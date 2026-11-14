@@ -297,6 +297,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/baselines/{baseline_id}/specs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: operations["createSpecification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["getSpecification"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit */
+        patch: operations["editSpecification"];
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/versions/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History */
+        get: operations["getSpecificationVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approveSpecification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -507,6 +576,390 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, unknown>;
+        };
+        /** AcceptanceCase */
+        AcceptanceCase: {
+            /** Id */
+            id: string;
+            /** Req Ids */
+            req_ids: string[];
+            /** Use Case Ids */
+            use_case_ids: string[];
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "unit" | "database" | "api" | "browser" | "policy";
+            /** Given */
+            given: string[];
+            /** When */
+            when: string;
+            /** Then */
+            then: string[];
+            /** Fixture Ids */
+            fixture_ids: string[];
+        };
+        /** ActorRole */
+        ActorRole: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** ApiOperation */
+        ApiOperation: {
+            /** Id */
+            id: string;
+            /** Use Case Id */
+            use_case_id: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+            /** Path */
+            path: string;
+            /** Actor Roles */
+            actor_roles: string[];
+            /** Request Fields */
+            request_fields: components["schemas"]["SpecField"][];
+            /** Response Fields */
+            response_fields: components["schemas"]["SpecField"][];
+            /** Success Status */
+            success_status: number;
+            /** Error Codes */
+            error_codes: string[];
+            /**
+             * Pagination
+             * @enum {string}
+             */
+            pagination: "none" | "cursor";
+            /**
+             * Concurrency
+             * @enum {string}
+             */
+            concurrency: "read_only" | "row_lock" | "optimistic";
+        };
+        /** ArtifactDigest */
+        ArtifactDigest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "functions" | "erd" | "ddl" | "rtm";
+            /**
+             * File Format
+             * @enum {string}
+             */
+            file_format: "md" | "mmd" | "sql" | "csv" | "xlsx";
+            /** Sha256 */
+            sha256: string;
+        };
+        /** BaselineReference */
+        BaselineReference: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Baseline Id
+             * Format: uuid
+             */
+            baseline_id: string;
+            /**
+             * Source Run Id
+             * Format: uuid
+             */
+            source_run_id: string;
+            /** Source Revision */
+            source_revision: number;
+            /** Model Hash */
+            model_hash: string;
+            /** Manifest Hash */
+            manifest_hash: string;
+            /**
+             * Approval Id
+             * Format: uuid
+             */
+            approval_id: string;
+            /** Artifacts */
+            artifacts: components["schemas"]["ArtifactDigest"][];
+        };
+        /** BooleanLiteral */
+        BooleanLiteral: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "boolean";
+            /** Value */
+            value: boolean;
+        };
+        /** Comparison */
+        Comparison: {
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "eq" | "ne" | "lt" | "le" | "gt" | "ge";
+            /** Left */
+            left: components["schemas"]["FieldRef"] | components["schemas"]["NumberLiteral"] | components["schemas"]["TextLiteral"] | components["schemas"]["BooleanLiteral"];
+            /** Right */
+            right: components["schemas"]["FieldRef"] | components["schemas"]["NumberLiteral"] | components["schemas"]["TextLiteral"] | components["schemas"]["BooleanLiteral"];
+        };
+        /** Edit */
+        Edit: {
+            /** Expected Version */
+            expected_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+            bundle: components["schemas"]["SpecBundle"];
+        };
+        /** Expected */
+        Expected: {
+            /** Expected Version */
+            expected_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+        };
+        /** FieldRef */
+        FieldRef: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "field";
+            /** Entity Id */
+            entity_id: string;
+            /** Field Id */
+            field_id: string;
+        };
+        /** Invariant */
+        Invariant: {
+            /** Id */
+            id: string;
+            /** Req Ids */
+            req_ids: string[];
+            /** Description */
+            description: string;
+            /**
+             * Match
+             * @enum {string}
+             */
+            match: "all" | "any";
+            /** Comparisons */
+            comparisons: components["schemas"]["Comparison"][];
+            /** Layers */
+            layers: ("database" | "api")[];
+        };
+        /** NumberLiteral */
+        NumberLiteral: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "number";
+            /** Value */
+            value: string;
+        };
+        /** OpenQuestion */
+        OpenQuestion: {
+            /** Id */
+            id: string;
+            /** Req Ids */
+            req_ids: string[];
+            /** Question */
+            question: string;
+            /** Answer */
+            answer?: string | null;
+        };
+        /** ReadinessIssue */
+        ReadinessIssue: {
+            /** Code */
+            code: string;
+            /** Target */
+            target: string;
+            /** Message */
+            message: string;
+        };
+        /** ReadinessReport */
+        ReadinessReport: {
+            /** Spec Hash */
+            spec_hash: string;
+            /** Ready For Review */
+            ready_for_review: boolean;
+            /** Issues */
+            issues: components["schemas"]["ReadinessIssue"][];
+        };
+        /** Screen */
+        Screen: {
+            /** Id */
+            id: string;
+            /** Route */
+            route: string;
+            /** Name */
+            name: string;
+            /** Actor Roles */
+            actor_roles: string[];
+            /** Api Ids */
+            api_ids: string[];
+            /** Empty State */
+            empty_state: string;
+            /** Loading State */
+            loading_state: string;
+            /** Error State */
+            error_state: string;
+        };
+        /** SpecBundle */
+        SpecBundle: {
+            /**
+             * Schema Version
+             * @default spec-v0.1
+             * @constant
+             */
+            schema_version: "spec-v0.1";
+            /**
+             * Spec Id
+             * Format: uuid
+             */
+            spec_id: string;
+            /** Spec Version */
+            spec_version: number;
+            /** Parent Spec Hash */
+            parent_spec_hash?: string | null;
+            baseline: components["schemas"]["BaselineReference"];
+            /**
+             * Template
+             * @constant
+             */
+            template: "inventory-fastapi-react-v1";
+            /** Requirements */
+            requirements: components["schemas"]["SpecRequirement"][];
+            /** Roles */
+            roles: components["schemas"]["ActorRole"][];
+            /** Entities */
+            entities: components["schemas"]["SpecEntity"][];
+            /** Use Cases */
+            use_cases: components["schemas"]["UseCase"][];
+            /** Invariants */
+            invariants: components["schemas"]["Invariant"][];
+            /** Apis */
+            apis: components["schemas"]["ApiOperation"][];
+            /** Screens */
+            screens: components["schemas"]["Screen"][];
+            /** Acceptance Cases */
+            acceptance_cases: components["schemas"]["AcceptanceCase"][];
+            /** Questions */
+            questions: components["schemas"]["OpenQuestion"][];
+        };
+        /** SpecEntity */
+        SpecEntity: {
+            /** Id */
+            id: string;
+            /** Legacy Id */
+            legacy_id: string;
+            /** Name */
+            name: string;
+            /** Fields */
+            fields: components["schemas"]["SpecField"][];
+        };
+        /** SpecField */
+        SpecField: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Data Type
+             * @enum {string}
+             */
+            data_type: "string" | "integer" | "decimal" | "boolean" | "date" | "datetime" | "uuid";
+            /** Required */
+            required: boolean;
+        };
+        /** SpecRequirement */
+        SpecRequirement: {
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "FR" | "NFR";
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "Must" | "Should" | "Could" | "Won't";
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "design" | "user";
+            /** Legacy Id */
+            legacy_id?: string | null;
+            /** Rationale */
+            rationale: string;
+            /** Requires Ui */
+            requires_ui: boolean;
+        };
+        /** SpecView */
+        SpecView: {
+            bundle: components["schemas"]["SpecBundle"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_input" | "ready_for_review" | "approved";
+            readiness: components["schemas"]["ReadinessReport"];
+            /** Approved By */
+            approved_by: string | null;
+            /** Versions */
+            versions: number[];
+        };
+        /** TextLiteral */
+        TextLiteral: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "text";
+            /** Value */
+            value: string;
+        };
+        /** UseCase */
+        UseCase: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Req Ids */
+            req_ids: string[];
+            /** Actor Roles */
+            actor_roles: string[];
+            /** Preconditions */
+            preconditions: string[];
+            /** Inputs */
+            inputs: components["schemas"]["SpecField"][];
+            /** Steps */
+            steps: string[];
+            /** Outputs */
+            outputs: components["schemas"]["SpecField"][];
+            /** Error Codes */
+            error_codes: string[];
+            /**
+             * Transaction
+             * @enum {string}
+             */
+            transaction: "read_only" | "atomic";
+            /**
+             * Idempotency
+             * @enum {string}
+             */
+            idempotency: "not_applicable" | "key";
         };
     };
     responses: never;
@@ -1193,6 +1646,170 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                baseline_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Edit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSpecificationVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approveSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Expected"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
                 };
             };
             /** @description Validation Error */

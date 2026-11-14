@@ -2,6 +2,8 @@
 
 아래 이름과 엔드포인트는 구현을 위한 제안 계약이다. 현재 제공 중인 `/runs` API와 구분하며 확장 단계에서 OpenAPI·Pydantic·프런트 타입을 함께 구현한다.
 
+> 현재 구현된 명세 API의 정확한 동작은 [실행 명세 구현 기록](10-specification-implementation.md)을 따른다. 아래 전체 확장 표는 후속 목표 계약도 포함한다.
+
 ## 버전과 식별 원칙
 
 - 프로젝트가 고객 업무의 지속적인 단위다. 설계 실행, 실행 명세, 구현 실행, 검증 실행은 각각 별도 ID를 갖는다.
@@ -80,7 +82,7 @@
 | `POST /api/v1/changes/{id}/decide` | 승인·질문·기각 | target_hash, decision, note |
 | `POST /api/v1/changes/{id}/implement` | 새 명세·구현 연결 | 승인 요청·기준 버전 |
 
-기존 프런트와 Caddy/Vite는 `/runs`·`/health`만 프록시하므로 신규 `/api/v1`·인증 callback·webhook 경로를 명시적으로 추가해야 한다. webhook은 일반 브라우저 세션 인증과 분리한다. 원격 미리보기 경로를 관리 API 프록시에 임의 포함하지 않는다.
+Google 로그인 단계에서 Caddy/Vite에 `/api/v1`·인증 callback 프록시를 추가했다. Gmail 단계에서는 webhook 경로를 별도로 구성해야 한다. webhook은 일반 브라우저 세션 인증과 분리한다. 원격 미리보기 경로를 관리 API 프록시에 임의 포함하지 않는다.
 
 ## 요청 예시
 

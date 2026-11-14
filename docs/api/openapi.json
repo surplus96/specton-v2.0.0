@@ -992,6 +992,248 @@
           }
         }
       }
+    },
+    "/api/v1/baselines/{baseline_id}/specs": {
+      "post": {
+        "tags": [
+          "specifications"
+        ],
+        "summary": "Create",
+        "operationId": "createSpecification",
+        "parameters": [
+          {
+            "name": "baseline_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Baseline Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/specs/{spec_id}": {
+      "get": {
+        "tags": [
+          "specifications"
+        ],
+        "summary": "Get",
+        "operationId": "getSpecification",
+        "parameters": [
+          {
+            "name": "spec_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Spec Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "specifications"
+        ],
+        "summary": "Edit",
+        "operationId": "editSpecification",
+        "parameters": [
+          {
+            "name": "spec_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Spec Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Edit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/specs/{spec_id}/versions/{version}": {
+      "get": {
+        "tags": [
+          "specifications"
+        ],
+        "summary": "History",
+        "operationId": "getSpecificationVersion",
+        "parameters": [
+          {
+            "name": "spec_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Spec Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/specs/{spec_id}/approve": {
+      "post": {
+        "tags": [
+          "specifications"
+        ],
+        "summary": "Approve",
+        "operationId": "approveSpecification",
+        "parameters": [
+          {
+            "name": "spec_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Spec Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Expected"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1678,6 +1920,1168 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "AcceptanceCase": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "req_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Req Ids"
+          },
+          "use_case_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "type": "array",
+            "title": "Use Case Ids"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "unit",
+              "database",
+              "api",
+              "browser",
+              "policy"
+            ],
+            "title": "Tier"
+          },
+          "given": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Given"
+          },
+          "when": {
+            "type": "string",
+            "minLength": 1,
+            "title": "When"
+          },
+          "then": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Then"
+          },
+          "fixture_ids": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Fixture Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "req_ids",
+          "use_case_ids",
+          "tier",
+          "given",
+          "when",
+          "then",
+          "fixture_ids"
+        ],
+        "title": "AcceptanceCase"
+      },
+      "ActorRole": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ActorRole"
+      },
+      "ApiOperation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "use_case_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Use Case Id"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ],
+            "title": "Method"
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/[a-zA-Z0-9_/{}/-]*$",
+            "title": "Path"
+          },
+          "actor_roles": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Actor Roles"
+          },
+          "request_fields": {
+            "items": {
+              "$ref": "#/components/schemas/SpecField"
+            },
+            "type": "array",
+            "title": "Request Fields"
+          },
+          "response_fields": {
+            "items": {
+              "$ref": "#/components/schemas/SpecField"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Response Fields"
+          },
+          "success_status": {
+            "type": "integer",
+            "maximum": 299.0,
+            "minimum": 200.0,
+            "title": "Success Status"
+          },
+          "error_codes": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Error Codes"
+          },
+          "pagination": {
+            "type": "string",
+            "enum": [
+              "none",
+              "cursor"
+            ],
+            "title": "Pagination"
+          },
+          "concurrency": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "row_lock",
+              "optimistic"
+            ],
+            "title": "Concurrency"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "use_case_id",
+          "method",
+          "path",
+          "actor_roles",
+          "request_fields",
+          "response_fields",
+          "success_status",
+          "error_codes",
+          "pagination",
+          "concurrency"
+        ],
+        "title": "ApiOperation"
+      },
+      "ArtifactDigest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "functions",
+              "erd",
+              "ddl",
+              "rtm"
+            ],
+            "title": "Kind"
+          },
+          "file_format": {
+            "type": "string",
+            "enum": [
+              "md",
+              "mmd",
+              "sql",
+              "csv",
+              "xlsx"
+            ],
+            "title": "File Format"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "file_format",
+          "sha256"
+        ],
+        "title": "ArtifactDigest"
+      },
+      "BaselineReference": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "baseline_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Baseline Id"
+          },
+          "source_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Run Id"
+          },
+          "source_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Source Revision"
+          },
+          "model_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Model Hash"
+          },
+          "manifest_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Manifest Hash"
+          },
+          "approval_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Approval Id"
+          },
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactDigest"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Artifacts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "baseline_id",
+          "source_run_id",
+          "source_revision",
+          "model_hash",
+          "manifest_hash",
+          "approval_id",
+          "artifacts"
+        ],
+        "title": "BaselineReference"
+      },
+      "BooleanLiteral": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "boolean",
+            "title": "Kind",
+            "default": "boolean"
+          },
+          "value": {
+            "type": "boolean",
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "BooleanLiteral"
+      },
+      "Comparison": {
+        "properties": {
+          "operator": {
+            "type": "string",
+            "enum": [
+              "eq",
+              "ne",
+              "lt",
+              "le",
+              "gt",
+              "ge"
+            ],
+            "title": "Operator"
+          },
+          "left": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FieldRef"
+              },
+              {
+                "$ref": "#/components/schemas/NumberLiteral"
+              },
+              {
+                "$ref": "#/components/schemas/TextLiteral"
+              },
+              {
+                "$ref": "#/components/schemas/BooleanLiteral"
+              }
+            ],
+            "title": "Left",
+            "discriminator": {
+              "propertyName": "kind",
+              "mapping": {
+                "boolean": "#/components/schemas/BooleanLiteral",
+                "field": "#/components/schemas/FieldRef",
+                "number": "#/components/schemas/NumberLiteral",
+                "text": "#/components/schemas/TextLiteral"
+              }
+            }
+          },
+          "right": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FieldRef"
+              },
+              {
+                "$ref": "#/components/schemas/NumberLiteral"
+              },
+              {
+                "$ref": "#/components/schemas/TextLiteral"
+              },
+              {
+                "$ref": "#/components/schemas/BooleanLiteral"
+              }
+            ],
+            "title": "Right",
+            "discriminator": {
+              "propertyName": "kind",
+              "mapping": {
+                "boolean": "#/components/schemas/BooleanLiteral",
+                "field": "#/components/schemas/FieldRef",
+                "number": "#/components/schemas/NumberLiteral",
+                "text": "#/components/schemas/TextLiteral"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operator",
+          "left",
+          "right"
+        ],
+        "title": "Comparison"
+      },
+      "Edit": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "spec_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Spec Hash"
+          },
+          "bundle": {
+            "$ref": "#/components/schemas/SpecBundle"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "spec_hash",
+          "bundle"
+        ],
+        "title": "Edit"
+      },
+      "Expected": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "spec_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Spec Hash"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "spec_hash"
+        ],
+        "title": "Expected"
+      },
+      "FieldRef": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "field",
+            "title": "Kind",
+            "default": "field"
+          },
+          "entity_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Entity Id"
+          },
+          "field_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Field Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entity_id",
+          "field_id"
+        ],
+        "title": "FieldRef"
+      },
+      "Invariant": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "req_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Req Ids"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Description"
+          },
+          "match": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ],
+            "title": "Match"
+          },
+          "comparisons": {
+            "items": {
+              "$ref": "#/components/schemas/Comparison"
+            },
+            "type": "array",
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Comparisons"
+          },
+          "layers": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "database",
+                "api"
+              ]
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Layers"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "req_ids",
+          "description",
+          "match",
+          "comparisons",
+          "layers"
+        ],
+        "title": "Invariant"
+      },
+      "NumberLiteral": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "number",
+            "title": "Kind",
+            "default": "number"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "NumberLiteral"
+      },
+      "OpenQuestion": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "req_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Req Ids"
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Question"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "req_ids",
+          "question"
+        ],
+        "title": "OpenQuestion"
+      },
+      "ReadinessIssue": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Code"
+          },
+          "target": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Target"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "target",
+          "message"
+        ],
+        "title": "ReadinessIssue"
+      },
+      "ReadinessReport": {
+        "properties": {
+          "spec_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Spec Hash"
+          },
+          "ready_for_review": {
+            "type": "boolean",
+            "title": "Ready For Review"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ReadinessIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "spec_hash",
+          "ready_for_review",
+          "issues"
+        ],
+        "title": "ReadinessReport"
+      },
+      "Screen": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "route": {
+            "type": "string",
+            "pattern": "^/[a-zA-Z0-9_/{}/-]*$",
+            "title": "Route"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "actor_roles": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Actor Roles"
+          },
+          "api_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Api Ids"
+          },
+          "empty_state": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Empty State"
+          },
+          "loading_state": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Loading State"
+          },
+          "error_state": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Error State"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "route",
+          "name",
+          "actor_roles",
+          "api_ids",
+          "empty_state",
+          "loading_state",
+          "error_state"
+        ],
+        "title": "Screen"
+      },
+      "SpecBundle": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "spec-v0.1",
+            "title": "Schema Version",
+            "default": "spec-v0.1"
+          },
+          "spec_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Spec Id"
+          },
+          "spec_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Spec Version"
+          },
+          "parent_spec_hash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Spec Hash"
+          },
+          "baseline": {
+            "$ref": "#/components/schemas/BaselineReference"
+          },
+          "template": {
+            "type": "string",
+            "const": "inventory-fastapi-react-v1",
+            "title": "Template"
+          },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/SpecRequirement"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Requirements"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/ActorRole"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Roles"
+          },
+          "entities": {
+            "items": {
+              "$ref": "#/components/schemas/SpecEntity"
+            },
+            "type": "array",
+            "title": "Entities"
+          },
+          "use_cases": {
+            "items": {
+              "$ref": "#/components/schemas/UseCase"
+            },
+            "type": "array",
+            "title": "Use Cases"
+          },
+          "invariants": {
+            "items": {
+              "$ref": "#/components/schemas/Invariant"
+            },
+            "type": "array",
+            "title": "Invariants"
+          },
+          "apis": {
+            "items": {
+              "$ref": "#/components/schemas/ApiOperation"
+            },
+            "type": "array",
+            "title": "Apis"
+          },
+          "screens": {
+            "items": {
+              "$ref": "#/components/schemas/Screen"
+            },
+            "type": "array",
+            "title": "Screens"
+          },
+          "acceptance_cases": {
+            "items": {
+              "$ref": "#/components/schemas/AcceptanceCase"
+            },
+            "type": "array",
+            "title": "Acceptance Cases"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/OpenQuestion"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "spec_id",
+          "spec_version",
+          "baseline",
+          "template",
+          "requirements",
+          "roles",
+          "entities",
+          "use_cases",
+          "invariants",
+          "apis",
+          "screens",
+          "acceptance_cases",
+          "questions"
+        ],
+        "title": "SpecBundle"
+      },
+      "SpecEntity": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "legacy_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Legacy Id"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/SpecField"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Fields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "legacy_id",
+          "name",
+          "fields"
+        ],
+        "title": "SpecEntity"
+      },
+      "SpecField": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,62}$",
+            "title": "Name"
+          },
+          "data_type": {
+            "type": "string",
+            "enum": [
+              "string",
+              "integer",
+              "decimal",
+              "boolean",
+              "date",
+              "datetime",
+              "uuid"
+            ],
+            "title": "Data Type"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "data_type",
+          "required"
+        ],
+        "title": "SpecField"
+      },
+      "SpecRequirement": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "FR",
+              "NFR"
+            ],
+            "title": "Kind"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "Must",
+              "Should",
+              "Could",
+              "Won't"
+            ],
+            "title": "Priority"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "design",
+              "user"
+            ],
+            "title": "Origin"
+          },
+          "legacy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacy Id"
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Rationale"
+          },
+          "requires_ui": {
+            "type": "boolean",
+            "title": "Requires Ui"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "text",
+          "kind",
+          "priority",
+          "origin",
+          "rationale",
+          "requires_ui"
+        ],
+        "title": "SpecRequirement"
+      },
+      "SpecView": {
+        "properties": {
+          "bundle": {
+            "$ref": "#/components/schemas/SpecBundle"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "needs_input",
+              "ready_for_review",
+              "approved"
+            ],
+            "title": "Status"
+          },
+          "readiness": {
+            "$ref": "#/components/schemas/ReadinessReport"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "versions": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Versions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "bundle",
+          "status",
+          "readiness",
+          "approved_by",
+          "versions"
+        ],
+        "title": "SpecView"
+      },
+      "TextLiteral": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "text",
+            "title": "Kind",
+            "default": "text"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "TextLiteral"
+      },
+      "UseCase": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "req_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Req Ids"
+          },
+          "actor_roles": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Actor Roles"
+          },
+          "preconditions": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Preconditions"
+          },
+          "inputs": {
+            "items": {
+              "$ref": "#/components/schemas/SpecField"
+            },
+            "type": "array",
+            "title": "Inputs"
+          },
+          "steps": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Steps"
+          },
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/SpecField"
+            },
+            "type": "array",
+            "title": "Outputs"
+          },
+          "error_codes": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Error Codes"
+          },
+          "transaction": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "atomic"
+            ],
+            "title": "Transaction"
+          },
+          "idempotency": {
+            "type": "string",
+            "enum": [
+              "not_applicable",
+              "key"
+            ],
+            "title": "Idempotency"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "req_ids",
+          "actor_roles",
+          "preconditions",
+          "inputs",
+          "steps",
+          "outputs",
+          "error_codes",
+          "transaction",
+          "idempotency"
+        ],
+        "title": "UseCase"
       }
     },
     "securitySchemes": {

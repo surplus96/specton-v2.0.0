@@ -2,7 +2,7 @@
 
 2026-11-14, 작업 브랜치 `feat/implementation-foundation`. 원본 `specton`에는 변경하지 않고 독립 저장소 `specton-personal`에서 구현한다.
 
-> 후속 상태: Google 지속 로그인·프로젝트 소유권·실제 승인 기준 연결은 [후속 구현 기록](09-google-project-implementation.md)에 정리했다. 이 문서의 상태와 측정값은 기반 구현 시점의 기록이다.
+> 후속 상태: [실행 명세 보완·승인](10-specification-implementation.md)까지 이어졌다. Google 지속 로그인·프로젝트 소유권·실제 승인 기준 연결은 [후속 구현 기록](09-google-project-implementation.md)에 정리했다. 이 문서의 상태와 측정값은 기반 구현 시점의 기록이다.
 
 ## 이번 구현
 

@@ -69,7 +69,7 @@ uv run pytest -m llm              # 실제 LLM 호출, 수동 실행 (이번 시
 `uv run python -m specton.evaluation.baseline`을 실행한다. DB 이전·기존 데이터 보존 절차는
 [마이그레이션 결정](docs/adr/0017-platform-migrations.md)을 따른다.
 
-Google 로그인·프로젝트·승인 설계 연결은 [설정 및 사용 흐름](docs/planning/09-google-project-implementation.md)을 따른다.
+Google 로그인·프로젝트·승인 설계 연결은 [설정 및 사용 흐름](docs/planning/09-google-project-implementation.md)을 따른다. 이어서 [실행 명세 보완·승인](docs/planning/10-specification-implementation.md)을 진행할 수 있다.
 
 ## 도메인 팩
 
@@ -108,7 +108,7 @@ tests/          unit · integration · e2e
 
 ## 프로젝트 분석과 확장 계획
 
-[프로젝트 분석](docs/planning/00-project-analysis.md)과 [개발 계획](docs/planning/README.md)에서 현재 구현, 품질 개선, SDD 구현, Gmail 피드백 반영 범위를 확인할 수 있다. 확장 기능은 기획 단계다.
+[프로젝트 분석](docs/planning/00-project-analysis.md)과 [개발 계획](docs/planning/README.md)에서 현재 구현, 품질 개선, SDD 구현, Gmail 피드백 반영 범위를 확인할 수 있다. 기반·로그인·프로젝트·실행 명세 검토를 구현했으며, 생성 앱·Gmail 피드백은 후속 구현 범위다.
 
 ## 라이선스
 

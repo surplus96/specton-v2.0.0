@@ -160,7 +160,8 @@ def test_schema_widens_the_document_format_check_of_an_older_database(
 
     with pool.connection() as conn:
         conn.execute(
-            "DROP TABLE design_baseline,project_run,project,login_session,"
+            "DROP TABLE spec_approval,spec_object,spec_revision,spec_document,"
+            "design_baseline,project_run,project,login_session,"
             "oauth_attempt,app_user,alembic_version"
         )  # 버전 도입 전 DB를 재현한다
         conn.execute("ALTER TABLE document DROP CONSTRAINT document_file_format_check")

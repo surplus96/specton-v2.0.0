@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
+import { specificationRequest, type Specification } from '../api/specifications'
 
 type Project = { id: string; name: string }
 type Baseline = { id: string; run_id: string; revision: number }
@@ -18,6 +19,7 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
 
 export default function ProjectsPage() {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [projects, setProjects] = useState<Project[]>([])
   const [selected, setSelected] = useState<Detail | null>(null)
@@ -74,7 +76,10 @@ export default function ProjectsPage() {
           await api(`/projects/${selected.id}/baselines`, { run_id: run, revision })
           setSelected(await api<Detail>(`/projects/${selected.id}`))
         })}>승인 설계를 기준 버전으로 연결</button>
-        <ul>{selected.baselines.map(b => <li key={b.id}>실행 {b.run_id} · revision {b.revision} · 기준 {b.id}</li>)}</ul>
+        <ul>{selected.baselines.map(b => <li key={b.id}>실행 {b.run_id} · revision {b.revision} · 기준 {b.id} <button disabled={busy} onClick={() => void perform(async () => {
+          const result = await specificationRequest<Specification>(`/baselines/${b.id}/specs`, 'POST')
+          navigate(`/specifications/${result.bundle.spec_id}`)
+        })}>실행 명세 작성·조회</button></li>)}</ul>
         {!selected.baselines.length && <p>연결된 승인 기준 버전이 없습니다.</p>}
       </article>}
     </>}

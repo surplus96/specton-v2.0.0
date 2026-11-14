@@ -7,6 +7,7 @@ import NotFoundPage from './pages/NotFoundPage.tsx'
 import RunPage from './pages/RunPage.tsx'
 import RunsPage from './pages/RunsPage.tsx'
 import ProjectsPage from './pages/ProjectsPage.tsx'
+import SpecificationPage from './pages/SpecificationPage.tsx'
 import StartPage from './pages/StartPage.tsx'
 import Loading from './ui/Loading.tsx'
 
@@ -44,6 +45,7 @@ function App() {
         />
         <Route index element={<Home />} />
         <Route path="projects" element={<ProjectsPage />} />
+        <Route path="specifications/:specId" element={<SpecificationPage />} />
         <Route path="history" element={<RunsPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="start" element={<Navigate to="/" replace />} />

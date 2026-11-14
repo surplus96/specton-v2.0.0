@@ -16,6 +16,7 @@ from specton.api.auth import router as auth_router
 from specton.api.errors import install_error_handlers
 from specton.api.projects import router as projects_router
 from specton.api.runs import router as runs_router
+from specton.api.specifications import router as specifications_router
 from specton.config import Settings, get_settings
 from specton.ddl_node import ddl_node
 from specton.design_rules_node import design_rules_node
@@ -119,6 +120,7 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
     app.include_router(runs_router)
     app.include_router(auth_router)
     app.include_router(projects_router)
+    app.include_router(specifications_router)
 
     @app.get("/health", operation_id="health")
     def health() -> HealthResponse:

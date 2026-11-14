@@ -16,6 +16,7 @@
 | [일정과 인수 기준](05-delivery-validation.md) | 개인 개발 일정, 작업 의존성, 기능별 완료 기준, 위험과 비용 |
 | [전체 파일 지도](06-module-map.md) | 원본 추적 파일의 분류, Python 모듈별 책임, 화면·테스트 위치 |
 | [분리와 검증 기록](07-repository-verification.md) | 변경 범위, 기존 근거 보존, 현재 실행한 검사와 미실행 항목 |
+| [실행 명세 구현](10-specification-implementation.md) | 승인 설계 기반 초안·질문·계약 편집·버전·별도 승인 |
 | [Google·프로젝트 구현](09-google-project-implementation.md) | 지속 로그인·소유권·실제 승인 기준 연결과 설정 |
 | [구현 진행 기록](08-implementation-progress.md) | 현재 구현·검증 결과, 재현 명령, 다음 작업 |
 

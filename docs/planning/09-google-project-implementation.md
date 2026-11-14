@@ -2,6 +2,8 @@
 
 2026-11-14 구현 기록. [ADR-0018](../adr/0018-google-project-baseline.md)에 결정과 검증 경계를 기록했다.
 
+> 후속 단계: [실행 명세 보완·승인 구현](10-specification-implementation.md). 아래 스키마·검사 결과는 Google·프로젝트 구현 시점의 기록이다.
+
 ## 사용 흐름
 
 1. 왼쪽 메뉴의 **내 프로젝트**에서 Google 계정으로 로그인한다.
