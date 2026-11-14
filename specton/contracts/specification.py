@@ -199,8 +199,24 @@ def _refs(values: tuple[str, ...], allowed: set[str], label: str) -> None:
         raise ValueError(f"없는 참조 {label}: {', '.join(sorted(unknown))}")
 
 
+class StorageBinding(Contract):
+    entity_id: Key
+    table_id: NonEmptyText
+    columns: dict[Key, NonEmptyText]
+
+
+class OperationBinding(Contract):
+    api_id: Key
+    entity_id: Key
+    action: Literal["insert", "get"]
+    key_field_id: Key
+    key_format: Literal["url-safe-segment"]
+
+
 class SpecBundle(Contract):
-    schema_version: Literal["spec-v0.1"] = "spec-v0.1"
+    schema_version: Literal["spec-v0.1", "spec-v0.2"] = "spec-v0.1"
+    storage_bindings: tuple[StorageBinding, ...] = ()
+    operation_bindings: tuple[OperationBinding, ...] = ()
     spec_id: UUID
     spec_version: PositiveVersion
     parent_spec_hash: Sha256 | None = None
@@ -218,6 +234,26 @@ class SpecBundle(Contract):
 
     @model_validator(mode="after")
     def _references(self) -> Self:
+        if self.schema_version == "spec-v0.1" and (
+            self.storage_bindings or self.operation_bindings
+        ):
+            raise ValueError("실행 연결은 spec-v0.2에서 명시적으로 승인해야 합니다")
+        entities = {e.id: e for e in self.entities}
+        _unique(tuple(b.entity_id for b in self.storage_bindings), "저장 연결")
+        _unique(tuple(b.api_id for b in self.operation_bindings), "동작 연결")
+        for binding in self.storage_bindings:
+            _refs((binding.entity_id,), set(entities), "저장 엔티티")
+            if set(binding.columns) != {f.id for f in entities[binding.entity_id].fields}:
+                raise ValueError("모든 엔티티 필드의 원본 컬럼 연결이 필요합니다")
+            _unique(tuple(binding.columns.values()), "원본 컬럼")
+        for operation in self.operation_bindings:
+            _refs((operation.api_id,), {a.id for a in self.apis}, "실행 API")
+            _refs((operation.entity_id,), set(entities), "실행 엔티티")
+            _refs(
+                (operation.key_field_id,),
+                {f.id for f in entities[operation.entity_id].fields},
+                "조회 키",
+            )
         if (self.spec_version == 1) != (self.parent_spec_hash is None):
             raise ValueError("첫 명세만 부모 해시가 없고 후속 버전에는 부모 해시가 필요합니다")
         groups = (

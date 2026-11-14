@@ -207,3 +207,20 @@ def verify_specification(conn: Connection) -> None:
         expected = _signature(conn, reference, spec_tables)
     if actual != expected:
         raise SchemaVersionError("실행 명세 스키마가 기준 구조와 일치하지 않습니다")
+
+
+def verify_implementation(conn: Connection) -> None:
+    from specton.persistence.migrations.identity_schema import SQL as identity_sql
+    from specton.persistence.migrations.implementation_schema import SQL
+    from specton.persistence.migrations.implementation_schema import TABLES as impl_tables
+    from specton.persistence.migrations.spec_schema import SQL as spec_sql
+
+    schema = str(conn.exec_driver_sql("SELECT current_schema()").scalar_one())
+    _check_extra_behavior(conn, schema, impl_tables)
+    actual = _signature(conn, schema, impl_tables)
+    with _reference(conn) as reference:
+        for ddl in (identity_sql, spec_sql, SQL):
+            conn.exec_driver_sql(ddl, execution_options={"no_parameters": True})
+        expected = _signature(conn, reference, impl_tables)
+    if actual != expected:
+        raise SchemaVersionError("생성 소스 스키마가 기준 구조와 일치하지 않습니다")

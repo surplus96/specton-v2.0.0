@@ -1,0 +1,331 @@
+"""운영 API와 분리해 실행하는 제한된 Docker DB/HTTP smoke 검증 CLI."""
+
+import argparse
+import hashlib
+import io
+import json
+import os
+import re
+import secrets
+import subprocess
+import tarfile
+import time
+import zipfile
+from pathlib import Path
+from typing import Any
+from uuid import uuid4
+
+from specton.implementation.package import TEMPLATES, json_bytes
+
+ALLOWED = {
+    "spec/approved-spec.json",
+    "spec/design-state.json",
+    "backend/app.py",
+    "backend/contract.json",
+    "backend/approved.sql",
+    "backend/requirements.txt",
+    "frontend/src/contract.json",
+    "frontend/package.json",
+    "frontend/package-lock.json",
+    "frontend/tsconfig.json",
+    "frontend/vite.config.ts",
+    "frontend/index.html",
+    "frontend/src/main.tsx",
+    "design/functions.md",
+    "design/erd.mmd",
+    "design/ddl.sql",
+    "design/rtm.csv",
+    "design/manifest.json",
+    "traceability.json",
+    "README.md",
+    "build-manifest.json",
+}
+
+
+def inspect_package(content: bytes, expected_hash: str) -> tuple[dict[str, bytes], dict[str, Any]]:
+    if len(content) > 10 * 1024 * 1024 or hashlib.sha256(content).hexdigest() != expected_hash:
+        raise ValueError("소스 크기 또는 신뢰한 소스 해시가 다릅니다")
+    with zipfile.ZipFile(io.BytesIO(content)) as archive:
+        entries = archive.infolist()
+        if (
+            len(entries) != len(ALLOWED)
+            or {e.filename for e in entries} != ALLOWED
+            or sum(e.file_size for e in entries) > 10 * 1024 * 1024
+            or any((e.external_attr >> 16) & 0o170000 != 0o100000 for e in entries)
+        ):
+            raise ValueError("허용되지 않는 ZIP 경로·중복·링크·크기")
+        files = {e.filename: archive.read(e) for e in entries}
+    manifest = json.loads(files["build-manifest.json"])
+    hashes = {
+        k: hashlib.sha256(v).hexdigest() for k, v in files.items() if k != "build-manifest.json"
+    }
+    if manifest.get("files") != hashes:
+        raise ValueError("생성 파일 manifest 불일치")
+    # 검증 실행은 신뢰한 고정 템플릿에 한정한다. 사용자 임의 Python 코드를 실행하지 않는다.
+    if files["backend/app.py"] != (TEMPLATES / "runtime/app.py.txt").read_bytes():
+        raise ValueError("지원하는 런타임 템플릿과 다릅니다")
+    return files, manifest
+
+
+def docker(
+    args: list[str], *, data: bytes | None = None, env: dict[str, str] | None = None
+) -> bytes:
+    result = subprocess.run(
+        ["docker", *args],
+        input=data,
+        capture_output=True,
+        timeout=60,
+        env=None if env is None else {**os.environ, **env},
+    )
+    if result.returncode:
+        # 실행 인수·stderr에는 작업 전용 비밀값이 있을 수 있으므로 출력하지 않는다.
+        raise RuntimeError("Docker 단계 실패: " + args[0])
+    if len(result.stdout) > 1024 * 1024:
+        raise RuntimeError("검증 출력 한도 초과")
+    return result.stdout
+
+
+def verify(
+    source: bytes, expected_hash: str, runtime_image: str, postgres_image: str
+) -> dict[str, Any]:
+    files, manifest = inspect_package(source, expected_hash)
+    for image in (runtime_image, postgres_image):
+        if not re.fullmatch(r"sha256:[0-9a-f]{64}", image):
+            raise ValueError("로컬에서 준비한 불변 image ID를 지정하세요")
+        if docker(["image", "inspect", image, "--format", "{{.Id}}"]).decode().strip() != image:
+            raise ValueError("이미지 ID 불일치")
+    suffix = uuid4().hex
+    network = ""
+    containers: list[str] = []
+    admin_password, password, token, denied = (secrets.token_urlsafe(32) for _ in range(4))
+    config = json.loads(files["backend/contract.json"])
+    roles = sorted({r for op in config["operations"] for r in op["actor_roles"]})
+    hashes = {
+        hashlib.sha256(token.encode()).hexdigest(): roles,
+        hashlib.sha256(denied.encode()).hexdigest(): [],
+    }
+    base = ["--read-only", "--cap-drop=ALL", "--security-opt=no-new-privileges", "--cpus=1"]
+    started = time.monotonic()
+    report: dict[str, Any] = {
+        "status": "failed",
+        "source_hash": expected_hash,
+        "spec_hash": manifest["spec_hash"],
+        "runtime_image": runtime_image,
+        "postgres_image": postgres_image,
+        "suite_hash": hashlib.sha256((TEMPLATES / "runtime/probe.py.txt").read_bytes()).hexdigest(),
+        "business_acceptance": "not_run",
+        "browser_acceptance": "not_run",
+    }
+    try:
+        network = (
+            docker(["network", "create", "--internal", "specton-verify-" + suffix]).decode().strip()
+        )
+        db = (
+            docker(
+                [
+                    "run",
+                    "-d",
+                    "--network",
+                    network,
+                    "--network-alias",
+                    "database",
+                    *base,
+                    "--user",
+                    "999:999",
+                    "--memory=512m",
+                    "--pids-limit=128",
+                    "--tmpfs",
+                    "/var/lib/postgresql:rw,noexec,nosuid,size=512m,uid=999,gid=999",
+                    "--tmpfs",
+                    "/var/run/postgresql:rw,noexec,nosuid,size=16m,uid=999,gid=999",
+                    "--tmpfs",
+                    "/tmp:rw,noexec,nosuid,size=16m",
+                    "-e",
+                    "POSTGRES_USER=admin",
+                    "-e",
+                    "POSTGRES_PASSWORD",
+                    postgres_image,
+                    "-c",
+                    "max_wal_size=64MB",
+                    "-c",
+                    "min_wal_size=32MB",
+                ],
+                env={"POSTGRES_PASSWORD": admin_password},
+            )
+            .decode()
+            .strip()
+        )
+        containers.append(db)
+        for _ in range(100):
+            result = subprocess.run(
+                ["docker", "exec", db, "pg_isready", "-h", "127.0.0.1", "-U", "admin"],
+                capture_output=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                break
+            time.sleep(0.2)
+        else:
+            raise RuntimeError("DB 준비 시간 초과")
+        docker(
+            ["exec", "-i", db, "psql", "-U", "admin", "-d", "postgres", "-v", "ON_ERROR_STOP=1"],
+            data=(
+                f"CREATE ROLE app LOGIN PASSWORD '{password}'; CREATE DATABASE generated OWNER app;"
+            ).encode(),
+        )
+        app = (
+            docker(
+                [
+                    "run",
+                    "-d",
+                    "--network",
+                    network,
+                    *base,
+                    "--user",
+                    "1000:1000",
+                    "--memory=256m",
+                    "--pids-limit=64",
+                    "--tmpfs",
+                    "/workspace:rw,noexec,nosuid,size=32m,uid=1000,gid=1000",
+                    "--tmpfs",
+                    "/tmp:rw,noexec,nosuid,size=16m",
+                    "-e",
+                    "APP_DATABASE_URL",
+                    "-e",
+                    "APP_TOKEN_HASHES",
+                    runtime_image,
+                ],
+                env={
+                    "APP_DATABASE_URL": f"postgresql://app:{password}@database:5432/generated",
+                    "APP_TOKEN_HASHES": json.dumps(hashes),
+                },
+            )
+            .decode()
+            .strip()
+        )
+        containers.append(app)
+        actual_suite = docker(["exec", app, "sha256sum", "/runner/probe.py"]).decode().split()[0]
+        if actual_suite != report["suite_hash"]:
+            raise RuntimeError("검증 이미지의 테스트 버전이 다릅니다")
+        stream = io.BytesIO()
+        with tarfile.open(fileobj=stream, mode="w") as archive:
+            for name, content in files.items():
+                if not name.startswith("backend/"):
+                    continue
+                entry = tarfile.TarInfo(name)
+                entry.size = len(content)
+                entry.mode = 0o444
+                entry.uid = 1000
+                entry.gid = 1000
+                archive.addfile(entry, io.BytesIO(content))
+        docker(
+            [
+                "exec",
+                "-i",
+                app,
+                "python",
+                "-c",
+                "import sys,tarfile,pathlib; "
+                "archive=tarfile.open(fileobj=sys.stdin.buffer,mode='r|'); "
+                "\nfor member in archive:\n"
+                " path=pathlib.Path('/workspace')/member.name; "
+                "path.parent.mkdir(parents=True,exist_ok=True); "
+                "path.write_bytes(archive.extractfile(member).read())",
+            ],
+            data=stream.getvalue(),
+        )
+        docker(["exec", app, "python", "/workspace/backend/app.py"])
+        docker(
+            [
+                "exec",
+                "-d",
+                app,
+                "uvicorn",
+                "app:app",
+                "--app-dir",
+                "/workspace/backend",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000",
+                "--no-access-log",
+            ]
+        )
+        for _ in range(60):
+            result = subprocess.run(
+                [
+                    "docker",
+                    "exec",
+                    app,
+                    "python",
+                    "-c",
+                    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=1)",
+                ],
+                capture_output=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                break
+            time.sleep(0.2)
+        else:
+            raise RuntimeError("API 준비 시간 초과")
+        output = docker(
+            [
+                "exec",
+                "-e",
+                "PROBE_TOKEN",
+                "-e",
+                "PROBE_DENIED_TOKEN",
+                app,
+                "python",
+                "/runner/probe.py",
+            ],
+            env={"PROBE_TOKEN": token, "PROBE_DENIED_TOKEN": denied},
+        )
+        report.update(json.loads(output))
+    except (RuntimeError, subprocess.TimeoutExpired):
+        report["status"] = "failed"
+        report["error"] = (
+            "격리 DB/API 검사 실패 또는 시간 초과. "
+            "비밀값이 포함될 수 있는 내부 로그는 게시하지 않습니다."
+        )
+    finally:
+        cleanup = True
+        for container in reversed(containers):
+            try:
+                docker(["rm", "--force", "--volumes", container])
+            except (RuntimeError, subprocess.TimeoutExpired):
+                cleanup = False
+        if network:
+            try:
+                docker(["network", "rm", network])
+            except (RuntimeError, subprocess.TimeoutExpired):
+                cleanup = False
+        report["cleanup_complete"] = cleanup
+        if not cleanup:
+            report["status"] = "failed"
+        report["elapsed_seconds"] = round(time.monotonic() - started, 3)
+    return report
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("archive", type=Path)
+    parser.add_argument("--expected-source-hash", required=True)
+    parser.add_argument("--runtime-image", required=True)
+    parser.add_argument("--postgres-image", required=True)
+    parser.add_argument("--report", type=Path, required=True)
+    args = parser.parse_args()
+    report = verify(
+        args.archive.read_bytes(),
+        args.expected_source_hash,
+        args.runtime_image,
+        args.postgres_image,
+    )
+    args.report.write_bytes(json_bytes(report))
+    print(json.dumps({"status": report["status"], "cleanup_complete": report["cleanup_complete"]}))
+    raise SystemExit(0 if report["status"] == "smoke_passed" else 1)
+
+
+if __name__ == "__main__":
+    main()

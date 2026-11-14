@@ -1234,6 +1234,192 @@
           }
         }
       }
+    },
+    "/api/v1/specs/{spec_id}/implementations": {
+      "post": {
+        "tags": [
+          "implementations"
+        ],
+        "summary": "Create",
+        "operationId": "generateImplementation",
+        "parameters": [
+          {
+            "name": "spec_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Spec Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Expected"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Generateimplementation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/implementations/{impl_id}": {
+      "get": {
+        "tags": [
+          "implementations"
+        ],
+        "summary": "Get",
+        "operationId": "getImplementation",
+        "parameters": [
+          {
+            "name": "impl_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Impl Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Getimplementation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/implementations/{impl_id}/source": {
+      "get": {
+        "tags": [
+          "implementations"
+        ],
+        "summary": "Download",
+        "operationId": "downloadImplementation",
+        "parameters": [
+          {
+            "name": "impl_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Impl Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/specs/{spec_id}/storage-catalog": {
+      "get": {
+        "tags": [
+          "implementations"
+        ],
+        "summary": "Catalog",
+        "operationId": "getStorageCatalog",
+        "parameters": [
+          {
+            "name": "spec_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Spec Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Getstoragecatalog"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2645,9 +2831,28 @@
         "properties": {
           "schema_version": {
             "type": "string",
-            "const": "spec-v0.1",
+            "enum": [
+              "spec-v0.1",
+              "spec-v0.2"
+            ],
             "title": "Schema Version",
             "default": "spec-v0.1"
+          },
+          "storage_bindings": {
+            "items": {
+              "$ref": "#/components/schemas/StorageBinding"
+            },
+            "type": "array",
+            "title": "Storage Bindings",
+            "default": []
+          },
+          "operation_bindings": {
+            "items": {
+              "$ref": "#/components/schemas/OperationBinding"
+            },
+            "type": "array",
+            "title": "Operation Bindings",
+            "default": []
           },
           "spec_id": {
             "type": "string",
@@ -3082,6 +3287,80 @@
           "idempotency"
         ],
         "title": "UseCase"
+      },
+      "OperationBinding": {
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Api Id"
+          },
+          "entity_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Entity Id"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "insert",
+              "get"
+            ],
+            "title": "Action"
+          },
+          "key_field_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Key Field Id"
+          },
+          "key_format": {
+            "type": "string",
+            "const": "url-safe-segment",
+            "title": "Key Format"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "api_id",
+          "entity_id",
+          "action",
+          "key_field_id",
+          "key_format"
+        ],
+        "title": "OperationBinding"
+      },
+      "StorageBinding": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Entity Id"
+          },
+          "table_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Table Id"
+          },
+          "columns": {
+            "patternProperties": {
+              "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "type": "object",
+            "title": "Columns"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entity_id",
+          "table_id",
+          "columns"
+        ],
+        "title": "StorageBinding"
       }
     },
     "securitySchemes": {

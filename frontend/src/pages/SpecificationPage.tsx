@@ -11,7 +11,9 @@ export default function SpecificationPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  function install(value: Specification) { setSpec(value); setEditor(serialize(value.bundle)) }
+  const [catalog, setCatalog] = useState<unknown>(null)
+  const [implementation, setImplementation] = useState<{ id: string; source_hash: string; spec_version: number } | null>(null)
+  function install(value: Specification) { setSpec(value); setEditor(serialize(value.bundle)); setImplementation(null) }
   useEffect(() => {
     let active = true
     specificationRequest<Specification>(`/specs/${specId}`).then(value => {
@@ -63,6 +65,13 @@ export default function SpecificationPage() {
             disabled={busy || !latest || !draft} value={typeof value === 'string' ? value : ''} onChange={e => answer(q.id, e.target.value)} />
         </label></div>
       })}
+      <h2>생성기 연결</h2>
+      <p>현재 생성기는 단일 기본키·외래키 없는 기준정보의 등록과 단건 조회를 지원합니다. 문자열·정수·불리언만 지원하며, 사용자 불변식·입출고 확정은 아직 생성하지 않습니다.</p>
+      <p>명세를 spec-v0.2로 보완하고 storage_bindings에 테이블·컬럼 ID, operation_bindings에 API의 insert/get 동작·조회 키와 key_format: url-safe-segment를 연결한 뒤 다시 승인하세요. 문자열 기본키는 영문·숫자·밑줄·하이픈만 지원합니다. 기존 v0.1 승인 해시는 유지됩니다.</p>
+      <button disabled={busy} onClick={() => void perform(async () => {
+        setCatalog(await specificationRequest(`/specs/${specId}/storage-catalog`))
+      })}>승인 설계의 테이블·컬럼 확인</button>
+      {catalog !== null && <details open><summary>승인 저장 구조</summary><pre style={{ overflow: 'auto', maxHeight: 400 }}>{JSON.stringify(catalog, null, 2)}</pre></details>}
       <h2>실행 계약 편집</h2>
       <p>초안의 Must와 화면 필요 여부는 확인 전 기본값입니다. 제외하는 요구도 삭제하지 말고 우선순위와 사유를 남기세요. 출처·ID·버전은 유지하세요.</p>
       <label>명세 JSON <textarea spellCheck={false} rows={25} style={{ width: '100%', fontFamily: 'monospace' }}
@@ -78,6 +87,18 @@ export default function SpecificationPage() {
           expected_version: spec.bundle.spec_version, spec_hash: spec.readiness.spec_hash,
         })); setNotice('현재 명세 버전과 해시를 승인했습니다.')
       })}>이 버전의 실행 명세 승인</button>
+      <h2>생성 소스</h2>
+      <button disabled={busy || dirty || !latest || spec.status !== 'approved'} onClick={() => void perform(async () => {
+        const source = await specificationRequest<{ id: string; source_hash: string; spec_version: number }>(`/specs/${specId}/implementations`, 'POST', {
+          expected_version: spec.bundle.spec_version, spec_hash: spec.readiness.spec_hash,
+        })
+        setImplementation(source); setNotice('소스 묶음을 생성했습니다. 실행·업무 인수·채택은 별도 단계입니다.')
+      })}>승인한 명세로 소스 생성·조회</button>
+      {implementation && <div><p>명세 버전 {implementation.spec_version} · 소스 생성 완료 · 서버 검증 미실행</p>
+        <p>SHA-256: <code style={{ overflowWrap: 'anywhere' }}>{implementation.source_hash}</code></p>
+        <a href={`/api/v1/implementations/${implementation.id}/source`}>생성 소스 ZIP 내려받기</a>
+        <p>ZIP의 README에 실행 방법이 있습니다. 격리 검증 작업자는 다운로드한 소스 해시를 확인하고 별도로 실행합니다.</p>
+      </div>}
     </>}
     {busy && <p role="status">처리 중입니다.</p>}
   </section>

@@ -366,6 +366,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/specs/{spec_id}/implementations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: operations["generateImplementation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/implementations/{impl_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["getImplementation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/implementations/{impl_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download */
+        get: operations["downloadImplementation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/storage-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog */
+        get: operations["getStorageCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -816,9 +884,19 @@ export interface components {
             /**
              * Schema Version
              * @default spec-v0.1
-             * @constant
+             * @enum {string}
              */
-            schema_version: "spec-v0.1";
+            schema_version: "spec-v0.1" | "spec-v0.2";
+            /**
+             * Storage Bindings
+             * @default []
+             */
+            storage_bindings: components["schemas"]["StorageBinding"][];
+            /**
+             * Operation Bindings
+             * @default []
+             */
+            operation_bindings: components["schemas"]["OperationBinding"][];
             /**
              * Spec Id
              * Format: uuid
@@ -960,6 +1038,36 @@ export interface components {
              * @enum {string}
              */
             idempotency: "not_applicable" | "key";
+        };
+        /** OperationBinding */
+        OperationBinding: {
+            /** Api Id */
+            api_id: string;
+            /** Entity Id */
+            entity_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "insert" | "get";
+            /** Key Field Id */
+            key_field_id: string;
+            /**
+             * Key Format
+             * @constant
+             */
+            key_format: "url-safe-segment";
+        };
+        /** StorageBinding */
+        StorageBinding: {
+            /** Entity Id */
+            entity_id: string;
+            /** Table Id */
+            table_id: string;
+            /** Columns */
+            columns: {
+                [key: string]: string;
+            };
         };
     };
     responses: never;
@@ -1810,6 +1918,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generateImplementation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Expected"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getImplementation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    downloadImplementation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getStorageCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

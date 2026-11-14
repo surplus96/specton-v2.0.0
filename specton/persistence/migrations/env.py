@@ -6,6 +6,7 @@ from specton.persistence.migrate import migration_connection
 from specton.persistence.migrations.baseline import (
     verify_baseline,
     verify_identity,
+    verify_implementation,
     verify_specification,
 )
 
@@ -24,7 +25,16 @@ with migration_connection(context.config) as connection:
         context.run_migrations()
         # 이미 버전이 등록된 DB의 임의 변경도 반복 upgrade로 덮지 않는다.
         verify_baseline(connection)
-        if context.get_context().get_current_revision() in {"0002_identity", "0003_specification"}:
+        if context.get_context().get_current_revision() in {
+            "0002_identity",
+            "0003_specification",
+            "0004_implementation",
+        }:
             verify_identity(connection)
-        if context.get_context().get_current_revision() == "0003_specification":
+        if context.get_context().get_current_revision() in {
+            "0003_specification",
+            "0004_implementation",
+        }:
             verify_specification(connection)
+        if context.get_context().get_current_revision() == "0004_implementation":
+            verify_implementation(connection)

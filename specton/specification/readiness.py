@@ -22,8 +22,13 @@ class ReadinessReport(Contract):
 def canonical_bytes(bundle: SpecBundle) -> bytes:
     """객체 key 순서는 무시하고 배열 순서·정확한 수량 문자열은 보존한다."""
     validated = SpecBundle.model_validate(bundle.model_dump(mode="json"))
+    payload = validated.model_dump(mode="json")
+    if validated.schema_version == "spec-v0.1":
+        # 신규 필드의 기본값을 구 승인 명세 해시에 섞지 않는다.
+        payload.pop("storage_bindings")
+        payload.pop("operation_bindings")
     return json.dumps(
-        validated.model_dump(mode="json"),
+        payload,
         sort_keys=True,
         ensure_ascii=False,
         separators=(",", ":"),
@@ -32,7 +37,9 @@ def canonical_bytes(bundle: SpecBundle) -> bytes:
 
 
 def spec_hash(bundle: SpecBundle) -> str:
-    return hashlib.sha256(b"specton:spec-v0.1\0" + canonical_bytes(bundle)).hexdigest()
+    return hashlib.sha256(
+        f"specton:{bundle.schema_version}\0".encode() + canonical_bytes(bundle)
+    ).hexdigest()
 
 
 def assess_readiness(bundle: SpecBundle) -> ReadinessReport:

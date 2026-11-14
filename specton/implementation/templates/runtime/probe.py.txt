@@ -1,0 +1,64 @@
+"""Trusted verifier, maintained separately from generated source and prose acceptance cases."""
+import concurrent.futures
+import json
+import os
+import socket
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+import psycopg
+from psycopg import sql
+from psycopg.rows import dict_row
+
+config = json.loads(Path('/workspace/backend/contract.json').read_text())
+token = os.environ['PROBE_TOKEN']
+checks = []
+
+
+def request(op, payload=None, key=None, credential=token, command='one'):
+    path = op['path'].replace('{key}', urllib.parse.quote(str(key), safe=''))
+    headers = {'Authorization': 'Bearer ' + credential, 'Content-Type': 'application/json', 'Idempotency-Key': command}
+    data = None if payload is None else json.dumps(payload).encode()
+    req = urllib.request.Request('http://127.0.0.1:8000' + path, data=data, headers=headers, method=op['method'])
+    try:
+        response = urllib.request.urlopen(req, timeout=5)
+    except urllib.error.HTTPError as error:
+        response = error
+    return response.status, json.loads(response.read())
+
+
+for insert in [o for o in config['operations'] if o['action'] == 'insert']:
+    get = next(o for o in config['operations'] if o['entity_id'] == insert['entity_id'] and o['action'] == 'get')
+    data = {f['name']: {'string': 'x', 'integer': 7, 'boolean': True}[f['data_type']] for f in insert['fields']}
+    key = data[insert['key']['name']]
+    assert request(get, key=key, credential='invalid')[0] == 401, 'unauthenticated access'
+    assert request(get, key=key, credential=os.environ['PROBE_DENIED_TOKEN'])[0] == 403, 'role bypass'
+    assert request(insert, data, credential='invalid')[0] == 401, 'unauthenticated write'
+    assert request(insert, data, credential=os.environ['PROBE_DENIED_TOKEN'])[0] == 403, 'role write bypass'
+    assert request(insert, {**data, '__unexpected': 1})[0] == 422, 'unknown input accepted'
+    if insert['key']['data_type'] == 'string':
+        assert request(insert, {**data, insert['key']['name']: '../invalid'})[0] == 422, 'unaddressable key accepted'
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        replies = list(pool.map(lambda _: request(insert, data), range(4)))
+    assert all(status == 201 and body == data for status, body in replies), 'idempotent insert mismatch'
+    assert request(insert, data, command='two') == (409, {'detail': 'DUPLICATE_KEY'}), 'duplicate key accepted'
+    changed = {**data, insert['key']['name']: 8 if isinstance(key, int) else 'y'}
+    assert request(insert, changed) == (409, {'detail': 'IDEMPOTENCY_CONFLICT'}), 'idempotency conflict accepted'
+    assert request(get, key=key) == (200, data), 'persisted read mismatch'
+    assert request(get, key=changed[insert['key']['name']])[0] == 404, 'missing row accepted'
+    with psycopg.connect(os.environ['APP_DATABASE_URL'], row_factory=dict_row) as conn:
+        assert int(conn.execute('SHOW server_version_num').fetchone()['server_version_num']) // 10000 == 18, 'PostgreSQL target mismatch'
+        rows = conn.execute(sql.SQL('SELECT * FROM {}').format(sql.Identifier(insert['table']))).fetchall()
+        assert len(rows) == 1, 'transaction/idempotency row count'
+        assert all(rows[0][f['column']] == data[f['name']] for f in insert['fields']), 'DB content mismatch'
+        assert not conn.execute('SELECT rolsuper FROM pg_roles WHERE rolname=current_user').fetchone()['rolsuper'], 'superuser runtime'
+    checks.append({'entity_id': insert['entity_id'], 'status': 'passed', 'checks': ['authentication','role','input','idempotency','duplicate','read','database']})
+assert not Path('/var/run/docker.sock').exists(), 'docker socket exposed'
+try:
+    with socket.create_connection(('1.1.1.1', 443), timeout=0.5):
+        raise AssertionError('external egress allowed')
+except OSError:
+    pass
+print(json.dumps({'status': 'smoke_passed', 'checks': checks, 'business_acceptance': 'not_run', 'browser_acceptance': 'not_run'}))

@@ -1,0 +1,115 @@
+"""Generated master-data service. No platform sessions or credentials are used."""
+import hashlib
+import json
+import os
+from pathlib import Path
+from typing import Annotated
+
+import psycopg
+from fastapi import FastAPI, Header, HTTPException, Request
+from psycopg import sql
+from psycopg.rows import dict_row
+from pydantic import ConfigDict, Field, StrictBool, StrictInt, StrictStr, ValidationError, create_model
+
+ROOT = Path(__file__).parent
+CONFIG = json.loads((ROOT / 'contract.json').read_text())
+TOKENS = json.loads(os.environ['APP_TOKEN_HASHES'])
+DSN = os.environ['APP_DATABASE_URL']
+app = FastAPI(title='Generated master data')
+
+
+def principal(request, allowed):
+    value = request.headers.get('authorization', '')
+    if not value.startswith('Bearer '):
+        raise HTTPException(401, detail='AUTH_REQUIRED')
+    key = hashlib.sha256(value[7:].encode()).hexdigest()
+    roles = TOKENS.get(key)
+    if roles is None:
+        raise HTTPException(401, detail='AUTH_REQUIRED')
+    if not set(roles) & set(allowed):
+        raise HTTPException(403, detail='FORBIDDEN')
+    return key
+
+
+def model_for(operation):
+    fields = {}
+    for field in operation['fields']:
+        kind = field['data_type']
+        type_ = {'string': StrictStr, 'integer': StrictInt, 'boolean': StrictBool}[kind]
+        limits = {}
+        if kind == 'string':
+            limits = {'max_length': field['length'], 'min_length': 1 if field['primary'] else 0}
+            if field['primary']:
+                limits['pattern'] = r'^[A-Za-z0-9_-]+$'
+        if kind == 'integer':
+            limits = {'ge': -2147483648, 'le': 2147483647}
+        if not field['required']:
+            type_ = type_ | None
+        fields[field['name']] = (type_, Field(... if field['required'] else None, **limits))
+    return create_model(operation['api_id'].replace('-', '_'), __config__=ConfigDict(extra='forbid'), **fields)
+
+
+def bind(operation):
+    model = model_for(operation)
+    names = [f['name'] for f in operation['fields']]
+    columns = [f['column'] for f in operation['fields']]
+    projection = sql.SQL(',').join(sql.SQL('{} AS {}').format(sql.Identifier(c), sql.Identifier(n)) for c, n in zip(columns, names))
+    if operation['action'] == 'insert':
+        def endpoint(payload, request: Request, idempotency_key: Annotated[str, Header(min_length=1, max_length=128)]):
+            actor = principal(request, operation['actor_roles'])
+            values = payload.model_dump()
+            digest = hashlib.sha256(json.dumps(values, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+            scope = actor + ':' + operation['api_id']
+            with psycopg.connect(DSN, row_factory=dict_row) as conn:
+                # Serialize retries before checking their persisted result, in the data transaction.
+                conn.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))', (scope + ':' + idempotency_key,))
+                old = conn.execute('SELECT request_hash,result FROM _specton_commands WHERE scope=%s AND key=%s', (scope, idempotency_key)).fetchone()
+                if old:
+                    if old['request_hash'] != digest:
+                        raise HTTPException(409, detail='IDEMPOTENCY_CONFLICT')
+                    return old['result']
+                try:
+                    result = conn.execute(sql.SQL('INSERT INTO {} ({}) VALUES ({}) RETURNING {}').format(
+                        sql.Identifier(operation['table']), sql.SQL(',').join(map(sql.Identifier, columns)),
+                        sql.SQL(',').join(sql.Placeholder() for _ in columns), projection),
+                        [values[n] for n in names]).fetchone()
+                except psycopg.errors.UniqueViolation:
+                    raise HTTPException(409, detail='DUPLICATE_KEY') from None
+                conn.execute('INSERT INTO _specton_commands VALUES(%s,%s,%s,%s)', (scope, idempotency_key, digest, psycopg.types.json.Jsonb(result)))
+                return result
+        endpoint.__annotations__['payload'] = model
+    else:
+        def endpoint(key: str, request: Request):
+            principal(request, operation['actor_roles'])
+            key_field = operation['key']
+            try:
+                value = int(key) if key_field['data_type'] == 'integer' else key
+                # Validate key bounds without requiring the remaining fields.
+                from pydantic import TypeAdapter
+                value = TypeAdapter(Annotated[model.model_fields[key_field['name']].annotation, *model.model_fields[key_field['name']].metadata]).validate_python(value)
+            except (ValueError, ValidationError):
+                raise HTTPException(422, detail='INVALID_KEY') from None
+            with psycopg.connect(DSN, row_factory=dict_row) as conn:
+                result = conn.execute(sql.SQL('SELECT {} FROM {} WHERE {}=%s').format(
+                    projection, sql.Identifier(operation['table']), sql.Identifier(key_field['column'])), (value,)).fetchone()
+            if result is None:
+                raise HTTPException(404, detail='NOT_FOUND')
+            return result
+    app.add_api_route(operation['path'], endpoint, methods=[operation['method']],
+                      operation_id=operation['api_id'], status_code=operation['success_status'], response_model=model)
+
+
+for operation in CONFIG['operations']:
+    bind(operation)
+
+
+@app.get('/health')
+def health():
+    return {'status': 'ok'}
+
+
+if __name__ == '__main__':
+    # Run once against an empty, dedicated database before serving the application.
+    with psycopg.connect(DSN) as conn:
+        conn.execute((ROOT / 'approved.sql').read_text(), prepare=False)
+        conn.execute('CREATE TABLE _specton_commands(scope text,key text,request_hash text NOT NULL,result jsonb NOT NULL,PRIMARY KEY(scope,key))')

@@ -1,0 +1,27 @@
+{
+  "browser_acceptance": "not_run",
+  "business_acceptance": "not_run",
+  "checks": [
+    {
+      "checks": [
+        "authentication",
+        "role",
+        "input",
+        "idempotency",
+        "duplicate",
+        "read",
+        "database"
+      ],
+      "entity_id": "ENTITY-master",
+      "status": "passed"
+    }
+  ],
+  "cleanup_complete": true,
+  "elapsed_seconds": 2.508,
+  "postgres_image": "sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6",
+  "runtime_image": "sha256:d81fce183aad629685828628ebb4702df1d3911e8d963466dcae794d35046e45",
+  "source_hash": "57b9e6dfa582d1a46fcfea360c107f9de5f4ef42e46dec4811f4e0e1db4cdefd",
+  "spec_hash": "2898810a858f8e33344829a98ac4cc70dce1da51d81d58a1454fbb3b14232713",
+  "status": "smoke_passed",
+  "suite_hash": "dc6e09c2478f40b4af6b325735d0a06e1fda671188cb5944959e0cd37b595001"
+}

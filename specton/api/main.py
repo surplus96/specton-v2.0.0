@@ -14,6 +14,7 @@ from specton.agent_nodes import openai_agent_nodes
 from specton.api.access_log import install_oauth_log_filter
 from specton.api.auth import router as auth_router
 from specton.api.errors import install_error_handlers
+from specton.api.implementations import router as implementations_router
 from specton.api.projects import router as projects_router
 from specton.api.runs import router as runs_router
 from specton.api.specifications import router as specifications_router
@@ -121,6 +122,7 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
     app.include_router(auth_router)
     app.include_router(projects_router)
     app.include_router(specifications_router)
+    app.include_router(implementations_router)
 
     @app.get("/health", operation_id="health")
     def health() -> HealthResponse:

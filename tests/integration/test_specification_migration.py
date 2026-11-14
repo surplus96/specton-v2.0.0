@@ -21,7 +21,9 @@ def test_identity_upgrade_keeps_account_and_project(pool):
         conn.execute(
             "INSERT INTO project(id,owner_id,name) VALUES(%s,%s,'preserved')", (project, user)
         )
-        conn.execute("DROP TABLE spec_approval,spec_object,spec_revision,spec_document")
+        conn.execute(
+            "DROP TABLE implementation_source,spec_approval,spec_object,spec_revision,spec_document"
+        )
         conn.execute("UPDATE alembic_version SET version_num='0002_identity'")
     apply_schema(pool)
     assert current_version(pool) == HEAD

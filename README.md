@@ -108,7 +108,7 @@ tests/          unit · integration · e2e
 
 ## 프로젝트 분석과 확장 계획
 
-[프로젝트 분석](docs/planning/00-project-analysis.md)과 [개발 계획](docs/planning/README.md)에서 현재 구현, 품질 개선, SDD 구현, Gmail 피드백 반영 범위를 확인할 수 있다. 기반·로그인·프로젝트·실행 명세 검토를 구현했으며, 생성 앱·Gmail 피드백은 후속 구현 범위다.
+[프로젝트 분석](docs/planning/00-project-analysis.md)과 [개발 계획](docs/planning/README.md)에서 현재 구현, 품질 개선, SDD 구현, Gmail 피드백 반영 범위를 확인할 수 있다. 기반·로그인·프로젝트·명세 검토와 [기준정보 소스 생성·격리 검증](docs/planning/11-generated-application-implementation.md)을 구현했다. 재고 명령 전체·브라우저 인수·Gmail 피드백은 후속 범위다.
 
 ## 라이선스
 

@@ -2,6 +2,8 @@
 
 2026-11-14, `feat/implementation-foundation`에서 구현했다. [Google·프로젝트 단계](09-google-project-implementation.md) 다음의 명세 작성 흐름이다. 실제 생성 앱 구현이나 Gmail 수집의 완료를 뜻하지 않는다.
 
+> 후속 단계: [기준정보 소스 생성·격리 검증](11-generated-application-implementation.md). 아래 내용과 측정값은 명세 검토 구현 시점의 기록이다.
+
 ## 제공하는 동작
 
 1. **내 프로젝트**에서 연결한 승인 기준의 **실행 명세 작성·조회**를 선택한다.
