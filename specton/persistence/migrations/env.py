@@ -4,6 +4,7 @@ from alembic import context
 
 from specton.persistence.migrate import migration_connection
 from specton.persistence.migrations.baseline import (
+    verify_adoption,
     verify_baseline,
     verify_identity,
     verify_implementation,
@@ -33,6 +34,7 @@ with migration_connection(context.config) as connection:
             "0004_implementation",
             "0005_verification",
             "0006_preview",
+            "0007_adoption",
         }:
             verify_identity(connection)
         if context.get_context().get_current_revision() in {
@@ -40,17 +42,26 @@ with migration_connection(context.config) as connection:
             "0004_implementation",
             "0005_verification",
             "0006_preview",
+            "0007_adoption",
         }:
             verify_specification(connection)
         if context.get_context().get_current_revision() in {
             "0004_implementation",
             "0005_verification",
             "0006_preview",
+            "0007_adoption",
         }:
             verify_implementation(connection)
 
-        if context.get_context().get_current_revision() in {"0005_verification", "0006_preview"}:
+        if context.get_context().get_current_revision() in {
+            "0005_verification",
+            "0006_preview",
+            "0007_adoption",
+        }:
             verify_verification(connection)
 
-        if context.get_context().get_current_revision() == "0006_preview":
+        if context.get_context().get_current_revision() in {"0006_preview", "0007_adoption"}:
             verify_preview(connection)
+
+        if context.get_context().get_current_revision() == "0007_adoption":
+            verify_adoption(connection)

@@ -25,6 +25,7 @@
 | [0019](0019-approved-inventory-ledger.md) | 승인 정책 기반 생성 재고 원장 | 구현 | 2026-11-14 |
 | [0020](0020-verification-worker.md) | DB 큐와 별도 신뢰 검증 작업자 | 구현 | 2026-11-14 |
 | [0021](0021-isolated-browser-preview.md) | 고정 브라우저 인수와 소유자 중계 미리보기 | 구현 | 2026-11-14 |
+| [0022](0022-candidate-adoption.md) | 비교 근거 기반 구현 기준 채택 | 구현 | 2026-11-14 |
 
 ## 작성 규칙
 

@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from specton import __version__
 from specton.agent_nodes import openai_agent_nodes
 from specton.api.access_log import install_oauth_log_filter
+from specton.api.adoptions import router as adoptions_router
 from specton.api.auth import router as auth_router
 from specton.api.errors import install_error_handlers
 from specton.api.implementations import router as implementations_router
@@ -125,6 +126,7 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
     app.include_router(specifications_router)
     app.include_router(implementations_router)
     app.include_router(previews_router)
+    app.include_router(adoptions_router)
 
     @app.get("/health", operation_id="health")
     def health() -> HealthResponse:

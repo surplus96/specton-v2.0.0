@@ -641,7 +641,8 @@ def test_manifest_constraint_upgrade_preserves_old_approved_artifacts(
         before = conn.execute("SELECT * FROM artifact ORDER BY artifact_id").fetchall()
         assert len(before) == 5 and all(r["approval_status"] == "approved" for r in before)
         conn.execute(
-            "DROP TABLE implementation_preview,implementation_verification,implementation_source,"
+            "DROP TABLE implementation_adoption,"
+            "implementation_preview,implementation_verification,implementation_source,"
             "spec_approval,spec_object,"
             "spec_revision,spec_document,"
             "design_baseline,project_run,project,login_session,"

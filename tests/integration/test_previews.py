@@ -272,7 +272,7 @@ def test_upgrade_keeps_existing_verification(verified, pool):
         before = conn.execute(
             "SELECT report,report_hash,source_hash FROM implementation_verification"
         ).fetchall()
-        conn.execute("DROP TABLE implementation_preview")
+        conn.execute("DROP TABLE implementation_adoption,implementation_preview")
         conn.execute(
             "ALTER TABLE implementation_verification DROP COLUMN browser_image, DROP COLUMN"
             " browser_suite_hash"

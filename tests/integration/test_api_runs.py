@@ -160,7 +160,8 @@ def test_schema_widens_the_document_format_check_of_an_older_database(
 
     with pool.connection() as conn:
         conn.execute(
-            "DROP TABLE implementation_preview,implementation_verification,implementation_source,"
+            "DROP TABLE implementation_adoption,"
+            "implementation_preview,implementation_verification,implementation_source,"
             "spec_approval,spec_object,"
             "spec_revision,spec_document,"
             "design_baseline,project_run,project,login_session,"

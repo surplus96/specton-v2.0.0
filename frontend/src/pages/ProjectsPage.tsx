@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { specificationRequest, type Specification } from '../api/specifications'
 
 type Project = { id: string; name: string }
@@ -64,6 +64,7 @@ export default function ProjectsPage() {
       })}>{p.name}</button></li>)}</ul>
       {selected && <article>
         <h2>{selected.name}</h2>
+        <p><Link to={`/projects/${selected.id}/candidates`}>검증 후보 비교·채택</Link></p>
         <p>현재 계정 또는 이 브라우저가 소유한 실행만 연결할 수 있습니다.</p>
         <label>실행 ID <input value={run} onChange={e => setRun(e.target.value)} /></label>
         <button disabled={busy || !run.trim()} onClick={() => void perform(async () => {

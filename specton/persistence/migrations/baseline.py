@@ -233,10 +233,10 @@ def verify_verification(conn: Connection) -> None:
     from specton.persistence.migrations.spec_schema import SQL as spec_sql
     from specton.persistence.migrations.verification_schema import SQL, TABLES
 
-    browser = (
-        conn.exec_driver_sql("SELECT version_num FROM alembic_version").scalar_one()
-        == "0006_preview"
-    )
+    browser = conn.exec_driver_sql("SELECT version_num FROM alembic_version").scalar_one() in {
+        "0006_preview",
+        "0007_adoption",
+    }
     schema = str(conn.exec_driver_sql("SELECT current_schema()").scalar_one())
     _check_extra_behavior(conn, schema, TABLES)
     actual = _signature(conn, schema, TABLES)
@@ -266,3 +266,21 @@ def verify_preview(conn: Connection) -> None:
         expected = _signature(conn, reference, TABLES)
     if actual != expected:
         raise SchemaVersionError("미리보기 스키마가 기준 구조와 일치하지 않습니다")
+
+
+def verify_adoption(conn: Connection) -> None:
+    from specton.persistence.migrations.adoption_schema import SQL, TABLES
+    from specton.persistence.migrations.identity_schema import SQL as identity_sql
+    from specton.persistence.migrations.implementation_schema import SQL as impl_sql
+    from specton.persistence.migrations.spec_schema import SQL as spec_sql
+    from specton.persistence.migrations.verification_schema import SQL as verification_sql
+
+    schema = str(conn.exec_driver_sql("SELECT current_schema()").scalar_one())
+    _check_extra_behavior(conn, schema, TABLES)
+    actual = _signature(conn, schema, TABLES)
+    with _reference(conn) as reference:
+        for ddl in (identity_sql, spec_sql, impl_sql, verification_sql, SQL):
+            conn.exec_driver_sql(ddl, execution_options={"no_parameters": True})
+        expected = _signature(conn, reference, TABLES)
+    if actual != expected:
+        raise SchemaVersionError("구현 채택 스키마가 기준 구조와 일치하지 않습니다")

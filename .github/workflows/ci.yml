@@ -126,8 +126,17 @@ jobs:
           export SPECTON_TEST_WORKER_RUNTIME="$(docker image inspect specton-generated-runtime:inventory-ledger-v1 --format '{{.Id}}')"
           export SPECTON_TEST_WORKER_POSTGRES="$(docker image inspect postgres:18 --format '{{.Id}}')"
           export SPECTON_TEST_BROWSER_IMAGE="$(docker image inspect specton-browser:generated-ui-v1 --format '{{.Id}}')"
+          export SPECTON_TEST_ADOPTION_REPORT=var/test-results/adoption.json
+          uv run pytest --require-db -m db tests/integration/test_adoptions.py::test_adoption_comparison_history_and_idempotency
           export SPECTON_TEST_PREVIEW_REPORT=var/test-results/browser-preview.json
           uv run pytest --require-db -m db tests/integration/test_previews.py::test_preview_runtime_proxy_and_expiry
+          npm --prefix frontend ci --no-audit --no-fund
+          npm --prefix frontend run build
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,size=256m --shm-size=256m --cpus=1 --memory=1g --pids-limit=256 \
+            -v "$PWD/frontend/dist:/app:ro" \
+            -v "$PWD/tests/browser/candidate-adoption.mjs:/runner/candidate-adoption.mjs:ro" \
+            specton-browser:generated-ui-v1 node /runner/candidate-adoption.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
