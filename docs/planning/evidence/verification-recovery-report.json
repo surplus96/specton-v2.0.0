@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "checks": [
+    "label_scoped_cleanup",
+    "idempotent_cleanup",
+    "unrelated_attempt_preserved"
+  ]
+}

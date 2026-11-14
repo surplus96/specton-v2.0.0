@@ -114,6 +114,12 @@ jobs:
           Path("var/test-results/inventory-runtime.json").write_text(json.dumps(report, indent=2))
           assert report["status"] == "smoke_passed", "Isolated inventory verification failed"
           PY
+      - name: Verify platform queue and actual worker result registration
+        run: |
+          export SPECTON_TEST_WORKER_RUNTIME="$(docker image inspect specton-generated-runtime:inventory-ledger-v1 --format '{{.Id}}')"
+          export SPECTON_TEST_WORKER_POSTGRES="$(docker image inspect postgres:18 --format '{{.Id}}')"
+          export SPECTON_TEST_WORKER_REPORT=var/test-results/worker-runtime.json
+          uv run pytest --require-db -m db tests/integration/test_verification_jobs.py::test_worker_registers_report
       - uses: actions/upload-artifact@v4
         if: always()
         with:

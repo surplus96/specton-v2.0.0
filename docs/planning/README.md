@@ -16,6 +16,7 @@
 | [일정과 인수 기준](05-delivery-validation.md) | 개인 개발 일정, 작업 의존성, 기능별 완료 기준, 위험과 비용 |
 | [전체 파일 지도](06-module-map.md) | 원본 추적 파일의 분류, Python 모듈별 책임, 화면·테스트 위치 |
 | [분리와 검증 기록](07-repository-verification.md) | 변경 범위, 기존 근거 보존, 현재 실행한 검사와 미실행 항목 |
+| [자동 검증 작업자](13-verification-worker-implementation.md) | 검증 요청·큐·취소·복구·플랫폼 증거 등록 |
 | [승인 재고 정책 구현](12-inventory-ledger-implementation.md) | 입출고·취소·원장·동시성·실제 DB/HTTP 검증 |
 | [생성 앱·격리 검증](11-generated-application-implementation.md) | 제한된 기준정보 소스 생성·실제 DB/HTTP 검증·남은 재고 범위 |
 | [실행 명세 구현](10-specification-implementation.md) | 승인 설계 기반 초안·질문·계약 편집·버전·별도 승인 |

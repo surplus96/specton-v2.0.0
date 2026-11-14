@@ -10,19 +10,33 @@ from specton.api.auth import Mutation, UserDep
 from specton.api.deps import ConnDep, SettingsDep
 from specton.api.specifications import Expected, expected, fail, load, reference, view
 from specton.contracts import DesignState
+from specton.contracts.specification import Sha256
 from specton.implementation.compiler import Unsupported
 from specton.implementation.package import TEMPLATE_VERSION, generate
 
 router = APIRouter(prefix="/api/v1", tags=["implementations"])
 
 
-def summary(row: dict[str, Any]) -> dict[str, Any]:
+def summary(row: dict[str, Any], conn: ConnDep) -> dict[str, Any]:
+    latest = conn.execute(
+        "SELECT * FROM implementation_verification WHERE implementation_id=%s "
+        "ORDER BY created_at DESC,id DESC LIMIT 1",
+        (row["id"],),
+    ).fetchone()
+    if latest is not None:
+        from specton.implementation.jobs import public
+
+        try:
+            public(latest)
+        except ValueError:
+            fail(422, "저장된 검증 결과 해시가 일치하지 않습니다.")
     return {
         key: row[key]
         for key in ("id", "spec_id", "spec_version", "spec_hash", "source_hash", "template_version")
     } | {
         "status": "source_ready",
-        "validation_status": "not_run",
+        "validation_status": latest["status"] if latest else "not_run",
+        "verification_id": latest["id"] if latest else None,
     }
 
 
@@ -106,7 +120,7 @@ def create(
             or hashlib.sha256(bytes(row["source_zip"])).hexdigest() != digest
         ):
             fail(409, "같은 템플릿 버전의 생성 결과가 변경됐습니다. 템플릿 버전을 갱신하세요.")
-        return summary(row)
+        return summary(row, conn)
 
 
 def owned(conn: ConnDep, impl_id: UUID, user: UserDep) -> dict[str, Any]:
@@ -126,7 +140,7 @@ def owned(conn: ConnDep, impl_id: UUID, user: UserDep) -> dict[str, Any]:
 
 @router.get("/implementations/{impl_id}", operation_id="getImplementation")
 def get(impl_id: UUID, user: UserDep, conn: ConnDep) -> dict[str, Any]:
-    return summary(owned(conn, impl_id, user))
+    return summary(owned(conn, impl_id, user), conn)
 
 
 @router.get("/implementations/{impl_id}/source", operation_id="downloadImplementation")
@@ -161,3 +175,120 @@ def catalog(spec_id: UUID, user: UserDep, conn: ConnDep, settings: SettingsDep) 
             "supported_actions": ["insert", "get"],
             "supported_types": ["string", "integer", "boolean"],
         }
+
+
+# No public result-upload endpoint: only the trusted worker writes evidence.
+class VerificationRequest(Expected):
+    source_hash: Sha256
+    request_key: UUID
+
+
+@router.post("/implementations/{impl_id}/verifications", operation_id="requestVerification")
+def request_verification(
+    impl_id: UUID,
+    payload: VerificationRequest,
+    user: UserDep,
+    conn: ConnDep,
+    settings: SettingsDep,
+    checked: Mutation,
+) -> dict[str, Any]:
+    from specton.implementation.jobs import public
+
+    with conn.transaction():
+        row = owned(conn, impl_id, user)
+        if payload.source_hash != row["source_hash"]:
+            fail(409, "소스 해시가 다릅니다.")
+        base, version = load(conn, row["spec_id"], user)
+        current = view(conn, row["spec_id"], version)
+        expected(current, payload)
+        if (
+            current.status != "approved"
+            or version != row["spec_version"]
+            or current.readiness.spec_hash != row["spec_hash"]
+        ):
+            fail(409, "현재 승인 명세의 소스만 검증 요청할 수 있습니다.")
+        if current.bundle.baseline != reference(conn, base, user, settings):
+            fail(422, "승인 설계 출처가 일치하지 않습니다.")
+        # Match source generation lock order: spec document, then source.
+        conn.execute("SELECT id FROM implementation_source WHERE id=%s FOR UPDATE", (impl_id,))
+        previous = conn.execute(
+            "SELECT * FROM implementation_verification WHERE implementation_id=%s "
+            "AND request_key=%s",
+            (impl_id, payload.request_key),
+        ).fetchone()
+        if previous is not None:
+            return public(previous)
+        active = conn.execute(
+            "SELECT * FROM implementation_verification WHERE implementation_id=%s "
+            "AND status IN ('queued','running','cancelling','recovering')",
+            (impl_id,),
+        ).fetchone()
+        if active is not None:
+            fail(409, "이 소스의 검증 작업이 이미 진행 중입니다.")
+        job = conn.execute(
+            "INSERT INTO implementation_verification(id,implementation_id,requested_by,request_key,"
+            "source_hash,spec_hash,resource_key) VALUES(%s,%s,%s,%s,%s,%s,%s) RETURNING *",
+            (
+                uuid4(),
+                impl_id,
+                user["id"],
+                payload.request_key,
+                row["source_hash"],
+                row["spec_hash"],
+                uuid4(),
+            ),
+        ).fetchone()
+        assert job is not None
+        return public(job)
+
+
+@router.get("/implementations/{impl_id}/verifications", operation_id="listVerifications")
+def verifications(impl_id: UUID, user: UserDep, conn: ConnDep) -> list[dict[str, Any]]:
+    from specton.implementation.jobs import public
+
+    owned(conn, impl_id, user)
+    try:
+        return [
+            public(row)
+            for row in conn.execute(
+                "SELECT * FROM implementation_verification WHERE implementation_id=%s "
+                "ORDER BY created_at DESC, id DESC LIMIT 50",
+                (impl_id,),
+            ).fetchall()
+        ]
+    except ValueError:
+        fail(422, "저장된 검증 결과 해시가 일치하지 않습니다.")
+
+
+@router.post(
+    "/implementations/{impl_id}/verifications/{job_id}/cancel", operation_id="cancelVerification"
+)
+def cancel_verification(
+    impl_id: UUID,
+    job_id: UUID,
+    user: UserDep,
+    conn: ConnDep,
+    checked: Mutation,
+) -> dict[str, Any]:
+    from specton.implementation.jobs import public
+
+    with conn.transaction():
+        owned(conn, impl_id, user)
+        row = conn.execute(
+            "SELECT * FROM implementation_verification WHERE id=%s "
+            "AND implementation_id=%s FOR UPDATE",
+            (job_id, impl_id),
+        ).fetchone()
+        if row is None:
+            fail(404, "검증 작업을 찾을 수 없습니다.")
+        if row["status"] in ("queued", "running", "cancelling", "recovering"):
+            row = conn.execute(
+                "UPDATE implementation_verification SET cancel_requested=true, "
+                "status=CASE WHEN status='queued' THEN 'cancelled' "
+                "WHEN status='running' THEN 'cancelling' ELSE status END, "
+                "finished_at=CASE WHEN status='queued' THEN now() ELSE finished_at END "
+                "WHERE id=%s RETURNING *",
+                (job_id,),
+            ).fetchone()
+        assert row is not None
+        return public(row)

@@ -1,0 +1,75 @@
+{
+  "id": "58ed5f78-2cc2-4a01-a5af-d9042a4de442",
+  "implementation_id": "ad1197b2-b7f8-40d2-8bf0-c5f3f262eb30",
+  "source_hash": "2e3756ae1421bc1a41df2c7d5ab0fae24723632dfe23b0517946727bcc619b3d",
+  "spec_hash": "e859a35986986d641b0db2c91c1f80458da8cb3017fd6f6b09c1bf491a1846d1",
+  "status": "smoke_passed",
+  "created_at": "2026-11-14T08:52:10.733632Z",
+  "started_at": "2026-11-14T08:52:10.822572Z",
+  "finished_at": "2026-11-14T08:52:13.903682Z",
+  "runtime_image": "sha256:0dd35aa9dd4e033a652e00a5600b3fb7ecdd0170b0ead5fdcf8ecb61e013e9ec",
+  "postgres_image": "sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6",
+  "suite_hash": "e36da5ee1350c9bcbc913213813740e8fa2640a09ce296490c8aab86538cff74",
+  "report": {
+    "checks": [
+      {
+        "checks": [
+          "authentication",
+          "role",
+          "input",
+          "idempotency",
+          "duplicate",
+          "read",
+          "database"
+        ],
+        "status": "passed",
+        "entity_id": "ENTITY-master"
+      },
+      {
+        "checks": [
+          "authentication",
+          "role",
+          "input",
+          "idempotency",
+          "duplicate",
+          "read",
+          "database"
+        ],
+        "status": "passed",
+        "entity_id": "ENTITY-item"
+      },
+      {
+        "checks": [
+          "decimal",
+          "draft_edit",
+          "confirm",
+          "cancel",
+          "cancel_permission",
+          "receipt_cancel_shortage",
+          "concurrent_oversell",
+          "initial_balance_race",
+          "idempotency",
+          "cross_target_replay",
+          "fault_rollback",
+          "overflow",
+          "ledger_balance_agreement"
+        ],
+        "status": "passed",
+        "profile": "stock-ledger-v1"
+      }
+    ],
+    "status": "smoke_passed",
+    "spec_hash": "e859a35986986d641b0db2c91c1f80458da8cb3017fd6f6b09c1bf491a1846d1",
+    "suite_hash": "e36da5ee1350c9bcbc913213813740e8fa2640a09ce296490c8aab86538cff74",
+    "source_hash": "2e3756ae1421bc1a41df2c7d5ab0fae24723632dfe23b0517946727bcc619b3d",
+    "runtime_image": "sha256:0dd35aa9dd4e033a652e00a5600b3fb7ecdd0170b0ead5fdcf8ecb61e013e9ec",
+    "postgres_image": "sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6",
+    "elapsed_seconds": 2.767,
+    "cleanup_complete": true,
+    "browser_acceptance": "not_run",
+    "business_acceptance": "not_run"
+  },
+  "report_hash": "35814916a0b5b01dae13a7502f1d441f3cd0f1ac879e1f8d4bde70a44c0cd6b6",
+  "error_code": null,
+  "cancel_requested": false
+}

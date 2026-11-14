@@ -23,6 +23,7 @@
 | [0017](0017-platform-migrations.md) | 명시적 플랫폼 DB 마이그레이션 | 구현 | 2026-11-14 |
 | [0018](0018-google-project-baseline.md) | Google 사용자·프로젝트·승인 기준 | 구현 | 2026-11-14 |
 | [0019](0019-approved-inventory-ledger.md) | 승인 정책 기반 생성 재고 원장 | 구현 | 2026-11-14 |
+| [0020](0020-verification-worker.md) | DB 큐와 별도 신뢰 검증 작업자 | 구현 | 2026-11-14 |
 
 ## 작성 규칙
 

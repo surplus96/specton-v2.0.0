@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { specificationRequest, type Bundle, type Specification } from '../api/specifications'
 
+type Verification = { id: string; status: string; source_hash: string; report_hash: string | null; error_code: string | null; report: unknown }
+const activeStatuses = ['queued', 'running', 'cancelling', 'recovering']
 const serialize = (bundle: Bundle) => JSON.stringify(bundle, null, 2)
 
 export default function SpecificationPage() {
@@ -13,11 +15,25 @@ export default function SpecificationPage() {
   const [notice, setNotice] = useState('')
   const [catalog, setCatalog] = useState<unknown>(null)
   const [implementation, setImplementation] = useState<{ id: string; source_hash: string; spec_version: number } | null>(null)
-  function install(value: Specification) { setSpec(value); setEditor(serialize(value.bundle)); setImplementation(null) }
+  const [verifications, setVerifications] = useState<Verification[]>([])
+  useEffect(() => {
+    if (!implementation) return
+    let active = true
+    async function refresh() {
+      try {
+        const rows = await specificationRequest<Verification[]>(`/implementations/${implementation!.id}/verifications`)
+        if (active) setVerifications(rows)
+      } catch (e) { if (active) setError(e instanceof Error ? e.message : '검증 조회 실패') }
+    }
+    void refresh()
+    const timer = window.setInterval(() => void refresh(), 3000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [implementation])
+  function install(value: Specification) { setSpec(value); setEditor(serialize(value.bundle)); setImplementation(null); setVerifications([]) }
   useEffect(() => {
     let active = true
     specificationRequest<Specification>(`/specs/${specId}`).then(value => {
-      if (active) { setSpec(value); setEditor(serialize(value.bundle)) }
+      if (active) { setSpec(value); setEditor(serialize(value.bundle)); setImplementation(null); setVerifications([]) }
     }).catch(e => { if (active) setError(e.message) })
     return () => { active = false }
   }, [specId])
@@ -92,12 +108,29 @@ export default function SpecificationPage() {
         const source = await specificationRequest<{ id: string; source_hash: string; spec_version: number }>(`/specs/${specId}/implementations`, 'POST', {
           expected_version: spec.bundle.spec_version, spec_hash: spec.readiness.spec_hash,
         })
-        setImplementation(source); setNotice('소스 묶음을 생성했습니다. 실행·업무 인수·채택은 별도 단계입니다.')
+        setVerifications([]); setImplementation(source); setNotice('소스 묶음을 생성했습니다. 실행·업무 인수·채택은 별도 단계입니다.')
       })}>승인한 명세로 소스 생성·조회</button>
-      {implementation && <div><p>명세 버전 {implementation.spec_version} · 소스 생성 완료 · 서버 검증 미실행</p>
+      {implementation && <div><p>명세 버전 {implementation.spec_version} · 소스 생성 완료</p>
         <p>SHA-256: <code style={{ overflowWrap: 'anywhere' }}>{implementation.source_hash}</code></p>
         <a href={`/api/v1/implementations/${implementation.id}/source`}>생성 소스 ZIP 내려받기</a>
-        <p>ZIP의 README에 실행 방법이 있습니다. 격리 검증 작업자는 다운로드한 소스 해시를 확인하고 별도로 실행합니다.</p>
+        <p>별도 작업자가 격리 DB·HTTP 검증을 실행합니다. 통과해도 브라우저·업무 인수나 후보 채택을 의미하지 않습니다.</p>
+        <button disabled={busy || dirty || !latest || verifications.some(v => activeStatuses.includes(v.status))} onClick={() => void perform(async () => {
+          const job = await specificationRequest<Verification>(`/implementations/${implementation.id}/verifications`, 'POST', {
+            expected_version: spec.bundle.spec_version, spec_hash: spec.readiness.spec_hash,
+            source_hash: implementation.source_hash, request_key: crypto.randomUUID(),
+          })
+          setVerifications(rows => [job, ...rows.filter(row => row.id !== job.id)])
+        })}>격리 검증 요청·재실행</button>
+        {!verifications.length && <p>검증 이력이 없습니다.</p>}
+        {verifications.map(job => <article key={job.id}>
+          <p>검증 상태: {job.status} {job.error_code && `· ${job.error_code}`}</p>
+          {activeStatuses.includes(job.status) && <button disabled={busy || job.status === 'cancelling'} onClick={() => void perform(async () => {
+            const updated = await specificationRequest<Verification>(`/implementations/${implementation.id}/verifications/${job.id}/cancel`, 'POST')
+            setVerifications(rows => rows.map(row => row.id === updated.id ? updated : row))
+          })}>검증 취소</button>}
+          {job.report_hash && <p>결과 SHA-256: <code>{job.report_hash}</code></p>}
+          {job.report !== null && <details><summary>검증 증거</summary><pre style={{ overflow: 'auto' }}>{JSON.stringify(job.report, null, 2)}</pre></details>}
+        </article>)}
       </div>}
     </>}
     {busy && <p role="status">처리 중입니다.</p>}

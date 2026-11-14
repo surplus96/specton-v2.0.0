@@ -434,6 +434,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/implementations/{impl_id}/verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Verifications */
+        get: operations["listVerifications"];
+        put?: never;
+        /** Request Verification */
+        post: operations["requestVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/implementations/{impl_id}/verifications/{job_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Verification */
+        post: operations["cancelVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1105,6 +1140,20 @@ export interface components {
             api_ids: {
                 [key: string]: string;
             };
+        };
+        /** VerificationRequest */
+        VerificationRequest: {
+            /** Expected Version */
+            expected_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+            /** Source Hash */
+            source_hash: string;
+            /**
+             * Request Key
+             * Format: uuid
+             */
+            request_key: string;
         };
     };
     responses: never;
@@ -2075,6 +2124,110 @@ export interface operations {
             header?: never;
             path: {
                 spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listVerifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    requestVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancelVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+                job_id: string;
             };
             cookie?: never;
         };

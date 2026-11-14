@@ -8,6 +8,7 @@ from specton.persistence.migrations.baseline import (
     verify_identity,
     verify_implementation,
     verify_specification,
+    verify_verification,
 )
 
 if context.is_offline_mode():
@@ -29,12 +30,20 @@ with migration_connection(context.config) as connection:
             "0002_identity",
             "0003_specification",
             "0004_implementation",
+            "0005_verification",
         }:
             verify_identity(connection)
         if context.get_context().get_current_revision() in {
             "0003_specification",
             "0004_implementation",
+            "0005_verification",
         }:
             verify_specification(connection)
-        if context.get_context().get_current_revision() == "0004_implementation":
+        if context.get_context().get_current_revision() in {
+            "0004_implementation",
+            "0005_verification",
+        }:
             verify_implementation(connection)
+
+        if context.get_context().get_current_revision() == "0005_verification":
+            verify_verification(connection)

@@ -7,6 +7,7 @@ import json
 import os
 import re
 import secrets
+import signal
 import subprocess
 import tarfile
 import time
@@ -89,7 +90,12 @@ def docker(
 
 
 def verify(
-    source: bytes, expected_hash: str, runtime_image: str, postgres_image: str
+    source: bytes,
+    expected_hash: str,
+    runtime_image: str,
+    postgres_image: str,
+    *,
+    resource_key: str | None = None,
 ) -> dict[str, Any]:
     files, manifest = inspect_package(source, expected_hash)
     for image in (runtime_image, postgres_image):
@@ -98,6 +104,11 @@ def verify(
         if docker(["image", "inspect", image, "--format", "{{.Id}}"]).decode().strip() != image:
             raise ValueError("이미지 ID 불일치")
     suffix = uuid4().hex
+    if resource_key is not None:
+        from uuid import UUID
+
+        resource_key = str(UUID(resource_key))
+    labels = ["--label", "specton.verification=" + resource_key] if resource_key else []
     network = ""
     containers: list[str] = []
     admin_password, password, token, denied, non_cancel = (
@@ -126,13 +137,16 @@ def verify(
     }
     try:
         network = (
-            docker(["network", "create", "--internal", "specton-verify-" + suffix]).decode().strip()
+            docker(["network", "create", "--internal", *labels, "specton-verify-" + suffix])
+            .decode()
+            .strip()
         )
         db = (
             docker(
                 [
                     "run",
                     "-d",
+                    *labels,
                     "--network",
                     network,
                     "--network-alias",
@@ -186,6 +200,7 @@ def verify(
                 [
                     "run",
                     "-d",
+                    *labels,
                     "--network",
                     network,
                     *base,
@@ -329,12 +344,21 @@ def main() -> None:
     parser.add_argument("--runtime-image", required=True)
     parser.add_argument("--postgres-image", required=True)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--resource-key")
     args = parser.parse_args()
+    if args.resource_key:
+
+        def timeout(signum: int, frame: Any) -> None:
+            raise TimeoutError("검증 실행 제한 시간 초과")
+
+        signal.signal(signal.SIGALRM, timeout)
+        signal.alarm(360)
     report = verify(
         args.archive.read_bytes(),
         args.expected_source_hash,
         args.runtime_image,
         args.postgres_image,
+        resource_key=args.resource_key,
     )
     args.report.write_bytes(json_bytes(report))
     print(json.dumps({"status": report["status"], "cleanup_complete": report["cleanup_complete"]}))
