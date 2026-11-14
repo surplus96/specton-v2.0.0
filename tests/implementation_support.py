@@ -137,3 +137,149 @@ def executable(initial, state):
         }
     ]
     return bundle
+
+
+def inventory_executable(initial, state):
+    from specton.implementation.inventory_contract import CONTRACTS
+
+    bundle = executable(initial, state)
+    warehouse = next(
+        t for t in state.normalized.tables if t.id == bundle["storage_bindings"][0]["table_id"]
+    )
+    item = next(t for t in state.normalized.tables if t.name == "품목" and t.id != warehouse.id)
+    fields = [
+        {
+            "id": f"FIELD-item{i}",
+            "name": f"item{i}",
+            "data_type": "string",
+            "required": not c.nullable,
+        }
+        for i, c in enumerate(item.columns)
+    ]
+    bundle["entities"].append(
+        {"id": "ENTITY-item", "legacy_id": item.entity_id, "name": item.name, "fields": fields}
+    )
+    bundle["storage_bindings"].append(
+        {
+            "entity_id": "ENTITY-item",
+            "table_id": item.id,
+            "columns": {f["id"]: c.id for f, c in zip(fields, item.columns, strict=True)},
+        }
+    )
+    primary = next(fields[i] for i, c in enumerate(item.columns) if c.id == item.primary_key[0])
+    for action in ("insert", "get"):
+        use = deepcopy(next(u for u in bundle["use_cases"] if u["id"] == "UC-" + action))
+        api = deepcopy(next(a for a in bundle["apis"] if a["id"] == "API-" + action))
+        use.update(
+            id="UC-item-" + action,
+            inputs=fields if action == "insert" else [primary],
+            outputs=fields,
+        )
+        api.update(
+            id="API-item-" + action,
+            use_case_id=use["id"],
+            path="/items" if action == "insert" else "/items/{key}",
+            request_fields=use["inputs"],
+            response_fields=fields,
+        )
+        bundle["use_cases"].append(use)
+        bundle["apis"].append(api)
+        bundle["screens"][0]["api_ids"].append(api["id"])
+        bundle["operation_bindings"].append(
+            {
+                "api_id": api["id"],
+                "entity_id": "ENTITY-item",
+                "action": action,
+                "key_field_id": primary["id"],
+                "key_format": "url-safe-segment",
+            }
+        )
+    bundle["roles"].append({"id": "ROLE-admin", "name": "취소 관리자"})
+    bundle["requirements"].append(
+        {
+            "id": "REQ-stock",
+            "text": "승인한 단일 품목 입출고 정책을 원장과 잔량으로 검증한다.",
+            "kind": "FR",
+            "priority": "Must",
+            "origin": "user",
+            "legacy_id": None,
+            "rationale": "stock-ledger-v1 합성 인수 범위",
+            "requires_ui": True,
+        }
+    )
+    bundle["schema_version"] = "spec-v0.3"
+    bundle["inventory"] = {
+        "profile": "stock-ledger-v1",
+        "storage": "generated-ledger-v1",
+        "warehouse_entity_id": "ENTITY-master",
+        "item_entity_id": "ENTITY-item",
+        "quantity_scale": 3,
+        "negative_stock": False,
+        "cancel_received": "require_available_stock",
+        "api_ids": {},
+    }
+    for action, (method, path, status, inputs, outputs, errors) in CONTRACTS.items():
+
+        def fields_for(values):
+            return [
+                {"id": "FIELD-stock-" + name, "name": name, "data_type": dtype, "required": True}
+                for name, dtype in values
+            ]
+
+        aid, uid = "API-stock-" + action, "UC-stock-" + action
+        roles = ["ROLE-admin"] if action == "cancel" else ["ROLE-operator"]
+        use = {
+            "id": uid,
+            "name": action,
+            "req_ids": ["REQ-stock"],
+            "actor_roles": roles,
+            "preconditions": ["역할 확인"],
+            "inputs": fields_for(inputs),
+            "steps": [action],
+            "outputs": fields_for(outputs),
+            "error_codes": errors,
+            "transaction": "read_only" if method == "GET" else "atomic",
+            "idempotency": "not_applicable" if method == "GET" else "key",
+        }
+        bundle["use_cases"].append(use)
+        bundle["apis"].append(
+            {
+                "id": aid,
+                "use_case_id": uid,
+                "method": method,
+                "path": path,
+                "actor_roles": roles,
+                "request_fields": use["inputs"],
+                "response_fields": use["outputs"],
+                "error_codes": errors,
+                "success_status": status,
+                "pagination": "none",
+                "concurrency": "read_only" if method == "GET" else "row_lock",
+            }
+        )
+        bundle["inventory"]["api_ids"][action] = aid
+        bundle["screens"].append(
+            {
+                "id": "SCREEN-stock-" + action,
+                "name": action,
+                "route": "/stock/" + action,
+                "actor_roles": roles,
+                "api_ids": [aid],
+                "empty_state": "입력하세요",
+                "loading_state": "처리 중",
+                "error_state": "요청 실패",
+            }
+        )
+    bundle["acceptance_cases"].append(
+        {
+            "id": "TC-stock",
+            "req_ids": ["REQ-stock"],
+            "use_case_ids": ["UC-stock-" + action for action in CONTRACTS],
+            "tier": "browser",
+            "given": ["기준정보가 있다"],
+            "when": "입고 확정·출고·취소",
+            "then": ["재고 음수 없음", "원장과 잔량 일치"],
+            "fixture_ids": ["synthetic-stock-ledger-v1"],
+        }
+    )
+    return bundle

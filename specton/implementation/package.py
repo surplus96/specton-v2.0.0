@@ -13,7 +13,7 @@ from specton.implementation.compiler import compile_contract
 from specton.model_hash import model_hash
 from specton.specification.readiness import canonical_bytes, spec_hash
 
-TEMPLATE_VERSION = "master-data-v1"
+TEMPLATE_VERSION = "inventory-ledger-v1"
 TEMPLATES = Path(__file__).parent / "templates"
 
 
@@ -38,6 +38,7 @@ def generate(bundle: SpecBundle, state: DesignState, artifacts: dict[str, bytes]
         "spec/approved-spec.json": canonical_bytes(bundle),
         "spec/design-state.json": json_bytes(state.model_dump(mode="json")),
         "backend/app.py": (TEMPLATES / "runtime/app.py.txt").read_bytes(),
+        "backend/inventory.py": (TEMPLATES / "runtime/inventory.py.txt").read_bytes(),
         "backend/contract.json": json_bytes(contract),
         "backend/approved.sql": artifacts["ddl.sql"],
         "backend/requirements.txt": (TEMPLATES / "runtime/requirements.txt").read_bytes(),
@@ -63,7 +64,12 @@ def generate(bundle: SpecBundle, state: DesignState, artifacts: dict[str, bytes]
                     "api_id": a.id,
                     "use_case_id": a.use_case_id,
                     "req_ids": next(u.req_ids for u in bundle.use_cases if u.id == a.use_case_id),
-                    "files": ["backend/app.py", "backend/contract.json", "frontend/src/main.tsx"],
+                    "files": [
+                        "backend/app.py",
+                        "backend/inventory.py",
+                        "backend/contract.json",
+                        "frontend/src/main.tsx",
+                    ],
                 }
                 for a in bundle.apis
             ],
@@ -80,7 +86,8 @@ def generate(bundle: SpecBundle, state: DesignState, artifacts: dict[str, bytes]
     files["README.md"] = b"""# Generated master-data application
 
 Supported: insert/get using the approved schema, separate role tokens, idempotent insert.
-Business acceptance, browser acceptance, inventory ledger commands and deployment are NOT certified.
+Stock-ledger-v1 is enabled only by an approved spec-v0.3 policy.
+Prose business acceptance, browser acceptance and deployment are NOT certified.
 
 1. Create an empty, isolated PostgreSQL 18 database and a non-superuser owner.
 2. Install backend/requirements.txt with pip --require-hashes in a dedicated environment.

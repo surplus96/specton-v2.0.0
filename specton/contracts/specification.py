@@ -213,8 +213,29 @@ class OperationBinding(Contract):
     key_format: Literal["url-safe-segment"]
 
 
+class InventoryPolicy(Contract):
+    profile: Literal["stock-ledger-v1"]
+    storage: Literal["generated-ledger-v1"]
+    warehouse_entity_id: Key
+    item_entity_id: Key
+    quantity_scale: Literal[3]
+    negative_stock: Literal[False]
+    cancel_received: Literal["require_available_stock"]
+    api_ids: dict[Literal["draft", "edit", "confirm", "cancel", "movement", "balance"], Key]
+
+    @model_validator(mode="after")
+    def _complete(self) -> Self:
+        if set(self.api_ids) != {"draft", "edit", "confirm", "cancel", "movement", "balance"}:
+            raise ValueError("재고 명령과 조회 6개의 연결이 필요합니다")
+        _unique(tuple(self.api_ids.values()), "재고 API 연결")
+        if self.warehouse_entity_id == self.item_entity_id:
+            raise ValueError("창고와 품목은 서로 다른 엔티티여야 합니다")
+        return self
+
+
 class SpecBundle(Contract):
-    schema_version: Literal["spec-v0.1", "spec-v0.2"] = "spec-v0.1"
+    schema_version: Literal["spec-v0.1", "spec-v0.2", "spec-v0.3"] = "spec-v0.1"
+    inventory: InventoryPolicy | None = None
     storage_bindings: tuple[StorageBinding, ...] = ()
     operation_bindings: tuple[OperationBinding, ...] = ()
     spec_id: UUID
@@ -238,6 +259,17 @@ class SpecBundle(Contract):
             self.storage_bindings or self.operation_bindings
         ):
             raise ValueError("실행 연결은 spec-v0.2에서 명시적으로 승인해야 합니다")
+        if (self.schema_version == "spec-v0.3") != (self.inventory is not None):
+            raise ValueError("재고 정책은 spec-v0.3에서 별도 승인해야 합니다")
+        if self.inventory:
+            _refs(tuple(self.inventory.api_ids.values()), {a.id for a in self.apis}, "재고 API")
+            _refs(
+                (self.inventory.warehouse_entity_id, self.inventory.item_entity_id),
+                {e.id for e in self.entities},
+                "창고·품목",
+            )
+            if set(self.inventory.api_ids.values()) & {o.api_id for o in self.operation_bindings}:
+                raise ValueError("API를 기준정보와 재고 명령에 중복 연결할 수 없습니다")
         entities = {e.id: e for e in self.entities}
         _unique(tuple(b.entity_id for b in self.storage_bindings), "저장 연결")
         _unique(tuple(b.api_id for b in self.operation_bindings), "동작 연결")

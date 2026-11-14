@@ -26,7 +26,12 @@ def request(op, payload=None, key=None, credential=token, command='one'):
         response = urllib.request.urlopen(req, timeout=5)
     except urllib.error.HTTPError as error:
         response = error
-    return response.status, json.loads(response.read())
+    body = response.read()
+    try:
+        decoded = json.loads(body)
+    except ValueError:
+        decoded = body.decode(errors='replace')
+    return response.status, decoded
 
 
 for insert in [o for o in config['operations'] if o['action'] == 'insert']:
@@ -55,6 +60,86 @@ for insert in [o for o in config['operations'] if o['action'] == 'insert']:
         assert all(rows[0][f['column']] == data[f['name']] for f in insert['fields']), 'DB content mismatch'
         assert not conn.execute('SELECT rolsuper FROM pg_roles WHERE rolname=current_user').fetchone()['rolsuper'], 'superuser runtime'
     checks.append({'entity_id': insert['entity_id'], 'status': 'passed', 'checks': ['authentication','role','input','idempotency','duplicate','read','database']})
+
+if config.get('inventory'):
+    inventory_ops = {op['action']: op for op in config['inventory']['operations']}
+    def stock(action, body=None, key=None, command='stock-one', credential=token, item='x'):
+        op = dict(inventory_ops[action])
+        if action == 'balance':
+            op['path'] += '?warehouse_id=x&item_id=' + item
+        return request(op, body, key=key, command=command, credential=credential)
+
+    def draft(id, kind, amount, item='x'):
+        return stock('draft', {'id':id,'warehouse_id':'x','item_id':item,'kind':kind,'quantity':amount}, command='draft-'+id)
+
+    def amount(item='x'):
+        status, body = stock('balance', item=item)
+        assert status == 200, 'balance lookup'
+        return body['quantity']
+
+    for invalid in ['0','-1','0.0001','NaN','1e3',1]:
+        assert draft('invalid','receive',invalid)[0] == 422, 'invalid decimal accepted'
+    assert draft('missing','receive','1.000',item='unknown')[0] == 404, 'missing reference accepted'
+    assert stock('movement',key='missing')[0] == 404, 'missing movement'
+    assert draft('receipt','receive','10.000')[0] == 201
+    assert amount() == '0.000', 'draft changed stock'
+    assert stock('edit',{'quantity':'10.125'},key='receipt',command='edit')[0] == 200
+    assert stock('edit',{'quantity':'10.125','warehouse_id':'other'},key='receipt',command='bad-edit')[0] == 422
+    confirmed = stock('confirm',{},key='receipt',command='confirm-receipt')
+    assert confirmed[0] == 200 and amount() == '10.125'
+    assert stock('confirm',{},key='receipt',command='confirm-receipt') == confirmed
+    assert stock('confirm',{},key='receipt',command='again')[1] == {'detail':'INVALID_STATE'}
+    assert stock('edit',{'quantity':'2.000'},key='receipt',command='after-confirm')[0] == 409
+    assert draft('issue','issue','3.125')[0] == 201
+    assert stock('confirm',{},key='issue',command='confirm-issue')[0] == 200 and amount() == '7.000'
+    assert stock('cancel',{},key='receipt',command='insufficient')[1] == {'detail':'INSUFFICIENT_STOCK'}
+    assert stock('cancel',{},key='issue',command='forbidden',credential=os.environ['PROBE_NON_CANCEL_TOKEN'])[0] == 403
+    cancelled = stock('cancel',{},key='issue',command='cancel-issue')
+    assert cancelled[0] == 200 and amount() == '10.125'
+    assert stock('cancel',{},key='issue',command='cancel-issue') == cancelled
+    assert stock('cancel',{},key='issue',command='cancel-again')[0] == 409
+    assert stock('cancel',{},key='receipt',command='cancel-receipt')[0] == 200 and amount() == '0.000'
+    assert draft('seed','receive','10.000')[0] == 201
+    assert stock('confirm',{},key='seed',command='seed-confirm')[0] == 200
+    for id in ('race-a','race-b'):
+        assert draft(id,'issue','7.000')[0] == 201
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda id: stock('confirm',{},key=id,command=id), ('race-a','race-b')))
+    assert sorted(status for status,_ in results) == [200,409] and amount() == '3.000', 'concurrent oversell'
+    assert stock('confirm',{},key='race-a',command='confirm-receipt')[1] == {'detail':'IDEMPOTENCY_CONFLICT'}, 'command key reused across targets'
+    assert draft('rollback','receive','2.000')[0] == 201
+    with psycopg.connect(os.environ['APP_DATABASE_URL']) as conn:
+        conn.execute("""CREATE FUNCTION fail_ledger() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+            IF NEW.movement_id='rollback' THEN RAISE EXCEPTION 'injected failure'; END IF;
+            RETURN NEW; END $$; CREATE TRIGGER fail_ledger BEFORE INSERT ON _specton_ledger FOR EACH ROW EXECUTE FUNCTION fail_ledger();""")
+    assert stock('confirm',{},key='rollback',command='retry-rollback')[0] == 500
+    assert amount() == '3.000' and stock('movement',key='rollback')[1]['status'] == 'draft', 'partial transaction committed'
+    with psycopg.connect(os.environ['APP_DATABASE_URL']) as conn:
+        assert conn.execute("SELECT count(*) FROM _specton_ledger WHERE movement_id='rollback'").fetchone()[0] == 0
+        conn.execute('DROP TRIGGER fail_ledger ON _specton_ledger; DROP FUNCTION fail_ledger()')
+    assert stock('confirm',{},key='rollback',command='retry-rollback')[0] == 200 and amount() == '5.000'
+    item_insert = next(op for op in config['operations'] if op['entity_id']==config['inventory']['item_entity_id'] and op['action']=='insert')
+    for id in ('y','z'):
+        values = {f['name']: {'string': id, 'integer': 7, 'boolean': True}[f['data_type']] for f in item_insert['fields']}
+        assert request(item_insert, values, command='item-'+id)[0] == 201
+    for id,qty in [('first-a','1.000'),('first-b','2.000')]:
+        assert draft(id,'receive',qty,item='y')[0] == 201
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda id: stock('confirm',{},key=id,command=id), ('first-a','first-b')))
+    assert all(status==200 for status,_ in results) and amount('y')=='3.000', 'concurrent initial balance'
+    assert draft('maximum','receive','999999999999999.999',item='z')[0] == 201
+    assert stock('confirm',{},key='maximum',command='maximum')[0] == 200
+    assert draft('overflow','receive','0.001',item='z')[0] == 201
+    assert stock('confirm',{},key='overflow',command='overflow')[1] == {'detail':'QUANTITY_OVERFLOW'}
+    with psycopg.connect(os.environ['APP_DATABASE_URL'], row_factory=dict_row) as conn:
+        balances = conn.execute('SELECT * FROM _specton_balances').fetchall()
+        for balance in balances:
+            total = conn.execute("SELECT coalesce(sum(l.delta),0) AS total FROM _specton_ledger l JOIN _specton_movements m ON m.id=l.movement_id WHERE m.warehouse_id=%s AND m.item_id=%s", (balance['warehouse_id'],balance['item_id'])).fetchone()['total']
+            assert total == balance['quantity'] and total >= 0, 'ledger/balance mismatch'
+        assert conn.execute("SELECT count(*) AS count FROM _specton_ledger WHERE movement_id='receipt'").fetchone()['count'] == 2
+        assert conn.execute("SELECT status FROM _specton_movements WHERE id='overflow'").fetchone()['status']=='draft'
+    checks.append({'profile':'stock-ledger-v1','status':'passed','checks':['decimal','draft_edit','confirm','cancel','cancel_permission','receipt_cancel_shortage','concurrent_oversell','initial_balance_race','idempotency','cross_target_replay','fault_rollback','overflow','ledger_balance_agreement']})
+
 assert not Path('/var/run/docker.sock').exists(), 'docker socket exposed'
 try:
     with socket.create_connection(('1.1.1.1', 443), timeout=0.5):

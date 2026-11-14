@@ -66,8 +66,8 @@ export default function SpecificationPage() {
         </label></div>
       })}
       <h2>생성기 연결</h2>
-      <p>현재 생성기는 단일 기본키·외래키 없는 기준정보의 등록과 단건 조회를 지원합니다. 문자열·정수·불리언만 지원하며, 사용자 불변식·입출고 확정은 아직 생성하지 않습니다.</p>
-      <p>명세를 spec-v0.2로 보완하고 storage_bindings에 테이블·컬럼 ID, operation_bindings에 API의 insert/get 동작·조회 키와 key_format: url-safe-segment를 연결한 뒤 다시 승인하세요. 문자열 기본키는 영문·숫자·밑줄·하이픈만 지원합니다. 기존 v0.1 승인 해시는 유지됩니다.</p>
+      <p>기준정보 등록·단건 조회와 spec-v0.3의 stock-ledger-v1 재고 정책을 지원합니다. 재고 정책은 단일 창고·품목의 초안·수정·확정·취소·조회와 소수 셋째 자리 수량, 음수 재고 금지, 원장·잔량 동시 반영을 명시적으로 승인해야 합니다.</p>
+      <p>명세를 spec-v0.2로 보완하고 storage_bindings에 테이블·컬럼 ID, operation_bindings에 API의 insert/get 동작·조회 키와 key_format: url-safe-segment를 연결한 뒤 다시 승인하세요. 문자열 기본키는 영문·숫자·밑줄·하이픈만 지원합니다. 재고를 생성하려면 spec-v0.3에서 inventory 정책과 6개 재고 API 계약을 추가하세요. 기존 v0.1·v0.2 승인 해시는 유지됩니다.</p>
       <button disabled={busy} onClick={() => void perform(async () => {
         setCatalog(await specificationRequest(`/specs/${specId}/storage-catalog`))
       })}>승인 설계의 테이블·컬럼 확인</button>

@@ -23,6 +23,8 @@ def canonical_bytes(bundle: SpecBundle) -> bytes:
     """객체 key 순서는 무시하고 배열 순서·정확한 수량 문자열은 보존한다."""
     validated = SpecBundle.model_validate(bundle.model_dump(mode="json"))
     payload = validated.model_dump(mode="json")
+    if validated.schema_version != "spec-v0.3":
+        payload.pop("inventory")
     if validated.schema_version == "spec-v0.1":
         # 신규 필드의 기본값을 구 승인 명세 해시에 섞지 않는다.
         payload.pop("storage_bindings")

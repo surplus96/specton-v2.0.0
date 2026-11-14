@@ -21,8 +21,8 @@
 | [0015](0015-conditional-check.md) | 추출 확인·분석 확인 조건부 진행 | 승인 | 2026-11-01 |
 | [0016](0016-model-ids-and-keys.md) | 모델 정리의 내부 ID와 키 없는 엔티티 | 승인 | 2026-11-05 |
 | [0017](0017-platform-migrations.md) | 명시적 플랫폼 DB 마이그레이션 | 구현 | 2026-11-14 |
-
 | [0018](0018-google-project-baseline.md) | Google 사용자·프로젝트·승인 기준 | 구현 | 2026-11-14 |
+| [0019](0019-approved-inventory-ledger.md) | 승인 정책 기반 생성 재고 원장 | 구현 | 2026-11-14 |
 
 ## 작성 규칙
 

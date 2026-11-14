@@ -21,6 +21,7 @@ ALLOWED = {
     "spec/approved-spec.json",
     "spec/design-state.json",
     "backend/app.py",
+    "backend/inventory.py",
     "backend/contract.json",
     "backend/approved.sql",
     "backend/requirements.txt",
@@ -64,6 +65,8 @@ def inspect_package(content: bytes, expected_hash: str) -> tuple[dict[str, bytes
     # 검증 실행은 신뢰한 고정 템플릿에 한정한다. 사용자 임의 Python 코드를 실행하지 않는다.
     if files["backend/app.py"] != (TEMPLATES / "runtime/app.py.txt").read_bytes():
         raise ValueError("지원하는 런타임 템플릿과 다릅니다")
+    if files["backend/inventory.py"] != (TEMPLATES / "runtime/inventory.py.txt").read_bytes():
+        raise ValueError("지원하는 재고 런타임 템플릿과 다릅니다")
     return files, manifest
 
 
@@ -97,12 +100,17 @@ def verify(
     suffix = uuid4().hex
     network = ""
     containers: list[str] = []
-    admin_password, password, token, denied = (secrets.token_urlsafe(32) for _ in range(4))
+    admin_password, password, token, denied, non_cancel = (
+        secrets.token_urlsafe(32) for _ in range(5)
+    )
     config = json.loads(files["backend/contract.json"])
-    roles = sorted({r for op in config["operations"] for r in op["actor_roles"]})
+    stock_ops = config["inventory"]["operations"] if config.get("inventory") else []
+    roles = sorted({r for op in [*config["operations"], *stock_ops] for r in op["actor_roles"]})
+    cancel_roles = {r for op in stock_ops if op["action"] == "cancel" for r in op["actor_roles"]}
     hashes = {
         hashlib.sha256(token.encode()).hexdigest(): roles,
         hashlib.sha256(denied.encode()).hexdigest(): [],
+        hashlib.sha256(non_cancel.encode()).hexdigest(): sorted(set(roles) - cancel_roles),
     }
     base = ["--read-only", "--cap-drop=ALL", "--security-opt=no-new-privileges", "--cpus=1"]
     started = time.monotonic()
@@ -276,11 +284,17 @@ def verify(
                 "PROBE_TOKEN",
                 "-e",
                 "PROBE_DENIED_TOKEN",
+                "-e",
+                "PROBE_NON_CANCEL_TOKEN",
                 app,
                 "python",
                 "/runner/probe.py",
             ],
-            env={"PROBE_TOKEN": token, "PROBE_DENIED_TOKEN": denied},
+            env={
+                "PROBE_TOKEN": token,
+                "PROBE_DENIED_TOKEN": denied,
+                "PROBE_NON_CANCEL_TOKEN": non_cancel,
+            },
         )
         report.update(json.loads(output))
     except (RuntimeError, subprocess.TimeoutExpired):

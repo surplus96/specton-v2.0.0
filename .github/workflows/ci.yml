@@ -63,6 +63,7 @@ jobs:
       SPECTON_APP_DATABASE_URL: postgresql://specton:specton@127.0.0.1:5432/specton_app
       SPECTON_SANDBOX_DATABASE_URL: postgresql://specton_sandbox:specton_sandbox@127.0.0.1:5432/specton_sandbox
       SPECTON_TEST_SOURCE_OUTPUT: /tmp/specton-generated-source.zip
+      SPECTON_TEST_INVENTORY_OUTPUT: /tmp/specton-inventory-source.zip
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v7
@@ -84,21 +85,40 @@ jobs:
           import hashlib
           from pathlib import Path
           from specton.implementation.verify import inspect_package
-          source = Path("/tmp/specton-generated-source.zip").read_bytes()
-          files, _ = inspect_package(source, hashlib.sha256(source).hexdigest())
-          for name, content in files.items():
-              if name.startswith("frontend/"):
-                  target = Path("var/generated-web") / name.removeprefix("frontend/")
-                  target.parent.mkdir(parents=True, exist_ok=True)
-                  target.write_bytes(content)
+          for variant, archive in [("master", "/tmp/specton-generated-source.zip"), ("inventory", "/tmp/specton-inventory-source.zip")]:
+              source = Path(archive).read_bytes()
+              files, _ = inspect_package(source, hashlib.sha256(source).hexdigest())
+              for name, content in files.items():
+                  if name.startswith("frontend/"):
+                      target = Path("var/generated-web") / variant / name.removeprefix("frontend/")
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      target.write_bytes(content)
           PY
-          npm --prefix var/generated-web ci --no-audit --no-fund
-          npm --prefix var/generated-web run build
+          npm --prefix var/generated-web/master ci --no-audit --no-fund
+          npm --prefix var/generated-web/master run build
+          npm --prefix var/generated-web/inventory ci --no-audit --no-fund
+          npm --prefix var/generated-web/inventory run build
+      - name: Verify generated inventory against isolated PostgreSQL and HTTP
+        run: |
+          docker build -f docker/implementation/Dockerfile -t specton-generated-runtime:inventory-ledger-v1 .
+          uv run python - <<'PY'
+          import hashlib
+          import json
+          import subprocess
+          from pathlib import Path
+          from specton.implementation.verify import verify
+          def image_id(name):
+              return subprocess.check_output(["docker", "image", "inspect", name, "--format", "{{.Id}}"], text=True).strip()
+          source = Path("/tmp/specton-inventory-source.zip").read_bytes()
+          report = verify(source, hashlib.sha256(source).hexdigest(), image_id("specton-generated-runtime:inventory-ledger-v1"), image_id("postgres:18"))
+          Path("var/test-results/inventory-runtime.json").write_text(json.dumps(report, indent=2))
+          assert report["status"] == "smoke_passed", "Isolated inventory verification failed"
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: database-test-results
-          path: var/test-results/database.xml
+          path: var/test-results/
 
   frontend:
     runs-on: ubuntu-latest

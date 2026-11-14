@@ -886,7 +886,8 @@ export interface components {
              * @default spec-v0.1
              * @enum {string}
              */
-            schema_version: "spec-v0.1" | "spec-v0.2";
+            schema_version: "spec-v0.1" | "spec-v0.2" | "spec-v0.3";
+            inventory?: components["schemas"]["InventoryPolicy"] | null;
             /**
              * Storage Bindings
              * @default []
@@ -1066,6 +1067,42 @@ export interface components {
             table_id: string;
             /** Columns */
             columns: {
+                [key: string]: string;
+            };
+        };
+        /** InventoryPolicy */
+        InventoryPolicy: {
+            /**
+             * Profile
+             * @constant
+             */
+            profile: "stock-ledger-v1";
+            /**
+             * Storage
+             * @constant
+             */
+            storage: "generated-ledger-v1";
+            /** Warehouse Entity Id */
+            warehouse_entity_id: string;
+            /** Item Entity Id */
+            item_entity_id: string;
+            /**
+             * Quantity Scale
+             * @constant
+             */
+            quantity_scale: 3;
+            /**
+             * Negative Stock
+             * @constant
+             */
+            negative_stock: false;
+            /**
+             * Cancel Received
+             * @constant
+             */
+            cancel_received: "require_available_stock";
+            /** Api Ids */
+            api_ids: {
                 [key: string]: string;
             };
         };

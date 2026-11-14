@@ -103,6 +103,11 @@ for operation in CONFIG['operations']:
     bind(operation)
 
 
+if CONFIG.get('inventory'):
+    import inventory
+    inventory.register(app, CONFIG['inventory'], DSN, principal)
+
+
 @app.get('/health')
 def health():
     return {'status': 'ok'}
@@ -113,3 +118,6 @@ if __name__ == '__main__':
     with psycopg.connect(DSN) as conn:
         conn.execute((ROOT / 'approved.sql').read_text(), prepare=False)
         conn.execute('CREATE TABLE _specton_commands(scope text,key text,request_hash text NOT NULL,result jsonb NOT NULL,PRIMARY KEY(scope,key))')
+        if CONFIG.get('inventory'):
+            import inventory
+            inventory.install(conn, CONFIG['inventory'])

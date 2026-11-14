@@ -2833,10 +2833,21 @@
             "type": "string",
             "enum": [
               "spec-v0.1",
-              "spec-v0.2"
+              "spec-v0.2",
+              "spec-v0.3"
             ],
             "title": "Schema Version",
             "default": "spec-v0.1"
+          },
+          "inventory": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InventoryPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "storage_bindings": {
             "items": {
@@ -3361,6 +3372,76 @@
           "columns"
         ],
         "title": "StorageBinding"
+      },
+      "InventoryPolicy": {
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "stock-ledger-v1",
+            "title": "Profile"
+          },
+          "storage": {
+            "type": "string",
+            "const": "generated-ledger-v1",
+            "title": "Storage"
+          },
+          "warehouse_entity_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Warehouse Entity Id"
+          },
+          "item_entity_id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$",
+            "title": "Item Entity Id"
+          },
+          "quantity_scale": {
+            "type": "integer",
+            "const": 3,
+            "title": "Quantity Scale"
+          },
+          "negative_stock": {
+            "type": "boolean",
+            "const": false,
+            "title": "Negative Stock"
+          },
+          "cancel_received": {
+            "type": "string",
+            "const": "require_available_stock",
+            "title": "Cancel Received"
+          },
+          "api_ids": {
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,15}-[A-Za-z0-9_-]{1,64}$"
+            },
+            "propertyNames": {
+              "enum": [
+                "draft",
+                "edit",
+                "confirm",
+                "cancel",
+                "movement",
+                "balance"
+              ]
+            },
+            "type": "object",
+            "title": "Api Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "profile",
+          "storage",
+          "warehouse_entity_id",
+          "item_entity_id",
+          "quantity_scale",
+          "negative_stock",
+          "cancel_received",
+          "api_ids"
+        ],
+        "title": "InventoryPolicy"
       }
     },
     "securitySchemes": {

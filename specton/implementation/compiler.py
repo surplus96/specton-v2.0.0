@@ -15,14 +15,20 @@ class Unsupported(ValueError):
 
 
 def compile_contract(bundle: SpecBundle, state: DesignState) -> dict[str, Any]:
-    if bundle.schema_version != "spec-v0.2" or not assess_readiness(bundle).ready_for_review:
-        raise Unsupported("검토 가능한 spec-v0.2 실행 연결이 필요합니다.")
+    if (
+        bundle.schema_version not in {"spec-v0.2", "spec-v0.3"}
+        or not assess_readiness(bundle).ready_for_review
+    ):
+        raise Unsupported("검토 가능한 spec-v0.2/v0.3 실행 연결이 필요합니다.")
     if state.normalized is None or bundle.invariants:
         raise Unsupported("정규화 모델이 필요하며 사용자 불변식 컴파일은 아직 지원하지 않습니다.")
     if not bundle.apis or len(bundle.apis) > 40 or len(bundle.entities) > 20:
         raise Unsupported("1~40개 API, 최대 20개 엔티티만 지원합니다.")
-    if {o.api_id for o in bundle.operation_bindings} != {a.id for a in bundle.apis}:
+    inventory_ids = set(bundle.inventory.api_ids.values()) if bundle.inventory else set()
+    if {o.api_id for o in bundle.operation_bindings} | inventory_ids != {a.id for a in bundle.apis}:
         raise Unsupported("모든 API에 명시적인 insert/get 동작을 연결하세요.")
+    if any(t.physical_name.startswith("_specton_") for t in state.normalized.tables):
+        raise Unsupported("승인 DDL에서 생성기 예약 테이블 이름을 사용할 수 없습니다.")
     tables = {t.id: t for t in state.normalized.tables}
     entities = {e.id: e for e in bundle.entities}
     stores = {b.entity_id: b for b in bundle.storage_bindings}
@@ -124,7 +130,10 @@ def compile_contract(bundle: SpecBundle, state: DesignState) -> dict[str, Any]:
             raise Unsupported("각 엔티티에 등록·조회 API를 정확히 하나씩 연결하세요.")
         if {o["action"] for o in operations if o["entity_id"] == entity_id} != {"insert", "get"}:
             raise Unsupported("각 엔티티에 등록과 단건 조회를 함께 연결하세요.")
+    from specton.implementation.inventory_contract import compile_inventory
+
     return {
+        "inventory": compile_inventory(bundle, compiled),
         "operations": operations,
         "screens": [s.model_dump(mode="json") for s in bundle.screens],
     }

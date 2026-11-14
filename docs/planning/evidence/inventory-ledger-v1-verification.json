@@ -1,0 +1,59 @@
+{
+  "status": "smoke_passed",
+  "source_hash": "a1a0907322744b06f85f6dc9e7ae20701ea794c58931b5cbcedd26fb03aa2b63",
+  "spec_hash": "e42199d5f1f69a047d93fcdd754c7ce3fa079c684897c6717b60f4acfd049890",
+  "runtime_image": "sha256:0dd35aa9dd4e033a652e00a5600b3fb7ecdd0170b0ead5fdcf8ecb61e013e9ec",
+  "postgres_image": "sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6",
+  "suite_hash": "e36da5ee1350c9bcbc913213813740e8fa2640a09ce296490c8aab86538cff74",
+  "business_acceptance": "not_run",
+  "browser_acceptance": "not_run",
+  "checks": [
+    {
+      "entity_id": "ENTITY-master",
+      "status": "passed",
+      "checks": [
+        "authentication",
+        "role",
+        "input",
+        "idempotency",
+        "duplicate",
+        "read",
+        "database"
+      ]
+    },
+    {
+      "entity_id": "ENTITY-item",
+      "status": "passed",
+      "checks": [
+        "authentication",
+        "role",
+        "input",
+        "idempotency",
+        "duplicate",
+        "read",
+        "database"
+      ]
+    },
+    {
+      "profile": "stock-ledger-v1",
+      "status": "passed",
+      "checks": [
+        "decimal",
+        "draft_edit",
+        "confirm",
+        "cancel",
+        "cancel_permission",
+        "receipt_cancel_shortage",
+        "concurrent_oversell",
+        "initial_balance_race",
+        "idempotency",
+        "cross_target_replay",
+        "fault_rollback",
+        "overflow",
+        "ledger_balance_agreement"
+      ]
+    }
+  ],
+  "cleanup_complete": true,
+  "elapsed_seconds": 2.885
+}
