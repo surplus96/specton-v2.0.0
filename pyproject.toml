@@ -20,6 +20,8 @@ dependencies = [
     "pyyaml>=6.0",
     "rhwp-python==0.8.1",
     "weasyprint>=70.0",
+    "alembic>=1.14,<2",
+    "sqlalchemy>=2.0,<3",
 ]
 # PDF 출력은 ADR-0004 승인(#197)대로 WeasyPrint를 쓴다. 시스템 라이브러리(Pango)·한글 폰트·mermaid-cli는
 # Python 패키지가 아니라 실행 이미지에 넣는다(#25). PDF 추출은 ADR-0004 결정 후 추가한다.
@@ -60,4 +62,5 @@ addopts = "-m 'not db and not llm'"
 markers = [
     "db: requires the isolated PostgreSQL sandbox",
     "llm: calls the real LLM API (manual run, run limits from ADR-0007)",
+    "native_pdf: requires installed native PDF and browser tools",
 ]

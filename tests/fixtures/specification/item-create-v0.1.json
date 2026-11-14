@@ -1,0 +1,244 @@
+{
+  "schema_version": "spec-v0.1",
+  "spec_id": "00000000-0000-4000-8000-000000000005",
+  "spec_version": 1,
+  "baseline": {
+    "project_id": "00000000-0000-4000-8000-000000000001",
+    "baseline_id": "00000000-0000-4000-8000-000000000002",
+    "source_run_id": "00000000-0000-4000-8000-000000000003",
+    "source_revision": 1,
+    "model_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "manifest_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "approval_id": "00000000-0000-4000-8000-000000000004",
+    "artifacts": [
+      {
+        "kind": "functions",
+        "file_format": "md",
+        "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      {
+        "kind": "erd",
+        "file_format": "mmd",
+        "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      {
+        "kind": "ddl",
+        "file_format": "sql",
+        "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      {
+        "kind": "rtm",
+        "file_format": "csv",
+        "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+      }
+    ]
+  },
+  "template": "inventory-fastapi-react-v1",
+  "requirements": [
+    {
+      "id": "REQ-item-create",
+      "text": "품목을 등록할 수 있다. 수량은 0 이상이다.",
+      "kind": "FR",
+      "priority": "Must",
+      "origin": "design",
+      "legacy_id": "REQ-01",
+      "rationale": "계약 테스트를 위해 작성한 합성 예제이며 실제 승인 근거가 아니다.",
+      "requires_ui": true
+    }
+  ],
+  "roles": [
+    {
+      "id": "ROLE-operator",
+      "name": "업무 처리자"
+    }
+  ],
+  "entities": [
+    {
+      "id": "ENTITY-item",
+      "legacy_id": "ENT-01",
+      "name": "품목",
+      "fields": [
+        {
+          "id": "FIELD-code",
+          "name": "code",
+          "data_type": "string",
+          "required": true
+        },
+        {
+          "id": "FIELD-quantity",
+          "name": "quantity",
+          "data_type": "decimal",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "use_cases": [
+    {
+      "id": "UC-item-create",
+      "name": "품목 등록",
+      "req_ids": [
+        "REQ-item-create"
+      ],
+      "actor_roles": [
+        "ROLE-operator"
+      ],
+      "preconditions": [
+        "인증된 업무 처리자"
+      ],
+      "inputs": [
+        {
+          "id": "FIELD-code",
+          "name": "code",
+          "data_type": "string",
+          "required": true
+        },
+        {
+          "id": "FIELD-quantity",
+          "name": "quantity",
+          "data_type": "decimal",
+          "required": true
+        }
+      ],
+      "steps": [
+        "코드 중복을 검사한다",
+        "품목을 저장한다"
+      ],
+      "outputs": [
+        {
+          "id": "FIELD-code",
+          "name": "code",
+          "data_type": "string",
+          "required": true
+        },
+        {
+          "id": "FIELD-quantity",
+          "name": "quantity",
+          "data_type": "decimal",
+          "required": true
+        }
+      ],
+      "error_codes": [
+        "DUPLICATE_CODE",
+        "INVALID_QUANTITY"
+      ],
+      "transaction": "atomic",
+      "idempotency": "key"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "RULE-nonnegative",
+      "req_ids": [
+        "REQ-item-create"
+      ],
+      "description": "수량은 0 이상이다",
+      "match": "all",
+      "comparisons": [
+        {
+          "operator": "ge",
+          "left": {
+            "kind": "field",
+            "entity_id": "ENTITY-item",
+            "field_id": "FIELD-quantity"
+          },
+          "right": {
+            "kind": "number",
+            "value": "0.000"
+          }
+        }
+      ],
+      "layers": [
+        "database",
+        "api"
+      ]
+    }
+  ],
+  "apis": [
+    {
+      "id": "API-item-create",
+      "use_case_id": "UC-item-create",
+      "method": "POST",
+      "path": "/items",
+      "actor_roles": [
+        "ROLE-operator"
+      ],
+      "request_fields": [
+        {
+          "id": "FIELD-code",
+          "name": "code",
+          "data_type": "string",
+          "required": true
+        },
+        {
+          "id": "FIELD-quantity",
+          "name": "quantity",
+          "data_type": "decimal",
+          "required": true
+        }
+      ],
+      "response_fields": [
+        {
+          "id": "FIELD-code",
+          "name": "code",
+          "data_type": "string",
+          "required": true
+        },
+        {
+          "id": "FIELD-quantity",
+          "name": "quantity",
+          "data_type": "decimal",
+          "required": true
+        }
+      ],
+      "success_status": 201,
+      "error_codes": [
+        "DUPLICATE_CODE",
+        "INVALID_QUANTITY"
+      ],
+      "pagination": "none",
+      "concurrency": "optimistic"
+    }
+  ],
+  "screens": [
+    {
+      "id": "SCREEN-item-create",
+      "route": "/items/new",
+      "name": "품목 등록",
+      "actor_roles": [
+        "ROLE-operator"
+      ],
+      "api_ids": [
+        "API-item-create"
+      ],
+      "empty_state": "새 품목을 등록하세요",
+      "loading_state": "등록 중",
+      "error_state": "입력값과 중복 코드를 확인하세요"
+    }
+  ],
+  "acceptance_cases": [
+    {
+      "id": "TC-item-create",
+      "req_ids": [
+        "REQ-item-create"
+      ],
+      "use_case_ids": [
+        "UC-item-create"
+      ],
+      "tier": "browser",
+      "given": [
+        "업무 처리자가 로그인했다",
+        "코드 ITEM001이 없다"
+      ],
+      "when": "코드 ITEM001과 수량 0.000을 입력하고 등록한다",
+      "then": [
+        "등록된 품목과 수량을 API로 다시 조회할 수 있다",
+        "같은 코드의 신규 요청은 거절된다"
+      ],
+      "fixture_ids": [
+        "synthetic-item-v1"
+      ]
+    }
+  ],
+  "questions": []
+}

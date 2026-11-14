@@ -42,27 +42,27 @@ ADR-0013 「실제 배포에서 달라진 점」에 있다. 허용 IP·접속 �
 - **시연 중에는 배포하지 않는다.** 컨테이너를 바꾸는 몇 초~수십 초 동안 접속이 끊긴다.
 - 배포 작업은 직렬로 실행하고 대상 이미지·커밋·복구 지점을 기록한다.
 - **커밋·push된 main만 배포한다.** 서버에 떠 있는 버전이 항상 GitHub의 커밋과 같아야 한다.
-- **DB 구조:** 시작할 때 `schema.sql`을 다시 돌린다(`IF NOT EXISTS`). 표·칸 추가는 자동 반영되지만 이름 바꾸기·타입 변경·삭제는 반영되지 않는다. 그런 변경은 배포 전에 백업한다. 이전 이미지로 되돌려도 DB는 되돌아가지 않는다.
+- **DB 구조:** API 시작은 Alembic 버전 확인만 한다. 백업·사본 검증 뒤 API를 멈추고 `docker compose -f compose.deploy.yml --env-file .env.deploy run --rm migrate`를 실행한 후 API를 기동한다. 기존 구조가 알려진 기준과 다르면 자동 이전하지 않는다. 이전 이미지로 되돌려도 DB는 되돌아가지 않으며, 기본 버전의 파괴적 downgrade는 차단한다. [ADR-0017](adr/0017-platform-migrations.md)을 따른다.
 - **진행 중 실행:** api를 바꾸면 진행 중 run은 lease가 만료될 때(기본 60초)까지 멈췄다가 마지막 체크포인트에서 이어 간다(ADR-0012). 그래프 상태 모양을 바꾼 배포는 진행 중 run이 없을 때 한다.
 - **새 설정값:** 코드에 필수 환경 변수를 더했으면 서버 `.env.deploy`에 먼저 넣는다. 설정값만 바꿀 때는 빌드 없이 `up -d`만 한다.
 
 ### 배포 절차 주의
 
-- **`--env-file.env.deploy`를 명령마다 붙인다. 서버에는 `.env`를 두지 않는다.** 빠뜨리면 compose가 같은 폴더의
+- **`--env-file .env.deploy`를 명령마다 붙인다. 서버에는 `.env`를 두지 않는다.** 빠뜨리면 compose가 같은 폴더의
   `.env`를 읽는다. 개발용 `.env`(`.env.example`을 복사한 것)에는 DB 비밀번호 값이 있어 필수값 검사가 통과하고,
   그 비밀번호로 배포 DB가 만들어진다.
 - **이미지는 서버 CPU에 맞춰 빌드한다.** compose에 플랫폼 지정이 없어 Apple Silicon에서 빌드하면 arm64 이미지가 올라간다.
   서버가 x86_64면 빌드하는 곳에서 `DOCKER_DEFAULT_PLATFORM=linux/amd64`를 붙인다:
-  `DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose -f compose.deploy.yml --env-file.env.deploy build`
+  `DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose -f compose.deploy.yml --env-file .env.deploy build`
 - **서버 checkout은 이미지 태그와 같은 커밋으로 둔다.** `docker/web/Caddyfile`과 DB 초기화 스크립트(`docker/postgres/init/`)는
   이미지가 아니라 서버 checkout에서 붙는다. 이미지 태그를 커밋 해시로 붙이고(`…/specton-api:<커밋>`), 서버에서는
   `git checkout <커밋>` 뒤 `pull`·`up -d --no-build`를 실행한다.
 - **DB 비밀번호는 볼륨을 처음 만들 때만 적용된다.** 나중에 `.env.deploy`만 바꾸면 DB 역할 비밀번호와 어긋나 api가 접속하지
   못한다. 바꿀 때는 DB 안에서 먼저 바꾸고, 그다음 `.env.deploy`를 고쳐 api를 다시 띄운다.
-  1. `docker compose -f compose.deploy.yml --env-file.env.deploy exec db psql -U specton -d specton_app`
+  1. `docker compose -f compose.deploy.yml --env-file .env.deploy exec db psql -U specton -d specton_app`
   2. psql에서 `\password specton`·`\password specton_sandbox`로 새 비밀번호 입력 (명령 기록에 비밀번호가 남지 않게 대화형으로)
   3. `.env.deploy`의 `POSTGRES_PASSWORD`·`SANDBOX_PASSWORD`를 같은 값으로 고친다
-  4. `docker compose -f compose.deploy.yml --env-file.env.deploy up -d --no-build api` (바뀐 접속 URL로 api만 다시 만든다)
+  4. `docker compose -f compose.deploy.yml --env-file .env.deploy up -d --no-build api` (바뀐 접속 URL로 api만 다시 만든다)
 
 ### 데이터 보존·백업·복구
 
@@ -77,7 +77,7 @@ ADR-0013 「실제 배포에서 달라진 점」에 있다. 허용 IP·접속 �
 - **`down -v`를 쓰지 않는다.** `-v`는 위 볼륨을 지워 DB·업로드·산출물이 모두 사라진다. 멈출 때는 `down`, 재배포는 `pull` 뒤 `up -d --no-build`.
 - 재배포·컨테이너 교체 뒤 유지 확인 (로컬 compose에서 확인, 2026-11-09): 업로드 → `up -d --no-build --force-recreate`
   → `down` 뒤 `up -d --no-build`를 거쳐도 같은 세션 쿠키로 실행 상태·추출 원문(19건)·업로드 파일이 그대로 보였다.
-- **백업** (DB와 파일을 같은 시점으로 맞추려고 api를 잠깐 멈춘다. `D`는 `docker compose -f compose.deploy.yml --env-file.env.deploy`):
+- **백업** (DB와 파일을 같은 시점으로 맞추려고 api를 잠깐 멈춘다. `D`는 `docker compose -f compose.deploy.yml --env-file .env.deploy`):
   1. `$D stop api`
   2. `$D exec -T db pg_dump -U specton -d specton_app -Fc > specton_app-<날짜>.dump`
   3. `$D run --rm --no-deps -u 0 -v "$PWD:/backup" --entrypoint tar api czf /backup/storage-<날짜>.tgz -C /data/storage.`
@@ -123,7 +123,7 @@ ADR-0013 「실제 배포에서 달라진 점」에 있다. 허용 IP·접속 �
 
 ## 운영 절차
 
-- **시작:** 설정 확인 → DB·역할 준비 → 앱 메타데이터·checkpointer 초기화 → API·실행기 → UI → 샘플 검증
+- **시작:** 설정 확인 → DB·역할 준비 → 명시적 플랫폼 migration → DB 버전 확인·checkpointer 준비 → API·실행기 → UI → 샘플 검증
 - API의 `create_graph`는 실제 모델 정리와 실패 변환기를 등록한다. 둘 다 `settings.pack_root`를 사용하며, 변환기의 규칙 심각도는 그래프를 만들 때 공통 팩에서 읽는다. 정리 실패는 재작업 또는 사람 확인으로 보내고 생성·LLM 검토를 건너뛴다. 팩 불일치·읽기 실패·출력 추적 오류는 실행 오류로 끝낸다. DDL·ERD·RTM 생성, 후속 규칙 검사와 내보내기도 현재 앱 그래프에 연결되어 있다.
 - **중지:** 신규 접수 중단 → 현재 단계 상태 기록 → 작업 lease 정리 → API·실행기 종료
 - 강제 종료 후에는 마지막 체크포인트와 부분 파일 상태를 대조한다. LLM 응답을 받고 저장 전에 실패한 구간의 중복 호출·비용을 기록한다.

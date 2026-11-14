@@ -4,9 +4,10 @@
 
 - 설치: `uv sync`
 - DB: `docker compose up -d db`
+- DB 이전: `uv run python -m specton.persistence.migrate upgrade` (API 기동 전)
 - API: `uv run uvicorn specton.api.main:app --reload`
 - 테스트: `uv run pytest` (기본은 db·llm 마커 제외)
-- 린트·타입: `uv run ruff check. && uv run mypy`
+- 린트·타입: `uv run ruff check . && uv run mypy`
 - 팩 재생성: `uv run python -m specton.packs.build` (`--check`로 검사)
 - 웹: `cd frontend && npm run dev`
 

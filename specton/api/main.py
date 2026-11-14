@@ -24,7 +24,8 @@ from specton.manifest_node import manifest_node
 from specton.normalization_node import normalization_node
 from specton.parse_node import parse_node
 from specton.pdf_adapter import erd_pdf_renderer, function_spec_pdf_renderer
-from specton.persistence.db import Pool, apply_schema, create_checkpointer, create_pool
+from specton.persistence.db import Pool, create_checkpointer, create_pool
+from specton.persistence.migrate import require_current_schema
 from specton.review.normalization_findings import failure_mapper, rule_severities
 from specton.review.rule_policy import load_policies
 from specton.runner import Runner
@@ -95,7 +96,7 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
         owned.open(wait=True)
         runner: Runner | None = None
         try:
-            apply_schema(owned)
+            require_current_schema(owned)
             graph = create_graph(settings, create_checkpointer(owned))
             runner = Runner(owned, graph, settings)
             runner.start()

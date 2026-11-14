@@ -159,6 +159,7 @@ def test_schema_widens_the_document_format_check_of_an_older_database(
     from specton.persistence.db import apply_schema
 
     with pool.connection() as conn:
+        conn.execute("DROP TABLE alembic_version")  # 버전 도입 전 DB를 재현한다
         conn.execute("ALTER TABLE document DROP CONSTRAINT document_file_format_check")
         conn.execute(
             "ALTER TABLE document ADD CONSTRAINT document_file_format_check CHECK "

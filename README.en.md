@@ -25,7 +25,8 @@ Supported inputs: Excel, CSV, HWP and HWPX. PDF input/extraction is outside the 
 ```bash
 cp .env.example .env              # enter keys only in your local environment
 uv sync                           # install dependencies (.venv)
-docker compose up -d db           # PostgreSQL 18 (app + sandbox)
+docker compose up -d --wait db    # PostgreSQL 18 (app + sandbox)
+uv run python -m specton.persistence.migrate upgrade  # migrate before starting the API
 uv run uvicorn specton.api.main:app --reload
 curl localhost:8000/health
 ```

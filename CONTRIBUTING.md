@@ -22,22 +22,20 @@ GitHub의 리뷰 승인 수·보호 규칙·자동 병합은 원격 저장소를
 
 ## 검증 명령
 
-```text
-이슈 배정 → 브랜치 → 커밋·push → PR (Closes #이슈) → CI 통과 + 리뷰 승인 → 병합 담당자가 Squash 병합 → 이슈 자동 종료
-보드:  Backlog → Todo → In Progress → In Review(자동) → Done(자동)
-```
-
-프런트 변경 시 `frontend/`에서 실행한다.
+Python 검사를 저장소 루트에서 실행하고 프런트 검사는 `frontend/`에서 실행한다.
 
 ```bash
 uv run ruff check . && uv run ruff format --check .
 uv run mypy
 uv run pytest
 uv run python -m specton.packs.build --check
-cd frontend && npm run lint && npm run build   # frontend를 바꾼 경우
+uv run python -m specton.evaluation.baseline --repeats 1
+cd frontend && npm run lint && npm run check:api && npm test && npm run build
 ```
 
-DB 검사는 격리 환경에서 `uv run pytest -m db`로 실행한다. 실제 LLM 검사는 호출 범위와 비용 한도를 정한 뒤 `uv run pytest -m llm`로 별도 실행한다. 기본 pytest는 두 마커를 제외한다. 현재 CI의 실행 항목은 `.github/workflows/ci.yml`을 기준으로 확인한다.
+DB 검사는 격리 환경에서 `uv run pytest --require-db -m 'db and not native_pdf'`로 실행한다. 이 모드에서는 DB 연결 실패·DB 검사 skip을 실패로 처리한다. 실제 PDF 도구 검사는 `native_pdf`, 실제 LLM 검사는 `llm` 마커로 구분해 해당 환경에서 실행한다. 기본 pytest는 db·llm 마커를 제외한다. CI의 실행 항목은 `.github/workflows/ci.yml`에 있다.
+
+스키마 변경은 새 Alembic revision으로 추가한다. 기존 기준 SQL·revision은 수정하지 않는다. 앱 기동 전 `uv run python -m specton.persistence.migrate upgrade`를 실행한다. 기존 DB는 백업 사본에서 먼저 검증하며 구조 불일치를 `stamp`로 덮지 않는다.
 
 ## 변경 점검
 

@@ -528,6 +528,7 @@ def test_modified_document_cannot_be_promoted_after_approval(
 
 @pytest.mark.parametrize("pack", DOMAINS)
 @pytest.mark.parametrize("broken", [False, True])
+@pytest.mark.native_pdf
 def test_native_all_outputs_match_manifest_and_rule07_blocks_failed_sql(
     world: Callable[..., _World], monkeypatch: pytest.MonkeyPatch, pack: str, broken: bool
 ) -> None:
@@ -639,6 +640,7 @@ def test_manifest_constraint_upgrade_preserves_old_approved_artifacts(
     with first.pool.connection() as conn:
         before = conn.execute("SELECT * FROM artifact ORDER BY artifact_id").fetchall()
         assert len(before) == 5 and all(r["approval_status"] == "approved" for r in before)
+        conn.execute("DROP TABLE alembic_version")  # 버전 도입 전 승인 데이터 사본
         conn.execute("ALTER TABLE artifact DROP CONSTRAINT artifact_kind_check")
         conn.execute(
             "ALTER TABLE artifact ADD CONSTRAINT artifact_kind_check CHECK "

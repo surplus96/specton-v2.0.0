@@ -58,7 +58,7 @@ def test_schema_can_be_applied_twice(pool: Pool) -> None:
             ).fetchall()
         }
     assert tables == {
-        "run", "document", "source_block", "model_snapshot", "finding",
+        "alembic_version", "run", "document", "source_block", "model_snapshot", "finding",
         "approval", "approval_basis", "artifact", "artifact_validation", "run_event", "job_lease",
     }  # fmt: skip
 
@@ -67,6 +67,7 @@ def test_schema_adds_new_run_columns_to_an_existing_table(pool: Pool) -> None:
     """#108 스키마로 만든 DB에 다시 적용하면 run의 새 칸이 생긴다 (#110 리뷰)."""
     with pool.connection() as conn:
         run = create_run(conn, OWNER, "inventory")
+        conn.execute("DROP TABLE alembic_version")  # 버전 도입 전 DB를 재현한다
         conn.execute("ALTER TABLE run DROP COLUMN stage, DROP COLUMN interrupt, DROP COLUMN error")
 
     apply_schema(pool)
@@ -78,6 +79,7 @@ def test_schema_adds_new_run_columns_to_an_existing_table(pool: Pool) -> None:
 def test_schema_updates_source_block_for_the_extraction_check(pool: Pool) -> None:
     """#95 이전 스키마의 source_block에도 원문 없음 허용과 결정 칸이 생긴다."""
     with pool.connection() as conn:
+        conn.execute("DROP TABLE alembic_version")
         conn.execute(
             "ALTER TABLE source_block DROP COLUMN notice, DROP COLUMN user_decision,"
             " DROP COLUMN excluded_reason, ALTER COLUMN source_text SET NOT NULL"

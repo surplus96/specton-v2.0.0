@@ -8,6 +8,7 @@
 #   만들기(빌드하는 곳): docker compose -f compose.deploy.yml --env-file .env.deploy build
 #                        docker compose -f compose.deploy.yml --env-file .env.deploy push
 #   기동(서버):          docker compose -f compose.deploy.yml --env-file .env.deploy pull
+#                        docker compose -f compose.deploy.yml --env-file .env.deploy run --rm migrate
 #                        docker compose -f compose.deploy.yml --env-file .env.deploy up -d --no-build
 #   로컬 확인만 할 때:   ... up -d --build  (이미지 이름 기본값 specton-api:local·specton-web:local)
 #   중지: docker compose -f compose.deploy.yml --env-file .env.deploy down
@@ -37,6 +38,18 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  migrate:
+    profiles: [tools]
+    build: .
+    image: ${SPECTON_API_IMAGE:-specton-api:local}
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPECTON_APP_DATABASE_URL: postgresql://specton:${POSTGRES_PASSWORD}@db:5432/specton_app
+    command: ["python", "-m", "specton.persistence.migrate", "upgrade"]
 
   api:
     build: .

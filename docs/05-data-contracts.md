@@ -155,7 +155,7 @@ priority_source: explicit | inferred | unspecified
 
 ## 플랫폼 저장 모델
 
-DDL은 `specton/persistence/schema.sql`이고 이 표와 같아야 한다. 보존 기간은 시연 계획에서 정한다.
+기존 플랫폼 DDL은 `specton/persistence/schema.sql`에 동결했으며 Alembic `0001_platform`의 기준이다. 이후 변경은 `specton/persistence/migrations/versions/`에 추가한다. 앱 시작 시에는 DB 버전만 확인한다. 이전 절차는 [ADR-0017](adr/0017-platform-migrations.md)을 따른다. 보존 기간은 시연 계획에서 정한다.
 
 | 객체 | 주요 필드 | 관계·제약 |
 |---|---|---|

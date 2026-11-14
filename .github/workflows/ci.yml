@@ -1,5 +1,12 @@
 name: ci
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
   push:
@@ -8,6 +15,7 @@ on:
 jobs:
   python:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v7
@@ -16,6 +24,8 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest
+      - name: Verify deterministic baseline
+        run: uv run python -m specton.evaluation.baseline --repeats 1
       # 한글 엔진 시험 (ADR-0004): rhwp-python 0.8.1 리눅스 휠은 묶어 둔 libfreetype에 함수가 빠져
       # `import rhwp`가 실패한다(상류 DanMeon/rhwp-python #31). 위 단계에서는 엔진 시험이 건너뛰어지므로,
       # 시스템 libfreetype을 먼저 불러온 채 다시 돌리고, 엔진을 못 불러와 건너뛰는 것은 실패로 둔다
@@ -28,9 +38,51 @@ jobs:
           test -f "$FREETYPE" || { echo "시스템 libfreetype이 없음: $FREETYPE"; exit 1; }
           LD_PRELOAD="$FREETYPE" uv run pytest -rs tests/unit/test_ingest_hangul.py tests/unit/test_hangul_engine_lazy_import.py tests/unit/test_hangul_input.py
       - run: uv run python -m specton.packs.build --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deterministic-baseline
+          path: var/baseline/report.json
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: specton
+          POSTGRES_PASSWORD: specton
+          POSTGRES_DB: specton_app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U specton -d specton_app"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      SPECTON_APP_DATABASE_URL: postgresql://specton:specton@127.0.0.1:5432/specton_app
+      SPECTON_SANDBOX_DATABASE_URL: postgresql://specton_sandbox:specton_sandbox@127.0.0.1:5432/specton_sandbox
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync --locked
+      - name: Create isolated SQL validation database
+        run: >-
+          docker exec -i -e SANDBOX_PASSWORD=specton_sandbox
+          "${{ job.services.postgres.id }}" bash < docker/postgres/init/01_sandbox.sh
+      - run: uv run python -m specton.persistence.migrate upgrade
+      - run: uv run python -m specton.persistence.migrate check
+      - name: Database and API regression
+        run: uv run pytest --require-db -m 'db and not native_pdf and not llm' --junitxml=var/test-results/database.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: database-test-results
+          path: var/test-results/database.xml
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
@@ -43,4 +95,6 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm run check:api
+      - run: npm test
       - run: npm run build

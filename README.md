@@ -25,7 +25,8 @@
 ```bash
 cp .env.example .env              # 키는 개인 환경에서만 입력
 uv sync                           # 의존성 설치 (.venv)
-docker compose up -d db           # PostgreSQL 18 (app + sandbox)
+docker compose up -d --wait db    # PostgreSQL 18 (app + sandbox)
+uv run python -m specton.persistence.migrate upgrade  # API 시작 전 DB 버전 이전
 uv run uvicorn specton.api.main:app --reload
 curl localhost:8000/health
 ```
@@ -59,9 +60,14 @@ CSV
 uv run ruff check . && uv run ruff format --check .
 uv run mypy
 uv run pytest                     # 단위 테스트 (db·llm 제외)
-uv run pytest -m db               # 격리 DB 필요
+uv run pytest --require-db -m 'db and not native_pdf'  # 실제 격리 DB 필요
 uv run pytest -m llm              # 실제 LLM 호출, 수동 실행 (이번 시범·평가 총 약 $100, ADR-0007)
 ```
+
+후속 확장 구현의 현재 상태와 재현 명령은 [구현 진행 기록](docs/planning/08-implementation-progress.md)에 있다.
+기준 입력은 `tests/fixtures/baseline/`의 공개 가능한 합성 자료다. 결정론 경로를 30회 측정하려면
+`uv run python -m specton.evaluation.baseline`을 실행한다. DB 이전·기존 데이터 보존 절차는
+[마이그레이션 결정](docs/adr/0017-platform-migrations.md)을 따른다.
 
 ## 도메인 팩
 
