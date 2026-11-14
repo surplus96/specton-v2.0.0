@@ -160,6 +160,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Google Login */
+        get: operations["googleLogin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Callback */
+        get: operations["googleCallback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me */
+        get: operations["currentUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listing */
+        get: operations["listProjects"];
+        put?: never;
+        /** Create */
+        post: operations["createProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["getProject"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/runs/{run_id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim */
+        post: operations["claimRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/baselines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Baseline */
+        post: operations["createBaseline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -268,6 +405,108 @@ export interface components {
             /** @enum {string} */
             event: "status" | "interrupt" | "artifact" | "error" | "completed" | "cancelled";
             data: components["schemas"]["SseEventData"];
+        };
+        /** BaselineInput */
+        BaselineInput: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Revision */
+            revision: number;
+        };
+        /** Body_createRun */
+        Body_createRun: {
+            /** File */
+            file: string;
+            /** Pack */
+            pack: string;
+        };
+        /** CancelRequest */
+        CancelRequest: {
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /**
+         * ExcludedBlock
+         * @description 추출 확인에서 뺄 원문 블록. 사유는 `review` 블록이면 필수, `fail` 블록이면 선택이다.
+         *
+         *     다음 답은 resume API가 422 `INVALID_RESPONSE`로 막는다: 없는 블록, `pass` 블록,
+         *     `review` 블록의 빈 사유(공백만 있는 사유 포함), 같은 블록 두 번 (06 문서, #120).
+         *     `fail` 블록의 빈 사유(`""`)는 사유 없음으로 블록에 남긴다 (`SourceRequirement.excluded_reason`).
+         */
+        ExcludedBlock: {
+            /** Block Id */
+            block_id: string;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HealthResponse */
+        HealthResponse: {
+            /** Status */
+            status: string;
+            /** Version */
+            version: string;
+        };
+        /**
+         * InterruptKind
+         * @description 사람 확인(HITL) 지점. 값은 resume 응답의 `kind`와 같다 (05 문서 「모델별 `kind` 뜻」).
+         *
+         *     - extraction: 추출 확인(UI-02). `review`·`fail` 블록이 있을 때만 멈춘다 (ADR-0015)
+         *     - requirements: 분석 확인(HITL 1, UI-03). 품질 경고·질문·분할이 있을 때만 멈춘다 (ADR-0015)
+         *     - review: 최종 검토(HITL 2, UI-06). 내보내기 전에 항상 멈춘다
+         * @enum {string}
+         */
+        InterruptKind: "extraction" | "requirements" | "review";
+        /** ProjectInput */
+        ProjectInput: {
+            /** Name */
+            name: string;
+        };
+        /**
+         * RequirementAnswer
+         * @description 분석 확인(HITL 1)에서 요구사항 하나에 대한 답 (06 문서 resume).
+         *
+         *     - keep: 그대로 둔다. `texts`는 비운다
+         *     - edit: `texts` 1개로 문장(`text`)을 바꾼다. A01이 낸 `draft_text`는 남는다
+         *     - split: `texts` 2개 이상으로 나눈다. 첫 조각은 원래 ID, 나머지는 서버가 새 ID를 붙이고
+         *       원문 연결·분류는 원래 요구사항과 같다
+         */
+        RequirementAnswer: {
+            /** Req Id */
+            req_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "keep" | "edit" | "split";
+            /** Texts */
+            texts: string[];
+        };
+        /**
+         * RunState
+         * @description run 상태. 값은 `docs/api/openapi.json`의 RunStatus.status와 같다.
+         * @enum {string}
+         */
+        RunState: "queued" | "parsing" | "awaiting_input" | "analysing" | "awaiting_requirements" | "designing" | "generating" | "reviewing" | "awaiting_review" | "exporting" | "completed" | "failed" | "cancel_requested" | "cancelled";
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, unknown>;
         };
     };
     responses: never;
@@ -710,6 +949,259 @@ export interface operations {
                         /** @constant */
                         status: "ok";
                     };
+                };
+            };
+        };
+    };
+    googleLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    googleCallback: {
+        parameters: {
+            query?: {
+                state?: string;
+                code?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    currentUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listProjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    createProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claimRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createBaseline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaselineInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

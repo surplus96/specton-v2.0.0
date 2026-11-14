@@ -640,7 +640,10 @@ def test_manifest_constraint_upgrade_preserves_old_approved_artifacts(
     with first.pool.connection() as conn:
         before = conn.execute("SELECT * FROM artifact ORDER BY artifact_id").fetchall()
         assert len(before) == 5 and all(r["approval_status"] == "approved" for r in before)
-        conn.execute("DROP TABLE alembic_version")  # 버전 도입 전 승인 데이터 사본
+        conn.execute(
+            "DROP TABLE design_baseline,project_run,project,login_session,"
+            "oauth_attempt,app_user,alembic_version"
+        )  # 버전 도입 전 승인 데이터 사본
         conn.execute("ALTER TABLE artifact DROP CONSTRAINT artifact_kind_check")
         conn.execute(
             "ALTER TABLE artifact ADD CONSTRAINT artifact_kind_check CHECK "

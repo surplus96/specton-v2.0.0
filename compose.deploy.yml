@@ -60,6 +60,9 @@ services:
       db:
         condition: service_healthy
     environment:
+      SPECTON_PUBLIC_ORIGIN: ${SPECTON_PUBLIC_ORIGIN:-http://localhost}
+      SPECTON_GOOGLE_CLIENT_ID: ${SPECTON_GOOGLE_CLIENT_ID:-}
+      SPECTON_GOOGLE_CLIENT_SECRET: ${SPECTON_GOOGLE_CLIENT_SECRET:-}
       SPECTON_OPENAI_API_KEY: ${SPECTON_OPENAI_API_KEY:?SPECTON_OPENAI_API_KEY를 .env.deploy에 넣어 주세요}
       SPECTON_APP_DATABASE_URL: postgresql://specton:${POSTGRES_PASSWORD}@db:5432/specton_app
       SPECTON_SANDBOX_DATABASE_URL: postgresql://specton_sandbox:${SANDBOX_PASSWORD}@db:5432/specton_sandbox

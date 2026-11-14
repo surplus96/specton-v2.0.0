@@ -29,7 +29,10 @@ def test_legacy_baseline_keeps_rows_and_library_tables(pool: Pool) -> None:
         run = create_run(conn, "owner", "inventory")
         before = conn.execute("SELECT * FROM run").fetchall()
         library = conn.execute("SELECT * FROM checkpoint_migrations ORDER BY v").fetchall()
-        conn.execute("DROP TABLE alembic_version")
+        conn.execute(
+            "DROP TABLE design_baseline,project_run,project,login_session,"
+            "oauth_attempt,app_user,alembic_version"
+        )
     assert current_version(pool) is None
     with pytest.raises(SchemaVersionError, match="이전이 필요"):
         require_current_schema(pool)
@@ -63,7 +66,10 @@ def test_unknown_schema_changes_fail_without_stamp_or_data_loss(
         create_run(conn, "owner", "inventory")
         before = conn.execute("SELECT * FROM run").fetchall()
         if not versioned:
-            conn.execute("DROP TABLE alembic_version")
+            conn.execute(
+                "DROP TABLE design_baseline,project_run,project,login_session,"
+                "oauth_attempt,app_user,alembic_version"
+            )
         conn.execute(change.encode())
     with pytest.raises(SchemaVersionError):
         apply_schema(pool)
@@ -91,7 +97,10 @@ def test_unknown_future_version_blocks_startup(pool: Pool) -> None:
 def test_concurrent_upgrade_is_idempotent(pool: Pool) -> None:
     schema = _schema(pool)
     with pool.connection() as conn:
-        conn.execute("DROP TABLE alembic_version")
+        conn.execute(
+            "DROP TABLE design_baseline,project_run,project,login_session,"
+            "oauth_attempt,app_user,alembic_version"
+        )
 
     def migrate_in_process() -> None:
         completed = subprocess.run(

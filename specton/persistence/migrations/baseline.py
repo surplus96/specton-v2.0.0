@@ -52,11 +52,11 @@ def _reference(conn: Connection) -> Iterator[str]:
         conn.exec_driver_sql(f'DROP SCHEMA "{schema}" CASCADE')
 
 
-def _signature(conn: Connection, schema: str) -> dict[str, Any]:
+def _signature(conn: Connection, schema: str, tables: frozenset[str] = TABLES) -> dict[str, Any]:
     _search_path(conn, schema)
     inspector = inspect(conn)
     result: dict[str, Any] = {}
-    for table in sorted(TABLES & set(inspector.get_table_names(schema=schema))):
+    for table in sorted(tables & set(inspector.get_table_names(schema=schema))):
         columns = {
             c["name"]: {
                 "type": str(c["type"]),
@@ -89,7 +89,7 @@ def _signature(conn: Connection, schema: str) -> dict[str, Any]:
     return result
 
 
-def _check_extra_behavior(conn: Connection, schema: str) -> None:
+def _check_extra_behavior(conn: Connection, schema: str, tables: frozenset[str] = TABLES) -> None:
     rows = (
         conn.execute(
             text("""
@@ -105,7 +105,7 @@ def _check_extra_behavior(conn: Connection, schema: str) -> None:
             OR EXISTS (SELECT 1 FROM pg_inherits h WHERE h.inhrelid = c.oid OR h.inhparent = c.oid)
         )
     """),
-            {"schema": schema, "tables": sorted(TABLES)},
+            {"schema": schema, "tables": sorted(tables)},
         )
         .scalars()
         .all()
@@ -177,3 +177,17 @@ def install_baseline(conn: Connection) -> None:
         verify_baseline(conn, allow_legacy=True)
     conn.exec_driver_sql(baseline_sql(), execution_options={"no_parameters": True})
     verify_baseline(conn)
+
+
+def verify_identity(conn: Connection) -> None:
+    from specton.persistence.migrations.identity_schema import SQL
+    from specton.persistence.migrations.identity_schema import TABLES as identity_tables
+
+    schema = str(conn.exec_driver_sql("SELECT current_schema()").scalar_one())
+    _check_extra_behavior(conn, schema, identity_tables)
+    actual = _signature(conn, schema, identity_tables)
+    with _reference(conn) as reference:
+        conn.exec_driver_sql(SQL, execution_options={"no_parameters": True})
+        expected = _signature(conn, reference, identity_tables)
+    if actual != expected:
+        raise SchemaVersionError("사용자·프로젝트 스키마가 기준 구조와 일치하지 않습니다")

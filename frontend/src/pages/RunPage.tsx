@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ApiError, errorMessage } from '../api/errors.ts'
 import { runFileName } from '../api/runNames.ts'
 import StageSteps, { type ScreenId } from '../layout/StageSteps.tsx'
@@ -117,6 +117,7 @@ function RunPage({ runId }: { runId: string }) {
   return (
     <div>
       <StageSteps steps={steps} />
+      <Link to={`/projects?run=${encodeURIComponent(runId)}&revision=${run.revision}`}>이 실행을 프로젝트에 연결</Link>
       <div className="row row--between" style={{ marginBottom: 20 }}>
         {view ? (
           <Segmented<ResultView>

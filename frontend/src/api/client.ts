@@ -25,7 +25,10 @@ async function send(path: string, init?: RequestInit): Promise<Response> {
   let res: Response
   try {
     // credentials: 세션 쿠키(specton_session)를 함께 보낸다 (ADR-0011)
-    res = await fetch(baseUrl + path, { credentials: 'include', ...init })
+    const headers = new Headers(init?.headers)
+    const csrf = typeof document !== 'undefined' ? document.cookie.split('; ').find(v => v.startsWith('specton_csrf='))?.split('=')[1] : undefined
+    if (csrf) headers.set('X-CSRF-Token', csrf)
+    res = await fetch(baseUrl + path, { credentials: 'include', ...init, headers })
   } catch (cause) {
     throw new ApiError(0, null, cause)
   }

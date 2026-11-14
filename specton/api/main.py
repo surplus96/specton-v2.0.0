@@ -11,7 +11,10 @@ from pydantic import BaseModel
 
 from specton import __version__
 from specton.agent_nodes import openai_agent_nodes
+from specton.api.access_log import install_oauth_log_filter
+from specton.api.auth import router as auth_router
 from specton.api.errors import install_error_handlers
+from specton.api.projects import router as projects_router
 from specton.api.runs import router as runs_router
 from specton.config import Settings, get_settings
 from specton.ddl_node import ddl_node
@@ -85,6 +88,7 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
     시작 순서는 docs/11을 따른다: DB 연결 → 앱 표·checkpointer 준비 → 실행기 → API.
     중지할 때는 실행기를 먼저 멈춰 실행 중인 run을 노드 경계에서 저장하고 lease를 반납한다.
     """
+    install_oauth_log_filter()
     settings = settings or get_settings()
 
     @asynccontextmanager
@@ -113,6 +117,8 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
         app.state.pool = pool
     install_error_handlers(app)
     app.include_router(runs_router)
+    app.include_router(auth_router)
+    app.include_router(projects_router)
 
     @app.get("/health", operation_id="health")
     def health() -> HealthResponse:

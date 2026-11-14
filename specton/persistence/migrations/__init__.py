@@ -1,6 +1,6 @@
 """플랫폼 스키마의 버전 이력. LangGraph 표와 생성 앱 DB는 관리하지 않는다."""
 
-HEAD = "0001_platform"
+HEAD = "0002_identity"
 
 
 class SchemaVersionError(RuntimeError):

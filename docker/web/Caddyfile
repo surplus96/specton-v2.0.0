@@ -14,7 +14,7 @@
 		-Server
 	}
 
-	@api path /runs /runs/* /health
+	@api path /runs /runs/* /health /api/v1 /api/v1/*
 	handle @api {
 		# 업로드 한도(SPECTON_MAX_UPLOAD_MB 기본 20)보다 조금 크게. 정확한 검사는 API가 한다 (413).
 		request_body {

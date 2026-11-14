@@ -69,6 +69,8 @@ uv run pytest -m llm              # 실제 LLM 호출, 수동 실행 (이번 시
 `uv run python -m specton.evaluation.baseline`을 실행한다. DB 이전·기존 데이터 보존 절차는
 [마이그레이션 결정](docs/adr/0017-platform-migrations.md)을 따른다.
 
+Google 로그인·프로젝트·승인 설계 연결은 [설정 및 사용 흐름](docs/planning/09-google-project-implementation.md)을 따른다.
+
 ## 도메인 팩
 
 `domain_packs/`는 공공데이터 공통표준 8차 기반 입력이다. 사람이 쓰는 파일과 생성 파일이 나뉘어 있다([안내](domain_packs/README.md)).

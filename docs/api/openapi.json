@@ -659,6 +659,339 @@
           }
         }
       }
+    },
+    "/api/v1/auth/google": {
+      "get": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Google Login",
+        "operationId": "googleLogin",
+        "responses": {
+          "302": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/google/callback": {
+      "get": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Callback",
+        "operationId": "googleCallback",
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "State"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Me",
+        "operationId": "currentUser",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Currentuser"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Logout",
+        "operationId": "logout",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Listing",
+        "operationId": "listProjects",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Listprojects"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Create",
+        "operationId": "createProject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Createproject"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Detail",
+        "operationId": "getProject",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Getproject"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/runs/{run_id}/claim": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Claim",
+        "operationId": "claimRun",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Claimrun"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/baselines": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Baseline",
+        "operationId": "createBaseline",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaselineInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Createbaseline"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1111,6 +1444,240 @@
           "event",
           "data"
         ]
+      },
+      "BaselineInput": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "revision"
+        ],
+        "title": "BaselineInput"
+      },
+      "Body_createRun": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "pack": {
+            "type": "string",
+            "title": "Pack"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "pack"
+        ],
+        "title": "Body_createRun"
+      },
+      "CancelRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "CancelRequest"
+      },
+      "ExcludedBlock": {
+        "properties": {
+          "block_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Block Id"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block_id"
+        ],
+        "title": "ExcludedBlock",
+        "description": "추출 확인에서 뺄 원문 블록. 사유는 `review` 블록이면 필수, `fail` 블록이면 선택이다.\n\n다음 답은 resume API가 422 `INVALID_RESPONSE`로 막는다: 없는 블록, `pass` 블록,\n`review` 블록의 빈 사유(공백만 있는 사유 포함), 같은 블록 두 번 (06 문서, #120).\n`fail` 블록의 빈 사유(`\"\"`)는 사유 없음으로 블록에 남긴다 (`SourceRequirement.excluded_reason`)."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "version"
+        ],
+        "title": "HealthResponse"
+      },
+      "InterruptKind": {
+        "type": "string",
+        "enum": [
+          "extraction",
+          "requirements",
+          "review"
+        ],
+        "title": "InterruptKind",
+        "description": "사람 확인(HITL) 지점. 값은 resume 응답의 `kind`와 같다 (05 문서 「모델별 `kind` 뜻」).\n\n- extraction: 추출 확인(UI-02). `review`·`fail` 블록이 있을 때만 멈춘다 (ADR-0015)\n- requirements: 분석 확인(HITL 1, UI-03). 품질 경고·질문·분할이 있을 때만 멈춘다 (ADR-0015)\n- review: 최종 검토(HITL 2, UI-06). 내보내기 전에 항상 멈춘다"
+      },
+      "ProjectInput": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ProjectInput"
+      },
+      "RequirementAnswer": {
+        "properties": {
+          "req_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Req Id"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "keep",
+              "edit",
+              "split"
+            ],
+            "title": "Action"
+          },
+          "texts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Texts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "req_id",
+          "action",
+          "texts"
+        ],
+        "title": "RequirementAnswer",
+        "description": "분석 확인(HITL 1)에서 요구사항 하나에 대한 답 (06 문서 resume).\n\n- keep: 그대로 둔다. `texts`는 비운다\n- edit: `texts` 1개로 문장(`text`)을 바꾼다. A01이 낸 `draft_text`는 남는다\n- split: `texts` 2개 이상으로 나눈다. 첫 조각은 원래 ID, 나머지는 서버가 새 ID를 붙이고\n  원문 연결·분류는 원래 요구사항과 같다"
+      },
+      "RunState": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "parsing",
+          "awaiting_input",
+          "analysing",
+          "awaiting_requirements",
+          "designing",
+          "generating",
+          "reviewing",
+          "awaiting_review",
+          "exporting",
+          "completed",
+          "failed",
+          "cancel_requested",
+          "cancelled"
+        ],
+        "title": "RunState",
+        "description": "run 상태. 값은 `docs/api/openapi.json`의 RunStatus.status와 같다."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     },
     "securitySchemes": {

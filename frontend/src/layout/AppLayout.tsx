@@ -107,6 +107,7 @@ function AppLayout() {
         </div>
 
         <nav className="nav" aria-label="주 메뉴">
+          <Link to="/projects" title="내 프로젝트"><Icon name="code" /><span className="nav__text">내 프로젝트</span></Link>
           <Link to="/" aria-current={isNew ? 'page' : undefined} title="새 작업">
             <Icon name="plus" />
             <span className="nav__text">새 작업</span>

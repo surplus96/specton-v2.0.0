@@ -22,6 +22,8 @@ dependencies = [
     "weasyprint>=70.0",
     "alembic>=1.14,<2",
     "sqlalchemy>=2.0,<3",
+    "pyjwt[crypto]>=2.10,<3",
+    "httpx>=0.27,<1",
 ]
 # PDF 출력은 ADR-0004 승인(#197)대로 WeasyPrint를 쓴다. 시스템 라이브러리(Pango)·한글 폰트·mermaid-cli는
 # Python 패키지가 아니라 실행 이미지에 넣는다(#25). PDF 추출은 ADR-0004 결정 후 추가한다.

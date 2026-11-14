@@ -22,6 +22,8 @@
 | [0016](0016-model-ids-and-keys.md) | 모델 정리의 내부 ID와 키 없는 엔티티 | 승인 | 2026-11-05 |
 | [0017](0017-platform-migrations.md) | 명시적 플랫폼 DB 마이그레이션 | 구현 | 2026-11-14 |
 
+| [0018](0018-google-project-baseline.md) | Google 사용자·프로젝트·승인 기준 | 구현 | 2026-11-14 |
+
 ## 작성 규칙
 
 - 새 결정은 [template.md](template.md)를 복사해 `NNNN-영문-슬러그.md`로 만든다.
