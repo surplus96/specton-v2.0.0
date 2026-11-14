@@ -13,7 +13,7 @@ from specton.implementation.compiler import compile_contract
 from specton.model_hash import model_hash
 from specton.specification.readiness import canonical_bytes, spec_hash
 
-TEMPLATE_VERSION = "inventory-ledger-v1"
+TEMPLATE_VERSION = "browser-preview-v1"
 TEMPLATES = Path(__file__).parent / "templates"
 
 

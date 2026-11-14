@@ -32,6 +32,8 @@ def public(row: dict[str, Any]) -> dict[str, Any]:
             "runtime_image",
             "postgres_image",
             "suite_hash",
+            "browser_image",
+            "browser_suite_hash",
             "report",
             "report_hash",
             "error_code",
@@ -41,7 +43,13 @@ def public(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def claim(
-    conn: Connection[DictRow], runtime: str, postgres: str, suite: str, host: str = "test-host"
+    conn: Connection[DictRow],
+    runtime: str,
+    postgres: str,
+    suite: str,
+    host: str = "test-host",
+    browser_image: str | None = None,
+    browser_suite: str | None = None,
 ) -> dict[str, Any] | None:
     with conn.transaction():
         row = conn.execute(
@@ -61,6 +69,8 @@ def claim(
             "deadline=CASE WHEN %s THEN deadline ELSE now()+interval '360 seconds' END, "
             "runtime_image=coalesce(runtime_image,%s), postgres_image=coalesce(postgres_image,%s), "
             "suite_hash=coalesce(suite_hash,%s), executor_host=coalesce(executor_host,%s) "
+            " ,browser_image=coalesce(browser_image,%s), "
+            "browser_suite_hash=coalesce(browser_suite_hash,%s) "
             "WHERE id=%s RETURNING *",
             (
                 "recovering" if recovery else "running",
@@ -70,6 +80,8 @@ def claim(
                 postgres,
                 suite,
                 host,
+                browser_image,
+                browser_suite,
                 row["id"],
             ),
         ).fetchone()
@@ -98,9 +110,28 @@ def finish(
         if (
             report.get("status") not in ("smoke_passed", "failed")
             or report.get("business_acceptance") != "not_run"
-            or report.get("browser_acceptance") != "not_run"
+            or report.get("browser_acceptance")
+            not in (
+                {"passed"}
+                if job.get("browser_image") and report["status"] == "smoke_passed"
+                else {"not_run", "failed", "passed"}
+                if job.get("browser_image")
+                else {"not_run"}
+            )
         ):
             raise ValueError("지원하지 않는 검증 판정")
+        if job.get("browser_image"):
+            for key in ("browser_image", "browser_suite_hash"):
+                if report.get(key) != job[key]:
+                    raise ValueError("브라우저 검증 출처 불일치")
+            if report["status"] == "smoke_passed":
+                evidence = report.get("browser", {})
+                if (
+                    evidence.get("status") != "passed"
+                    or not evidence.get("checks")
+                    or any(c.get("status") != "passed" for c in evidence["checks"])
+                ):
+                    raise ValueError("브라우저 검증 증거 누락")
         if report.get("cleanup_complete") is not True:
             raise ValueError("자원 정리 확인이 필요합니다")
         if report["status"] == "smoke_passed" and (

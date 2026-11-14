@@ -7,6 +7,7 @@ from specton.persistence.migrations.baseline import (
     verify_baseline,
     verify_identity,
     verify_implementation,
+    verify_preview,
     verify_specification,
     verify_verification,
 )
@@ -31,19 +32,25 @@ with migration_connection(context.config) as connection:
             "0003_specification",
             "0004_implementation",
             "0005_verification",
+            "0006_preview",
         }:
             verify_identity(connection)
         if context.get_context().get_current_revision() in {
             "0003_specification",
             "0004_implementation",
             "0005_verification",
+            "0006_preview",
         }:
             verify_specification(connection)
         if context.get_context().get_current_revision() in {
             "0004_implementation",
             "0005_verification",
+            "0006_preview",
         }:
             verify_implementation(connection)
 
-        if context.get_context().get_current_revision() == "0005_verification":
+        if context.get_context().get_current_revision() in {"0005_verification", "0006_preview"}:
             verify_verification(connection)
+
+        if context.get_context().get_current_revision() == "0006_preview":
+            verify_preview(connection)

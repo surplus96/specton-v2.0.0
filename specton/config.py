@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
+    preview_worker_host: str = ""  # Docker daemon ID; API and worker must share loopback.
     public_origin: str = "http://localhost:5173"
     login_days: int = Field(default=30, ge=1, le=90)
 

@@ -7,7 +7,7 @@ const stock = (contract as unknown as { inventory: { operations: InventoryOperat
 const actionNames: Record<string, string> = { draft: '입출고 초안 작성', edit: '초안 수량 수정', confirm: '확정', cancel: '확정 취소', movement: '입출고 조회', balance: '재고 조회' }
 
 function App() {
-  const [token, setToken] = useState('')
+  const [token, setToken] = useState((window as unknown as { spectonPreview?: boolean }).spectonPreview ? 'preview' : '')
   const [screen, setScreen] = useState(contract.screens.find(s => s.route === window.location.pathname)?.id ?? contract.screens[0]?.id ?? '')
   const [values, setValues] = useState<Record<string, string>>({})
   const [result, setResult] = useState<unknown>(null)
@@ -56,26 +56,26 @@ function App() {
     finally { setBusy(false) }
   }
   return <main style={{ maxWidth: 900, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-    <h1>기준정보 업무 시스템</h1>
-    <label>데모 접근 토큰 <input type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label>
+    <h1>{stock ? '재고 업무 시스템' : '기준정보 업무 시스템'}</h1>
+    {!(window as unknown as { spectonPreview?: boolean }).spectonPreview && <label>데모 접근 토큰 <input type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label>}
     <p>토큰은 이 화면의 메모리에만 보관됩니다. 서버에서 역할을 확인합니다.</p>
-    <nav>{contract.screens.map(s => <button key={s.id} onClick={() => { setScreen(s.id); history.replaceState(null, '', s.route) }}>{s.name}</button>)}</nav>
+    <nav>{contract.screens.map(s => <button data-screen={s.id} key={s.id} onClick={() => { setScreen(s.id); if (!(window as unknown as { spectonPreview?: boolean }).spectonPreview) history.replaceState(null, '', s.route) }}>{s.name}</button>)}</nav>
     <h2>{selected?.name}</h2>
     {!result && !busy && !error && <p>{selected?.empty_state}</p>}
-    {operations.map(op => <form key={op.api_id} onSubmit={e => { e.preventDefault(); void invoke(op) }}>
+    {operations.map(op => <form data-api={op.api_id} key={op.api_id} onSubmit={e => { e.preventDefault(); void invoke(op) }}>
       <h3>{op.action === 'insert' ? '등록' : '단건 조회'}</h3>
-      {op.action === 'get' ? <label>{op.key.name} <input required value={values[op.api_id + ':key'] ?? ''} onChange={e => setValues(v => ({ ...v, [op.api_id + ':key']: e.target.value }))} /></label> : op.fields.map(f => <label key={f.id} style={{ display: 'block' }}>{f.name} {f.data_type === 'boolean' ? <select required={f.required} value={values[op.api_id + ':' + f.name] ?? ''} onChange={e => setValues(v => ({ ...v, [op.api_id + ':' + f.name]: e.target.value }))}><option value="">선택</option><option value="true">예</option><option value="false">아니오</option></select> : <input required={f.required} type={f.data_type === 'integer' ? 'number' : 'text'} step="1" maxLength={f.length ?? undefined} value={values[op.api_id + ':' + f.name] ?? ''} onChange={e => setValues(v => ({ ...v, [op.api_id + ':' + f.name]: e.target.value }))} />}</label>)}
+      {op.action === 'get' ? <label>{op.key.name} <input required value={values[op.api_id + ':key'] ?? ''} onChange={e => setValues(v => ({ ...v, [op.api_id + ':key']: e.target.value }))} /></label> : op.fields.map(f => <label key={f.id} style={{ display: 'block' }}>{f.name} {f.data_type === 'boolean' ? <select aria-label={f.name} required={f.required} value={values[op.api_id + ':' + f.name] ?? ''} onChange={e => setValues(v => ({ ...v, [op.api_id + ':' + f.name]: e.target.value }))}><option value="">선택</option><option value="true">예</option><option value="false">아니오</option></select> : <input required={f.required} type={f.data_type === 'integer' ? 'number' : 'text'} step="1" maxLength={f.length ?? undefined} value={values[op.api_id + ':' + f.name] ?? ''} onChange={e => setValues(v => ({ ...v, [op.api_id + ':' + f.name]: e.target.value }))} />}</label>)}
       <button disabled={busy || !token}>{op.action === 'insert' ? '등록' : '조회'}</button>
     </form>)}
-    {stock?.operations.filter(op => selected?.api_ids.includes(op.id)).map(op => <form key={op.id} onSubmit={e => { e.preventDefault(); void invokeStock(op) }}>
+    {stock?.operations.filter(op => selected?.api_ids.includes(op.id)).map(op => <form data-api={op.id} key={op.id} onSubmit={e => { e.preventDefault(); void invokeStock(op) }}>
       <h3>{actionNames[op.action]}</h3>
       {op.path.includes('{key}') && <label>입출고 ID <input required value={values[op.id + ':key'] ?? ''} onChange={e => setValues(v => ({ ...v, [op.id + ':key']: e.target.value }))} /></label>}
-      {op.request_fields.filter(f => f.name !== 'key').map(f => <label key={f.name} style={{ display: 'block' }}>{f.name} {f.name === 'kind' ? <select required value={values[op.id + ':kind'] ?? ''} onChange={e => setValues(v => ({ ...v, [op.id + ':kind']: e.target.value }))}><option value="">선택</option><option value="receive">입고</option><option value="issue">출고</option></select> : <input required inputMode={f.data_type === 'decimal' ? 'decimal' : 'text'} value={values[op.id + ':' + f.name] ?? ''} onChange={e => setValues(v => ({ ...v, [op.id + ':' + f.name]: e.target.value }))} />}</label>)}
+      {op.request_fields.filter(f => f.name !== 'key').map(f => <label key={f.name} style={{ display: 'block' }}>{f.name} {f.name === 'kind' ? <select aria-label={f.name} required value={values[op.id + ':kind'] ?? ''} onChange={e => setValues(v => ({ ...v, [op.id + ':kind']: e.target.value }))}><option value="">선택</option><option value="receive">입고</option><option value="issue">출고</option></select> : <input required inputMode={f.data_type === 'decimal' ? 'decimal' : 'text'} value={values[op.id + ':' + f.name] ?? ''} onChange={e => setValues(v => ({ ...v, [op.id + ':' + f.name]: e.target.value }))} />}</label>)}
       <button disabled={busy || !token}>{actionNames[op.action]}</button>
     </form>)}
     {busy && <p role="status">{selected?.loading_state}</p>}
     {error && <p role="alert">{selected?.error_state}: {error}</p>}
-    {result !== null && <pre>{JSON.stringify(result, null, 2)}</pre>}
+    {result !== null && <pre data-result>{JSON.stringify(result, null, 2)}</pre>}
   </main>
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>)

@@ -126,3 +126,24 @@ def test_extra_or_duplicate_zip_entries_are_rejected_even_with_matching_outer_ha
     source = output.getvalue()
     with pytest.raises(ValueError):
         inspect_package(source, hashlib.sha256(source).hexdigest())
+
+
+@pytest.mark.parametrize(
+    "name", ["frontend/src/main.tsx", "frontend/vite.config.ts", "frontend/index.html"]
+)
+def test_untrusted_frontend_is_rejected_even_if_archive_hashes_are_rebuilt(name):
+    source = generate(*inputs())
+    with zipfile.ZipFile(io.BytesIO(source)) as archive:
+        entries = archive.infolist()
+        files = {entry.filename: archive.read(entry) for entry in entries}
+    files[name] += b"\nmalicious change"
+    manifest = json.loads(files["build-manifest.json"])
+    manifest["files"][name] = hashlib.sha256(files[name]).hexdigest()
+    files["build-manifest.json"] = json.dumps(manifest).encode()
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w") as archive:
+        for entry in entries:
+            archive.writestr(entry, files[entry.filename])
+    changed = output.getvalue()
+    with pytest.raises(ValueError, match="프런트엔드"):
+        inspect_package(changed, hashlib.sha256(changed).hexdigest())

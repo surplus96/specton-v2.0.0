@@ -50,13 +50,17 @@ def stop(process: subprocess.Popen[bytes]) -> None:
             process.wait(timeout=10)
 
 
-def run_once(pool: Pool, runtime: str, postgres: str) -> bool:
+def run_once(pool: Pool, runtime: str, postgres: str, browser: str | None = None) -> bool:
     suite = hashlib.sha256((TEMPLATES / "runtime/probe.py.txt").read_bytes()).hexdigest()
     host = docker(["info", "--format", "{{.ID}}"]).decode().strip()
     if not host:
         raise RuntimeError("Docker 호스트 ID를 확인할 수 없습니다")
     with pool.connection() as conn:
-        job = jobs.claim(conn, runtime, postgres, suite, host)
+        from specton.implementation.browser_runner import suite_hash
+
+        job = jobs.claim(
+            conn, runtime, postgres, suite, host, browser, suite_hash() if browser else None
+        )
     if job is None:
         return False
     report: dict[str, Any] | None = None
@@ -99,6 +103,7 @@ def run_once(pool: Pool, runtime: str, postgres: str) -> bool:
                         postgres,
                         "--resource-key",
                         str(job["resource_key"]),
+                        *(["--browser-image", browser] if browser else []),
                         "--report",
                         str(result),
                     ],
@@ -161,10 +166,15 @@ def main() -> None:
     parser.add_argument("--runtime-image", required=True)
     parser.add_argument("--postgres-image", required=True)
     parser.add_argument("--once", action="store_true")
+    parser.add_argument("--browser-image")
     args = parser.parse_args()
     import re
 
-    for image in (args.runtime_image, args.postgres_image):
+    for image in (
+        args.runtime_image,
+        args.postgres_image,
+        *([args.browser_image] if args.browser_image else []),
+    ):
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", image):
             parser.error("로컬 불변 image ID가 필요합니다")
         if docker(["image", "inspect", image, "--format", "{{.Id}}"]).decode().strip() != image:
@@ -172,7 +182,11 @@ def main() -> None:
     with create_pool(Settings()) as pool:
         require_current_schema(pool)
         while True:
-            worked = run_once(pool, args.runtime_image, args.postgres_image)
+            from specton.implementation.preview_worker import run_once as preview_once
+
+            worked = preview_once(pool, args.runtime_image, args.postgres_image, args.browser_image)
+            if not worked:
+                worked = run_once(pool, args.runtime_image, args.postgres_image, args.browser_image)
             if args.once:
                 break
             if not worked:

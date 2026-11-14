@@ -68,6 +68,16 @@ def inspect_package(content: bytes, expected_hash: str) -> tuple[dict[str, bytes
         raise ValueError("지원하는 런타임 템플릿과 다릅니다")
     if files["backend/inventory.py"] != (TEMPLATES / "runtime/inventory.py.txt").read_bytes():
         raise ValueError("지원하는 재고 런타임 템플릿과 다릅니다")
+    for name in (
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json",
+        "vite.config.ts",
+        "index.html",
+        "src/main.tsx",
+    ):
+        if files["frontend/" + name] != (TEMPLATES / "frontend" / name).read_bytes():
+            raise ValueError("지원하는 프런트엔드 템플릿과 다릅니다")
     return files, manifest
 
 
@@ -96,9 +106,15 @@ def verify(
     postgres_image: str,
     *,
     resource_key: str | None = None,
+    browser_image: str | None = None,
+    preview_lifetime: int = 0,
 ) -> dict[str, Any]:
     files, manifest = inspect_package(source, expected_hash)
-    for image in (runtime_image, postgres_image):
+    if preview_lifetime and (
+        not browser_image or not resource_key or not 60 <= preview_lifetime <= 900
+    ):
+        raise ValueError("미리보기에는 작업 키와 브라우저 이미지, 60~900초 수명이 필요합니다")
+    for image in (runtime_image, postgres_image, *([browser_image] if browser_image else [])):
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", image):
             raise ValueError("로컬에서 준비한 불변 image ID를 지정하세요")
         if docker(["image", "inspect", image, "--format", "{{.Id}}"]).decode().strip() != image:
@@ -110,6 +126,7 @@ def verify(
         resource_key = str(UUID(resource_key))
     labels = ["--label", "specton.verification=" + resource_key] if resource_key else []
     network = ""
+    ingress = ""
     containers: list[str] = []
     admin_password, password, token, denied, non_cancel = (
         secrets.token_urlsafe(32) for _ in range(5)
@@ -135,6 +152,11 @@ def verify(
         "business_acceptance": "not_run",
         "browser_acceptance": "not_run",
     }
+    if browser_image:
+        from specton.implementation.browser_runner import suite_hash
+
+        report.update(browser_image=browser_image, browser_suite_hash=suite_hash())
+    keep = False
     try:
         network = (
             docker(["network", "create", "--internal", *labels, "specton-verify-" + suffix])
@@ -214,9 +236,12 @@ def verify(
                     "/tmp:rw,noexec,nosuid,size=16m",
                     "-e",
                     "APP_DATABASE_URL",
+                    "--network-alias",
+                    "application",
                     "-e",
                     "APP_TOKEN_HASHES",
                     runtime_image,
+                    *(["sleep", str(preview_lifetime + 120)] if preview_lifetime else []),
                 ],
                 env={
                     "APP_DATABASE_URL": f"postgresql://app:{password}@database:5432/generated",
@@ -312,7 +337,53 @@ def verify(
             },
         )
         report.update(json.loads(output))
-    except (RuntimeError, subprocess.TimeoutExpired):
+        if browser_image:
+            from specton.implementation.browser_runner import run
+
+            report["browser_acceptance"] = "failed"
+            browser_report, html = run(
+                files, network, browser_image, labels, token, non_cancel, bool(preview_lifetime)
+            )
+            report["browser"] = browser_report
+            report["browser_acceptance"] = "passed"
+            if preview_lifetime:
+                ingress = (
+                    docker(["network", "create", *labels, "specton-preview-ingress-" + suffix])
+                    .decode()
+                    .strip()
+                )
+                gateway = (
+                    docker(
+                        [
+                            "run",
+                            "-d",
+                            *labels,
+                            "--network",
+                            ingress,
+                            *base,
+                            "--user",
+                            "1000:1000",
+                            "--memory=128m",
+                            "--pids-limit=32",
+                            "-p",
+                            "127.0.0.1::8000",
+                            "-e",
+                            "PREVIEW_TOKEN",
+                            browser_image,
+                            "node",
+                            "/runner/gateway.mjs",
+                        ],
+                        env={"PREVIEW_TOKEN": token},
+                    )
+                    .decode()
+                    .strip()
+                )
+                containers.append(gateway)
+                docker(["network", "connect", network, gateway])
+                port = int(docker(["port", gateway, "8000/tcp"]).decode().strip().rsplit(":", 1)[1])
+                report["_preview"] = {"port": port, "html": html, "access_token": token}
+                keep = True
+    except (RuntimeError, ValueError, subprocess.TimeoutExpired):
         report["status"] = "failed"
         report["error"] = (
             "격리 DB/API 검사 실패 또는 시간 초과. "
@@ -320,17 +391,18 @@ def verify(
         )
     finally:
         cleanup = True
-        for container in reversed(containers):
+        for container in reversed(containers if not keep else []):
             try:
                 docker(["rm", "--force", "--volumes", container])
             except (RuntimeError, subprocess.TimeoutExpired):
                 cleanup = False
-        if network:
-            try:
-                docker(["network", "rm", network])
-            except (RuntimeError, subprocess.TimeoutExpired):
-                cleanup = False
-        report["cleanup_complete"] = cleanup
+        for target_network in [ingress, network] if not keep else []:
+            if target_network:
+                try:
+                    docker(["network", "rm", target_network])
+                except (RuntimeError, subprocess.TimeoutExpired):
+                    cleanup = False
+        report["cleanup_complete"] = cleanup and not keep
         if not cleanup:
             report["status"] = "failed"
         report["elapsed_seconds"] = round(time.monotonic() - started, 3)
@@ -345,6 +417,8 @@ def main() -> None:
     parser.add_argument("--postgres-image", required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--resource-key")
+    parser.add_argument("--browser-image")
+    parser.add_argument("--preview-lifetime", type=int, default=0)
     args = parser.parse_args()
     if args.resource_key:
 
@@ -359,6 +433,8 @@ def main() -> None:
         args.runtime_image,
         args.postgres_image,
         resource_key=args.resource_key,
+        browser_image=args.browser_image,
+        preview_lifetime=args.preview_lifetime,
     )
     args.report.write_bytes(json_bytes(report))
     print(json.dumps({"status": report["status"], "cleanup_complete": report["cleanup_complete"]}))

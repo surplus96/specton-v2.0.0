@@ -16,3 +16,6 @@ frontend/package-lock.json            linguist-generated=true
 specton/implementation/templates/** -text
 tests/fixtures/implementation/** -text
 tests/fixtures/implementation/design/rtm.csv -diff
+
+# 브라우저 검증 이미지와 작업자의 스크립트 해시를 동일하게 유지한다.
+specton/implementation/browser/** -text

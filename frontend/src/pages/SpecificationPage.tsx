@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import PreviewFrame from './PreviewFrame'
 import { specificationRequest, type Bundle, type Specification } from '../api/specifications'
 
-type Verification = { id: string; status: string; source_hash: string; report_hash: string | null; error_code: string | null; report: unknown }
+type Preview = { id: string; status: string; expires_at: string; error_code: string | null }
+type Verification = { id: string; status: string; source_hash: string; report_hash: string | null; error_code: string | null; report: { browser_acceptance?: string; browser?: { screenshot_base64?: string } } | null }
 const activeStatuses = ['queued', 'running', 'cancelling', 'recovering']
 const serialize = (bundle: Bundle) => JSON.stringify(bundle, null, 2)
 
@@ -15,6 +17,8 @@ export default function SpecificationPage() {
   const [notice, setNotice] = useState('')
   const [catalog, setCatalog] = useState<unknown>(null)
   const [implementation, setImplementation] = useState<{ id: string; source_hash: string; spec_version: number } | null>(null)
+  const [previews, setPreviews] = useState<Preview[]>([])
+  const [openPreview, setOpenPreview] = useState<string | null>(null)
   const [verifications, setVerifications] = useState<Verification[]>([])
   useEffect(() => {
     if (!implementation) return
@@ -23,17 +27,19 @@ export default function SpecificationPage() {
       try {
         const rows = await specificationRequest<Verification[]>(`/implementations/${implementation!.id}/verifications`)
         if (active) setVerifications(rows)
+        const previews = await specificationRequest<Preview[]>(`/implementations/${implementation!.id}/previews`)
+        if (active) setPreviews(previews)
       } catch (e) { if (active) setError(e instanceof Error ? e.message : '검증 조회 실패') }
     }
     void refresh()
     const timer = window.setInterval(() => void refresh(), 3000)
     return () => { active = false; window.clearInterval(timer) }
   }, [implementation])
-  function install(value: Specification) { setSpec(value); setEditor(serialize(value.bundle)); setImplementation(null); setVerifications([]) }
+  function install(value: Specification) { setSpec(value); setEditor(serialize(value.bundle)); setImplementation(null); setVerifications([]); setPreviews([]); setOpenPreview(null) }
   useEffect(() => {
     let active = true
     specificationRequest<Specification>(`/specs/${specId}`).then(value => {
-      if (active) { setSpec(value); setEditor(serialize(value.bundle)); setImplementation(null); setVerifications([]) }
+      if (active) { setSpec(value); setEditor(serialize(value.bundle)); setImplementation(null); setVerifications([]); setPreviews([]); setOpenPreview(null) }
     }).catch(e => { if (active) setError(e.message) })
     return () => { active = false }
   }, [specId])
@@ -108,7 +114,7 @@ export default function SpecificationPage() {
         const source = await specificationRequest<{ id: string; source_hash: string; spec_version: number }>(`/specs/${specId}/implementations`, 'POST', {
           expected_version: spec.bundle.spec_version, spec_hash: spec.readiness.spec_hash,
         })
-        setVerifications([]); setImplementation(source); setNotice('소스 묶음을 생성했습니다. 실행·업무 인수·채택은 별도 단계입니다.')
+        setVerifications([]); setPreviews([]); setOpenPreview(null); setImplementation(source); setNotice('소스 묶음을 생성했습니다. 실행·업무 인수·채택은 별도 단계입니다.')
       })}>승인한 명세로 소스 생성·조회</button>
       {implementation && <div><p>명세 버전 {implementation.spec_version} · 소스 생성 완료</p>
         <p>SHA-256: <code style={{ overflowWrap: 'anywhere' }}>{implementation.source_hash}</code></p>
@@ -128,8 +134,23 @@ export default function SpecificationPage() {
             const updated = await specificationRequest<Verification>(`/implementations/${implementation.id}/verifications/${job.id}/cancel`, 'POST')
             setVerifications(rows => rows.map(row => row.id === updated.id ? updated : row))
           })}>검증 취소</button>}
+          <p>고정 화면 인수: {job.report?.browser_acceptance ?? 'not_run'}</p>
+          {job.report?.browser?.screenshot_base64 && <details><summary>브라우저 검증 화면</summary><img alt="브라우저 검증 결과 화면" style={{ maxWidth: '100%' }} src={'data:image/png;base64,' + job.report.browser.screenshot_base64} /></details>}
           {job.report_hash && <p>결과 SHA-256: <code>{job.report_hash}</code></p>}
+          {job.status === 'smoke_passed' && job.report?.browser_acceptance === 'passed' && <button disabled={busy || previews.some(p => !['closed', 'failed'].includes(p.status))} onClick={() => void perform(async () => {
+            const preview = await specificationRequest<Preview>(`/implementations/${implementation.id}/previews`, 'POST', { verification_id: job.id, request_key: crypto.randomUUID() })
+            setPreviews(rows => [preview, ...rows])
+          })}>브라우저 검증 소스로 미리보기 준비</button>}
           {job.report !== null && <details><summary>검증 증거</summary><pre style={{ overflow: 'auto' }}>{JSON.stringify(job.report, null, 2)}</pre></details>}
+        </article>)}
+        {previews.map(preview => <article key={preview.id}>
+          <p>미리보기: {preview.status} · 만료 {new Date(preview.expires_at).toLocaleString()} {preview.error_code}</p>
+          <button disabled={preview.status !== 'ready' || Date.parse(preview.expires_at) <= Date.now()} onClick={() => setOpenPreview(preview.id)}>미리보기 열기</button>
+          <button disabled={busy || ['closed', 'failed'].includes(preview.status)} onClick={() => void perform(async () => {
+            const closed = await specificationRequest<Preview>(`/previews/${preview.id}/close`, 'POST')
+            setPreviews(rows => rows.map(row => row.id === closed.id ? closed : row)); setOpenPreview(null)
+          })}>미리보기 종료</button>
+          {openPreview === preview.id && preview.status === 'ready' && Date.parse(preview.expires_at) > Date.now() && <PreviewFrame id={preview.id} />}
         </article>)}
       </div>}
     </>}

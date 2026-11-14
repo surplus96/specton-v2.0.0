@@ -47,3 +47,35 @@ def test_worker_rejects_unbound_or_incomplete_pass(change):
     }
     with pytest.raises(ValueError):
         finish(None, job, report)  # validation must happen before database writes
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"browser_image": "different"},
+        {"browser_suite_hash": "different"},
+        {"browser": {"status": "passed", "checks": [{"status": "failed"}]}},
+    ],
+)
+def test_browser_pass_requires_bound_image_suite_and_checks(change):
+    job = dict(
+        source_hash="s",
+        spec_hash="spec",
+        runtime_image="r",
+        postgres_image="p",
+        suite_hash="suite",
+        browser_image="browser",
+        browser_suite_hash="browser-suite",
+    )
+    report = {
+        **job,
+        "status": "smoke_passed",
+        "cleanup_complete": True,
+        "business_acceptance": "not_run",
+        "browser_acceptance": "passed",
+        "checks": [{"status": "passed"}],
+        "browser": {"status": "passed", "checks": [{"status": "passed"}]},
+        **change,
+    }
+    with pytest.raises(ValueError):
+        finish(None, job, report)
