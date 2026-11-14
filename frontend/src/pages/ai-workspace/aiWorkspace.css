@@ -1,0 +1,315 @@
+/* AI Workspace 전용 스타일 (#281). 색은 theme.ts의 dark·darkTones 토큰을 페이지 뿌리에서 CSS 변수로 넘겨 쓴다.
+   움직임은 150~250ms로 짧게, prefers-reduced-motion이면 끈다. */
+
+.aiws {
+  background: var(--aiws-page);
+  color: var(--aiws-ink);
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.aiws-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--aiws-border);
+  background: var(--aiws-panel);
+}
+
+.aiws-body {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 380px;
+  min-height: 0;
+  height: calc(100vh - 58px);
+  transition: grid-template-columns 200ms ease;
+}
+.aiws-body.panel-closed {
+  grid-template-columns: 300px minmax(0, 1fr) 0;
+}
+
+.aiws-side {
+  background: var(--aiws-panel);
+  border-right: 1px solid var(--aiws-border);
+  overflow: auto;
+  min-height: 0;
+}
+.aiws-right {
+  background: var(--aiws-panel);
+  border-left: 1px solid var(--aiws-border);
+  overflow: auto;
+  min-height: 0;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.panel-closed .aiws-right {
+  opacity: 0;
+  transform: translateX(16px);
+  pointer-events: none;
+}
+
+.aiws-center {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--aiws-canvas);
+}
+
+.aiws-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--aiws-ink-muted);
+  margin: 16px 16px 8px;
+}
+
+/* 버튼처럼 쓰는 칸: 키보드 포커스가 보이게 */
+.aiws button,
+.aiws [role='button'],
+.aiws .react-flow__node {
+  outline: none;
+}
+.aiws button:focus-visible,
+.aiws [role='button']:focus-visible,
+.aiws .react-flow__node:focus-visible,
+.aiws .react-flow__node.selected .aiws-card {
+  box-shadow: 0 0 0 2px var(--aiws-focus);
+}
+
+.aiws-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--aiws-border);
+  color: var(--aiws-ink-muted);
+  white-space: nowrap;
+}
+
+/* ── 노드 카드 ── */
+.aiws-card {
+  box-sizing: border-box;
+  background: var(--aiws-card);
+  border: 1.5px solid var(--aiws-border);
+  border-radius: var(--radius-sm);
+  color: var(--aiws-ink);
+  transition: opacity 200ms ease, border-color 200ms ease, background 150ms ease, transform 150ms ease;
+}
+.aiws-card:hover {
+  background: var(--aiws-card-hover);
+}
+.aiws-card.dimmed {
+  opacity: 0.28;
+}
+.aiws-card.lit {
+  border-color: var(--aiws-accent);
+}
+
+/* 진행 중 노드의 은은한 맥박 */
+@keyframes aiws-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--aiws-accent) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--aiws-accent) 0%, transparent);
+  }
+}
+.aiws-card.state-running,
+.aiws-card.state-awaiting {
+  animation: aiws-pulse 1.6s ease-in-out infinite;
+}
+
+/* 완료 시 체크 전환 */
+@keyframes aiws-check {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.aiws-state-icon.state-done {
+  display: inline-block;
+  animation: aiws-check 200ms ease-out;
+}
+
+/* 연결선: 고른 줄은 강조, 나머지는 흐리게 */
+.aiws .react-flow__edge-path {
+  transition: opacity 200ms ease, stroke 200ms ease, stroke-width 200ms ease;
+}
+.aiws .react-flow__edge.dimmed .react-flow__edge-path {
+  opacity: 0.15;
+}
+.aiws .react-flow__edge.lit .react-flow__edge-path {
+  stroke: var(--aiws-accent) !important;
+  stroke-width: 2.5px;
+}
+.aiws .react-flow__edge-text {
+  fill: var(--aiws-ink-muted);
+  font-size: 11px;
+}
+.aiws .react-flow__edge-textbg {
+  fill: var(--aiws-canvas);
+}
+
+/* React Flow 기본 조작부·미니맵을 어두운 바탕에 맞춤 */
+.aiws .react-flow__controls-button {
+  background: var(--aiws-card);
+  color: var(--aiws-ink);
+  border-bottom: 1px solid var(--aiws-border);
+  fill: var(--aiws-ink);
+}
+.aiws .react-flow__controls-button:hover {
+  background: var(--aiws-card-hover);
+}
+/* 미니맵은 카드를 덜 가리게 반투명. 마우스를 올리거나 포커스하면 진해진다 (#281 후속) */
+.aiws .react-flow__minimap {
+  background: color-mix(in srgb, var(--aiws-page) 60%, transparent);
+  opacity: 0.7;
+  transition: opacity 150ms ease;
+}
+.aiws .react-flow__minimap:hover,
+.aiws .react-flow__minimap:focus-within {
+  opacity: 1;
+}
+.aiws .react-flow__attribution {
+  background: transparent;
+}
+
+/* 툴팁 (호버) */
+.aiws-tip {
+  position: relative;
+}
+.aiws-tip[data-tip]:hover::after,
+.aiws-tip[data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  background: var(--aiws-page);
+  color: var(--aiws-ink);
+  border: 1px solid var(--aiws-border);
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  z-index: 20;
+  animation: aiws-fade 150ms ease-out;
+}
+@keyframes aiws-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.aiws-list-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--aiws-ink);
+  padding: 8px 10px;
+  cursor: pointer;
+  font: inherit;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.aiws-list-item:hover {
+  background: var(--aiws-card);
+}
+.aiws-list-item.active {
+  border-color: var(--aiws-accent);
+  background: var(--aiws-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aiws *,
+  .aiws *::before,
+  .aiws *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 밝은 화면: 같은 토큰 이름의 값만 바꾼다. 글자로 쓰이는 강조색은 라임 대신 진한 초록 */
+.aiws[data-theme='light'] {
+  color-scheme: light;
+  --dark-page: #f4f6f3;
+  --dark-panel: #ffffff;
+  --dark-canvas: #eef2ee;
+  --dark-card: #ffffff;
+  --dark-card-hover: #f1f6ef;
+  --dark-border: #c3d2c7;
+  --dark-line: #94a99a;
+  --dark-ink: #18211a;
+  --dark-ink-muted: #5a7462;
+  --dark-accent: #2f6b43;
+  --dark-focus: #2f6b43;
+  --darktones-waiting-fg: #5a7462;
+  --darktones-waiting-border: #94a99a;
+  --darktones-running-fg: #4a7a00;
+  --darktones-running-border: #8cc63f;
+  --darktones-awaiting-fg: #8a6414;
+  --darktones-awaiting-border: #d9a93a;
+  --darktones-done-fg: #2f6b43;
+  --darktones-done-border: #6aa57a;
+  --darktones-failed-fg: #a8453b;
+  --darktones-failed-border: #d2867c;
+  --darktones-skipped-fg: #5a7462;
+  --darktones-skipped-border: #94a99a;
+  --darktones-cancelled-fg: #6b756c;
+  --darktones-cancelled-border: #a6aea6;
+}
+.aiws {
+  transition: background-color 200ms ease, color 200ms ease;
+}
+.aiws-theme-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--aiws-border);
+  background: transparent;
+  color: var(--aiws-ink);
+  cursor: pointer;
+}
+.aiws-theme-btn:hover {
+  background: var(--aiws-card-hover);
+}
+.aiws-theme-btn svg {
+  transition: transform 300ms var(--ease);
+}
+.aiws-theme-btn:hover svg {
+  transform: rotate(-20deg);
+}
+/* 캔버스(React Flow)는 어두운 기본값을 쓰므로 밝은 화면에서만 값을 덮는다 */
+.aiws[data-theme='light'] .react-flow.dark {
+  --xy-background-color-default: var(--aiws-canvas);
+  --xy-background-pattern-dots-color-default: var(--aiws-line);
+  --xy-edge-stroke-default: var(--aiws-line);
+  --xy-edge-stroke-selected-default: var(--aiws-ink);
+  --xy-node-color-default: var(--aiws-ink);
+  --xy-node-background-color-default: var(--aiws-card);
+  --xy-node-border-default: 1px solid var(--aiws-border);
+  --xy-handle-background-color-default: var(--aiws-line);
+  --xy-handle-border-color-default: var(--aiws-card);
+  --xy-minimap-background-color-default: var(--aiws-panel);
+  --xy-minimap-node-background-color-default: var(--aiws-card);
+  --xy-minimap-mask-background-color-default: rgba(24, 33, 26, 0.12);
+  --xy-attribution-background-color-default: transparent;
+}

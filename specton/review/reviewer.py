@@ -1,0 +1,423 @@
+"""설정형 리뷰어 노드 (04 문서, ADR-0008).
+
+관점 설정(Perspective)으로 프롬프트를 만들어 공통 LLM client로 호출하고,
+결과를 관점별 BranchResult(공통 Finding)로 돌려준다.
+- parallel: 관점마다 1회 호출. 관점을 동시에 실행하는 것은 그래프(#18)가 맡는다.
+- combined: 모든 관점을 1회 호출로 검토한다.
+한 관점이 실패해도 다른 관점의 결과는 남기고, 실패는 ok=False와 오류 코드로 표시한다.
+"""
+
+import hashlib
+import logging
+from collections.abc import Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Literal, Self
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from specton.config import Settings
+from specton.contracts import BranchResult, DesignState, Finding, FindingDraft, FindingSource
+from specton.llm.client import LLMClient
+from specton.llm.errors import LLMError
+from specton.llm.types import CallRecord
+from specton.nodes.common import build_request, data_block
+from specton.packs.examples import FewShot, load_examples
+from specton.review.fingerprint import fingerprint
+from specton.review.normalized_view import normalized_view
+from specton.review.perspective import InputSection, Perspective
+
+logger = logging.getLogger(__name__)
+
+COMBINED_STAGE = "REVIEW"
+SECTION_ORDER: tuple[InputSection, ...] = (
+    "requirements",
+    "functions",
+    "entities",
+    "relationships",
+    "normalized",
+)
+
+
+class MissingReviewInput(ValueError):
+    """관점이 고른 입력이 상태에 없다. LLM을 부르기 전에 멈춘다 (#12)."""
+
+
+# 입력 속 지시 무시·ID 생성 금지·원문 인용은 공통 규칙(specton.nodes.common)이 붙인다.
+REVIEW_RULES = """\
+너는 데이터 모델 설계 검토자다. 아래 관점으로 설계를 검토하고 문제만 지적한다.
+- targets에는 문제가 있는 설계 요소의 id를, evidence에는 근거 요구사항 문장을 넣는다.
+- severity는 major·minor만 쓴다. 요구를 어겨 고쳐야 하면 major, 개선 의견이면 minor다.
+- 문제가 없으면 findings를 비운다."""
+
+COMBINED_RULE = "- 관점마다 reviewer_id로 결과를 나누고, 모든 관점을 빠짐없이 돌려준다."
+
+
+class _Output(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+
+class ReviewOutput(_Output):
+    """parallel 방식의 LLM 출력. 관점 하나의 지적.
+
+    findings는 필수다. 기본값을 두면 형식이 틀린 응답("{}")이 "지적 없음"으로 통과한다.
+    """
+
+    findings: tuple[FindingDraft, ...]
+
+
+class PerspectiveFindings(_Output):
+    reviewer_id: str
+    findings: tuple[FindingDraft, ...]
+
+
+class CombinedReviewOutput(_Output):
+    """combined 방식의 LLM 출력. 관점별로 나눈 지적."""
+
+    perspectives: tuple[PerspectiveFindings, ...]
+
+
+@dataclass(frozen=True)
+class ReviewRun:
+    """리뷰 실행 결과. 관점마다 BranchResult 하나와 호출 기록."""
+
+    results: tuple[BranchResult, ...]
+    calls: tuple[CallRecord, ...]
+
+    @property
+    def complete(self) -> bool:
+        """모든 관점이 성공했는지. False면 불완전 검토로 표시한다 (TC-F14)."""
+        return all(r.ok for r in self.results)
+
+
+def run_review(
+    client: LLMClient,
+    perspectives: Sequence[Perspective],
+    state: DesignState,
+    settings: Settings,
+    *,
+    pack: str | None = None,
+    token_budget: int | None = None,
+) -> ReviewRun:
+    """설정의 review_mode에 따라 리뷰를 실행한다. pack을 주면 관점별 few-shot 예시를 넣는다."""
+    if settings.review_mode == "combined":
+        return review_combined(
+            client, perspectives, state, settings, pack=pack, token_budget=token_budget
+        )
+    runs = [
+        review_perspective(client, p, state, settings, pack=pack, token_budget=token_budget)
+        for p in perspectives
+    ]
+    return ReviewRun(
+        results=tuple(r for run in runs for r in run.results),
+        calls=tuple(c for run in runs for c in run.calls),
+    )
+
+
+def review_perspective(
+    client: LLMClient,
+    perspective: Perspective,
+    state: DesignState,
+    settings: Settings,
+    *,
+    pack: str | None = None,
+    token_budget: int | None = None,
+    opaque_source_ids: bool = False,
+) -> ReviewRun:
+    """관점 하나를 검토한다 (parallel 방식의 한 가지). 예시는 대화 쌍으로 넣는다."""
+    request = build_request(
+        settings,
+        role="review",
+        stage=perspective.reviewer_id,
+        prompt_version=perspective.prompt_version,
+        system=f"{REVIEW_RULES}\n\n{_perspective_block(perspective)}",
+        data=_review_data(
+            state,
+            perspective.inputs,
+            opaque_source_ids=opaque_source_ids,
+            include_fk_names=perspective.reviewer_id in {"A05", "A06", "A07", "A08"},
+        ),
+        examples=_examples(pack, perspective, root=settings.pack_root),
+    )
+
+    try:
+        result = client.complete(request, ReviewOutput, token_budget=token_budget)
+    except LLMError as exc:
+        return ReviewRun(
+            results=(_failed(perspective.reviewer_id, state, exc.code),), calls=exc.calls
+        )
+    branch = _succeeded(perspective.reviewer_id, state, result.output.findings)
+    return _confirm_major(client, state, settings, (branch,), result.calls, token_budget)
+
+
+def review_combined(
+    client: LLMClient,
+    perspectives: Sequence[Perspective],
+    state: DesignState,
+    settings: Settings,
+    *,
+    pack: str | None = None,
+    token_budget: int | None = None,
+) -> ReviewRun:
+    """모든 관점을 1회 호출로 검토한다. 출력에 빠진 관점은 실패로 표시한다.
+
+    예시는 관점 하나의 답이라 대화 쌍으로 넣으면 "모든 관점을 돌려준다"와 어긋난다.
+    그래서 각 관점 블록 안에 입력·지적 예시로 넣는다.
+    """
+    ids = [p.reviewer_id for p in perspectives]
+    request = build_request(
+        settings,
+        role="review",
+        stage=COMBINED_STAGE,
+        prompt_version=",".join(f"{p.reviewer_id}={p.prompt_version}" for p in perspectives),
+        system="\n\n".join(
+            [
+                f"{REVIEW_RULES}\n{COMBINED_RULE}",
+                *(
+                    _perspective_block(p, _examples(pack, p, root=settings.pack_root))
+                    for p in perspectives
+                ),
+            ]
+        ),
+        data=_review_data(
+            state,
+            tuple(s for p in perspectives for s in p.inputs),
+            include_fk_names=any(i in {"A05", "A06", "A07", "A08"} for i in ids),
+        ),
+    )
+    try:
+        result = client.complete(request, CombinedReviewOutput, token_budget=token_budget)
+    except LLMError as exc:
+        return ReviewRun(results=tuple(_failed(i, state, exc.code) for i in ids), calls=exc.calls)
+    by_id = _group_by_reviewer(result.output, ids)
+    results = tuple(
+        _succeeded(i, state, by_id[i]) if i in by_id else _failed(i, state, "LLM_OUTPUT_INVALID")
+        for i in ids
+    )
+    return _confirm_major(client, state, settings, results, result.calls, token_budget)
+
+
+class _MajorDecision(_Output):
+    candidate_id: str
+    verdict: Literal["missing", "covered", "uncertain"]
+    required_behavior: str = Field(min_length=1)
+    checked_design_ids: tuple[str, ...] = Field(min_length=1)
+    remaining_gap: str = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+
+
+class _MajorDecisions(_Output):
+    decisions: tuple[_MajorDecision, ...]
+
+
+def _confirm_major(
+    client: LLMClient,
+    state: DesignState,
+    settings: Settings,
+    branches: tuple[BranchResult, ...],
+    calls: tuple[CallRecord, ...],
+    token_budget: int | None,
+) -> ReviewRun:
+    """major를 재확인한다. 판단 실패는 원 지적을 보존한 불완전 검토다."""
+    candidates = tuple(
+        f
+        for b in branches
+        if b.branch in {"A06", "A07"} and b.ok
+        for f in b.findings
+        if f.severity.value == "major"
+    )
+    if not candidates:
+        return ReviewRun(results=branches, calls=calls)
+    reviewers = {f.reviewer_id for f in candidates if f.reviewer_id is not None}
+    stage = next(iter(reviewers)) + "_CONFIRM" if len(reviewers) == 1 else "REVIEW_CONFIRM"
+    expected = {f.id for f in candidates}
+    known = {
+        x.id
+        for section in (state.requirements, state.functions, state.entities, state.relationships)
+        for x in section
+    }
+    known.update(a.id for e in state.entities for a in e.attributes)
+
+    class CheckedDecisions(_MajorDecisions):
+        @model_validator(mode="after")
+        def check_ids(self) -> Self:
+            ids = [d.candidate_id for d in self.decisions]
+            if set(ids) != expected or len(ids) != len(expected):
+                raise ValueError("후보마다 정확히 한 번 판단해야 합니다")
+            if any(set(d.checked_design_ids) - known for d in self.decisions):
+                raise ValueError("대조한 ID는 현재 설계에 있어야 합니다")
+            return self
+
+    request = build_request(
+        settings,
+        role="review",
+        stage=stage,
+        prompt_version="review-confirm-v2",
+        system=REVIEW_RULES
+        + """
+기존 A06·A07 major 후보를 독립적으로 재확인한다. 새 지적은 만들지 않는다.
+각 후보의 required_behavior, checked_design_ids, remaining_gap, rationale를 기록한다.
+missing은 원문에 명시된 동작·정보가 전체 설계에 실제로 없을 때만이다.
+기능 설명에 동작이 있으면 원문에 없는 구현 방식·API·알림 채널이 없다는 이유로
+missing이라 하지 않는다.
+후보 설명이 '이미 있다/지적하지 않아야 한다'면서 누락이라고 하면 자기모순을 확인한다.
+이미 충족하면 covered, 정책·시작 시점이 미확정이거나 증거가 부족하면 uncertain이다.
+단순 req_ids 연결만으로 충족을 인정하지 말고 실제 설명·속성·관계 경로를 대조한다.
+A07의 감사·보존·권한 지적은 원문이 명시한 기록 항목·시점·역할과 대조한다.
+원문이 요청자·승인자·전후 수량·사유만 요구하면 추가 일시 속성이 없다는 이유로
+major를 유지하지 않는다.
+원문이 명시적으로 시각 기록·보존을 요구하고 설계에서 빠졌다면 missing을 유지한다.
+암호화 방식·보존 연한·생성 후 상태 변경 정책을 원문 없이 새 필수 요구로 확대하지 않는다.
+covered의 remaining_gap에는 없음을 명시한다. 불확실한 사항을 임의로 확정하지 않는다.
+""",
+        data={
+            "design": _review_data(state, SECTION_ORDER[:-1], include_fk_names=True),
+            "candidates": [f.model_dump(mode="json") for f in candidates],
+        },
+    )
+    remaining = (
+        None
+        if token_budget is None
+        else max(0, token_budget - sum(c.input_tokens + c.output_tokens for c in calls))
+    )
+    try:
+        result = client.complete(request, CheckedDecisions, token_budget=remaining)
+    except LLMError as exc:
+        return ReviewRun(
+            results=tuple(
+                b.model_copy(update={"ok": False, "error_code": exc.code})
+                if b.branch in reviewers
+                else b
+                for b in branches
+            ),
+            calls=(*calls, *exc.calls),
+        )
+    decisions = {d.candidate_id: d for d in result.output.decisions}
+
+    def revised(f: Finding) -> Finding:
+        if f.id not in decisions:
+            return f
+        d = decisions[f.id]
+        record = (
+            f"{f.reviewer_id} 재확인 [{d.verdict}] 요구: {d.required_behavior}; "
+            f"대조: {', '.join(d.checked_design_ids)}; 잔여: {d.remaining_gap}; "
+            f"판단: {d.rationale} / 최초 의견: {f.suggestion}"
+        )
+        update: dict[str, Any] = {"suggestion": record}
+        if d.verdict != "missing":
+            update.update(severity="minor", target_stage=None)
+        return Finding.model_validate({**f.model_dump(), **update})
+
+    return ReviewRun(
+        results=tuple(
+            b.model_copy(update={"findings": tuple(revised(f) for f in b.findings)})
+            if b.branch in reviewers
+            else b
+            for b in branches
+        ),
+        calls=(*calls, *result.calls),
+    )
+
+
+def _group_by_reviewer(
+    output: CombinedReviewOutput, ids: Sequence[str]
+) -> dict[str, tuple[FindingDraft, ...]]:
+    grouped: dict[str, tuple[FindingDraft, ...]] = {}
+    for part in output.perspectives:
+        if part.reviewer_id not in ids:
+            logger.warning("combined 출력에 설정에 없는 관점 %s가 있어 버린다", part.reviewer_id)
+            continue
+        grouped[part.reviewer_id] = (*grouped.get(part.reviewer_id, ()), *part.findings)
+    return grouped
+
+
+def _examples(
+    pack: str | None, perspective: Perspective, *, root: Path
+) -> tuple[FewShot[ReviewOutput], ...]:
+    """팩의 관점 예시(`examples/<reviewer_id>.yaml`). pack이 없으면 예시 없이 검토한다."""
+    if pack is None:
+        return ()
+    return load_examples(pack, perspective.reviewer_id, ReviewOutput, root=root)
+
+
+def _perspective_block(
+    perspective: Perspective, examples: Sequence[FewShot[ReviewOutput]] = ()
+) -> str:
+    lines = [
+        f"## {perspective.reviewer_id} {perspective.name}",
+        perspective.instructions,
+        "점검 항목:",
+        *(f"- {item}" for item in perspective.checklist),
+        "지적하지 않는 경우:",
+        *(f"- {item}" for item in perspective.false_positive_guards),
+    ]
+    for n, example in enumerate(examples, 1):
+        lines += [
+            f"예시 {n} 입력:",
+            data_block(example.input),
+            f"예시 {n} 지적:",
+            example.output.model_dump_json(),
+        ]
+    return "\n".join(lines)
+
+
+def _review_data(
+    state: DesignState,
+    sections: Sequence[InputSection],
+    *,
+    opaque_source_ids: bool = False,
+    include_fk_names: bool = False,
+) -> dict[str, Any]:
+    """선택한 입력만 담는다. 순서는 관점 설정과 무관하게 고정한다.
+
+    `normalized`는 목록이 아니라 정리 결과 하나라 요약 보기로 넣는다. 고른 관점이 있는데 정리
+    결과가 없으면 LLM을 부르기 전에 멈춘다. 정리 결과 없이 정상 검토처럼 처리하지 않는다 (#12).
+    """
+    # 관계 검토에는 존재하는 정리 결과도 함께 전달한다. 정리 전 단독 검토는 유지한다.
+    if "relationships" in sections and state.normalized is not None:
+        sections = (*sections, "normalized")
+    selected = [s for s in SECTION_ORDER if s in sections]
+    data: dict[str, Any] = {}
+    for section in selected:
+        if section == "normalized":
+            if state.normalized is None:
+                raise MissingReviewInput("정리 결과(normalized)가 없어 검토할 수 없습니다")
+            data[section] = normalized_view(state.normalized, include_fk_names=include_fk_names)
+        else:
+            data[section] = [item.model_dump(mode="json") for item in getattr(state, section)]
+            if section == "requirements" and opaque_source_ids:
+                for requirement in data[section]:
+                    if isinstance(source_id := requirement.get("source_id"), str):
+                        requirement["source_id"] = (
+                            "source-" + hashlib.sha256(source_id.encode()).hexdigest()
+                        )
+    return data
+
+
+def _succeeded(
+    reviewer_id: str, state: DesignState, drafts: Sequence[FindingDraft]
+) -> BranchResult:
+    findings = tuple(
+        _to_finding(d, reviewer_id, state.iteration, n) for n, d in enumerate(drafts, 1)
+    )
+    return BranchResult(branch=reviewer_id, revision=state.revision, ok=True, findings=findings)
+
+
+def _failed(reviewer_id: str, state: DesignState, error_code: str) -> BranchResult:
+    logger.warning("리뷰어 %s 실패: %s", reviewer_id, error_code)
+    return BranchResult(
+        branch=reviewer_id, revision=state.revision, ok=False, error_code=error_code
+    )
+
+
+def _to_finding(draft: FindingDraft, reviewer_id: str, iteration: int, number: int) -> Finding:
+    return Finding.model_validate(
+        {
+            **draft.model_dump(),
+            "id": f"{reviewer_id}-{iteration}-{number}",
+            "source": FindingSource.LLM,
+            "reviewer_id": reviewer_id,
+            "fingerprint": fingerprint(reviewer_id, draft.kind, draft.targets),
+            "iteration": iteration,
+        }
+    )

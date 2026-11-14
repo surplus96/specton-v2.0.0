@@ -1,0 +1,166 @@
+# ADR-0004: 문서 엔진
+
+- 날짜: 2026-10-23 (PDF 출력 승인 2026-11-08, HWP·HWPX 엔진 채택 2026-11-08)
+- 상태: PDF 출력 승인, HWP 5.0·HWPX 읽기·위치 추출 엔진 채택(2026-11-08), PDF 추출·OCR 제안(PDF 입력은 이번 인수 범위 밖, ADR-0002·)
+
+## 배경
+
+초기 제안(2026-10-23)에서는 PDF 입력·추출, 최종 PDF 출력, HWPX/HWP 추출 후보를 공개 자료로 비교했다. PDF 출력은 아래 렌더링 실측과 설계 결정을 바탕으로 승인하고, HWP·HWPX 엔진은 아래 「HWP·HWPX 채택」에서 채택하며, PDF 추출 엔진은 제안 상태로 남긴다.
+
+## 결정
+
+- PDF 추출: Docling(표 구조 인식·OCR 내장). 텍스트형이 느리면 pdfplumber로 보조. PDF 입력이 이번 인수 범위 밖(후속)이라 구현하지 않으며, 입력 지원을 다시 정할 때 쓸 제안이다(ADR-0002 REQ-02).
+- PDF 출력 (승인, 실측 2026-11-05·11-08): 공용 엔진 하나로 기능 명세서(Markdown)와 ERD(Mermaid)를 PDF로 바꾼다.
+  - 엔진: WeasyPrint(HTML/CSS → PDF) + `mermaid-cli`로 ERD를 SVG로 그려 넣는다. Mermaid는 웹과 같은 11.17.2로 고정한다( 검토). mermaid-cli는 이미지 태그가 아니라 안의 mermaid 버전으로 맞춘다: `minlag/mermaid-cli:11.16.1`(`sha256:d98fe54c22e78e65335589fc17d5419f698f915cebca48ea21fee633aff8b258`)에 mermaid-cli 11.16.0과 mermaid 11.17.2가 들어 있다. ERD가 깨지면 Playwright 인쇄로 전환한다.
+  - 한글 폰트: Noto Sans CJK KR(`fonts-noto-cjk`)을 실행 이미지에 넣고 PDF에 내장한다.
+  - 렌더러는 외부 경로·URL 리소스를 가져오지 않는다. 엔진이 만든 SVG·스타일만 쓴다 (docs/10).
+  - Mermaid 설정 보안 : 설정은 개발자가 정한 값만 넘기고, `secure` 목록에 `themeCSS`·`fontFamily`·`altFontFamily`·`themeVariables`·`layout` 등을 넣어 원문 지시문으로 바꾸지 못하게 한다. 이름 안 지시문이 렌더 설정으로 실행되지 않도록 처리하고, ERD 외 다이어그램과 임의 원문은 그리지 않는다. 설정 변경 차단·지시문 처리·외부 리소스 차단은 PDF 엔진 PR에서 구현하고 회귀 시험한다.
+  - ERD 구성: 전체 관계 개요(속성 없음) + 업무 영역별 상세도 + 테이블 정의서(전체 속성). 상세도에는 키 속성(PK·FK·UK)만 그리고 `direction LR`로 배치한다. 상세도 글자가 인쇄 용지에서 6pt보다 작으면 그 영역을 더 나누도록 경고한다. 전체 관계 개요는 전체 구조 확인용으로 나누지 않고, 6pt보다 작으면 세부는 영역 상세도에서 보라고 경고만 한다 . 개요도 관계 이름(`REL-xx`)을 쓰고 ELK 배치(`layout: elk`, mermaid-cli에 든 `@mermaid-js/layout-elk`)로 그린다. 상세도는 기본 배치(dagre) 그대로다. 기본 배치는 긴 관계선 두 개가 가운데에서 교차하면 두 이름을 같은 자리에 둬 한쪽이 가려진다. 처음에는 개요에서 이름을 빼서 막았고, 그 뒤 ELK로 이름을 되살렸다(아래 「개요 ELK 재실측」). 웹 화면(mermaid JS)은 기본 배치 그대로다. 다른 영역의 참조 상자를 포함한 상자 약 13개는 실측 참고값이며, 실제 인쇄 글자 크기로 판단한다.
+  - 쪽: 용지 크기는 297×210mm. 표지·긴 표는 세로, ERD·넓은 표는 가로. 긴 표는 쪽마다 머리글을 반복한다.
+  - 넓은 표(예: CRUD): 기능 ID 1열 + 엔티티 20열까지 가로 한 장에 둔다. 넘으면 엔티티 열을 20개씩 나누고 각 표에 기능 ID를 반복한다. 글자를 줄여 맞추지 않는다.
+  - 기능 명세서 PDF : Markdown을 입력으로 쓴다. Markdown 라이브러리 없이 합의한 문법(제목·문단·글머리표·굵게·인라인 코드·파이프 표·역슬래시 이스케이프)만 HTML로 바꾸고(`specton/export/markdown.py`), 그 밖의 문법은 글자 그대로 보인다. 6열이 넘는 표(CRUD 매트릭스)는 가로 쪽에 두고 위 넓은 표 규칙으로 나눈다. 진입점은 `render_function_spec_pdf(markdown, cover, draft=…)`이며, 저장·승인·manifest·다운로드는 개발자가 문서 생성 가지에 ERD와 같은 방식으로 연결했다(`SPECTON_ENABLE_FUNCTION_SPEC_PDF`, docs/03).
+  - 초안: 시험·내부 렌더링 검증용 초안 PDF에는 쪽마다 「초안 · 승인 전 · revision N」과 배경 표식을 넣는다. 최종 PDF는 승인한 revision에서만 만들고, 공개 PDF 다운로드도 승인본만 허용한다 (docs/06).
+  - 구현 구성: PDF 의존성 → 공용 렌더링 엔진·영역별 출력·표 분할·보안 검사 → 생성·저장·승인·다운로드 연결.
+- HWP 5.0·HWPX 읽기·위치 추출: `rhwp-python==0.8.1`(MIT)로 채택한다(2026-11-08)..hwp를 HWPX로 바꾸지 않고 바로 읽고, 문단마다 구역·문단 번호, 표 칸마다 행·열·병합 범위를 준다. 같은 문서의.hwp와.hwpx에서 구역·문단 번호가 같았다(공공 과업지시서 1건에서 확인).
+  - 쪽 번호는 렌더링으로 계산한 값이라 긴 문서에서 한글 프로그램과 달라진다. 원문 위치는 구역·문단·표·셀로 적고, 렌더링 쪽 번호를 원문 쪽 번호로 쓰지 않는다. 사람용 위치 표기에는 원문 고유번호와 표 위치를 쓴다.
+  - 처음 제안한 `python-hwpx`(HWPX만)와 `hwp-hwpx-parser`·`hwpkit`(HWP 5.0 표 비교)는 이번 채택 대상이 아니다. 이유는 「HWP·HWPX 채택」.
+- 스캔 PDF OCR 포함 여부는 별도 범위 검토로 정한다.
+- 채택 전 대표 문서 2~3건으로 1시간 실측한다. HWP·HWPX는 채택 전에 실측했다(아래 「HWP 실측」).
+
+## 검토한 대안
+
+| 대안 | 장점 | 단점 | 기각 이유 |
+|---|---|---|---|
+| PyMuPDF 단독 | 매우 빠름 | 복잡한 표·병합 셀에 약함 | 요구사항 정의서는 표가 많음 |
+| Playwright 인쇄 단독 | 화면과 같은 렌더링 | 이미지 용량 큼, 브라우저 의존 | WeasyPrint 실패 시 대체로 유지 |
+
+## 검토 근거
+
+초기 조사일은 2026-10-23이며 패키지 설명·공개 비교 자료를 기준으로 했다. 이후 확인한 내용은 아래 항목별 실측에 구분해 적는다.
+
+**HWPX·HWP 추출**
+
+| 후보 | 지원 | 라이선스 | 메모 |
+|---|---|---|---|
+| python-hwpx | HWPX | Apache-2.0 | 활발히 유지. HWP 5.0 바이너리 미지원 |
+| hwpkit | HWP·HWPX | MIT | 순수 Python, 텍스트 추출 중심. 신생 |
+| hwp-hwpx-parser | HWP·HWPX | Apache-2.0 (README) | 텍스트·표 추출. 저장소 LICENSE 재확인 필요 |
+| jakal-hwpx | HWP·HWPX | MIT | Python 3.11+, 매우 신생, 표 추출 미확인 |
+| pyhwpxlib | HWPX 생성·편집 | 상업 유료(BSL 혼합) | 추출용이 아니라 제외 |
+| rhwp-python | HWP·HWPX | MIT | 매우 신생: PyPI 0.8.1 `Development Status :: 3 - Alpha`, GitHub 스타 16개(2026-11-01 확인). Rust 엔진 rhwp의 파이썬 바인딩, Java 불필요. 문단 `section_idx`·`para_idx`, 표 칸 `row`·`col`·`row_span`·`col_span`. 쪽 수는 렌더링 계산. 2026-11-08 재조회: GitHub 스타 16·포크 6·마지막 푸시 2026-09-24·릴리스 13개, PyPI 배포 12개(0.8.1 Alpha). 엔진 rhwp는 GitHub 스타 4,081·최신 v0.8.7 |
+
+**PDF 추출**
+
+| 후보 | 장점 | 단점 |
+|---|---|---|
+| Docling | AI 표 구조 인식, OCR 내장(스캔본 대응) | 느리고 모델 다운로드 필요 |
+| pdfplumber | 문자 좌표 기반이라 표가 정확 | 느림, OCR 없음 |
+| PyMuPDF | 매우 빠름 | 복잡한 표·병합 셀에 약함 |
+
+한글 PDF 벤치마크 자료가 없어 대표 PDF로 실측한 뒤 확정한다.
+
+**HWP 실측 (2026-11-01, rhwp-python 0.8.1)**
+
+| 문서 | 확인한 것 | 결과 |
+|---|---|---|
+| 공공 과업지시서 1건(.hwp·.hwpx) | 요구사항 표 위치 | 목록표·상세표 문단 번호가.hwp·.hwpx 모두 347·359로 같음. 쪽 수는.hwp 48 /.hwpx 53 |
+| 요구사항 명세서 1건(8쪽) | 같은 이름 PDF와 쪽별 글자 대조 | 8쪽 모두 같음 |
+| 공공 제안요청서 2건(한글 2018로 만든 PDF) | 쪽별 글자 대조 | 각각 44쪽·16쪽까지 같고, 그 뒤 1쪽씩 밀림 |
+
+- 표 추출 비교: `hwp-hwpx-parser`는 표 내용만 주고 위치(문단·쪽)는 주지 않는다. `hwpkit`은 표 안 문단까지 한 줄로 이어 세어 같은 상세표가 567번이 된다.
+
+**PDF 출력**
+
+| 후보 | 메모 |
+|---|---|
+| WeasyPrint | HTML/CSS → PDF. 한글 폰트 설치 필요. Mermaid는 SVG로 먼저 렌더링 |
+| Playwright(Chromium) 인쇄 | 화면과 같은 렌더링, Mermaid 직접 렌더. 결과 용량이 큼 |
+
+**PDF 출력 실측 (2026-11-08, 개발자)**
+
+아래 수치는 개발자의 실측 보고다. 동일 조건을 재현하는 스크립트·테스트는 후속 PDF 엔진 PR에 포함한다.
+
+환경: Docker의 WeasyPrint 70.0(Python 3.12-slim, Pango, `fonts-noto-cjk`)과 `minlag/mermaid-cli:11.15.0`(안의 mermaid도 11.15.0). ERD 원문은 main의 실제 코드(`normalize_design` → `render_erd`·`render_area_erd`)로 만들었다. 시험 모델은 재고 팩 용어로 만든 설계를 실제 정리 코드에 통과시킨 테이블 20 · 컬럼 86 · FK 25 · 관계 24(N:M 1)이고, 영역은 기준정보 7 · 수불 7 · 재고 이력 6이다. 2026-11-05에 샘플 모델로 한 사전 실측(한글 폰트, 긴 표, 초안 표시 통과, 댓글)을 실제 코드 출력으로 다시 확인했다.
+
+재실측 (2026-11-09, 검토): PDF 엔진 시험 모델(`tests/unit/test_pdf_engine.py`, 테이블 8 · 관계 6 · 영역 3)의 원문 4개를 `minlag/mermaid-cli:11.15.0`(mermaid 11.15.0)과 `minlag/mermaid-cli:11.16.1`(mermaid 11.17.2)에서 같은 설정(`MERMAID_CONFIG`)으로 그려 비교했다. 4개 모두 오류 없이 viewBox 크기·엔티티·관계 라벨·한글 표기가 같았고, 자기참조 관계 고리만 길게 늘어진 고리에서 엔티티 아래 작은 고리로 바뀌었다. 속성 이름 글자 규칙과 단독 키워드도 같다(11.17.2는 `.`·`,`를 더 받지만 생성 코드는 쓰지 않는다). PDF 배율은 SVG viewBox로 정하므로 viewBox가 같으면 아래 글자 크기도 같다. 위 20테이블 모델과 PDF 전체는 다시 만들지 않았다.
+
+**실행 이미지 재실측 (2026-11-09, 개발자):** 배포용 실행 이미지(WeasyPrint 70.0·Noto Sans CJK·mermaid-cli 11.16.0 안의 mermaid 11.17.2)에서 지금 코드(키 속성만 + `direction LR` 상세도, 팩 `erd_areas.yaml` 영역)로 20테이블 PDF를 다시 만들었다. 11/8 모델 파일이 남아 있지 않아 **같은 규모로 다시 만든 모델**이다: 재고 팩 용어 · 테이블 20 · 컬럼 88 · FK 25 · 관계 24(N:M 1, 자기참조 1). 재현은 `tests/unit/erd_scale_model.py`·`test_pdf_scale.py`(이미지 `check` 단계에서 실행, `SPECTON_SCALE_REPORT`로 표 출력).
+
+| 그림 | 상자 | SVG(px) | 인쇄 글자 | 11/8 (참고, 다른 모델) |
+|---|---|---|---|---|
+| 전체 관계 개요 | 20 | 2741×868 | 4.5pt | 7.0pt |
+| 영역 상세 · 수불 (7개) | 10 | 1935×1138 | 6.4pt | 6.5pt (키만 + LR) |
+| 영역 상세 · 재고 이력 (6개) | 8 | 1174×879 | 8.9pt | 7.4pt (키만 + LR) |
+| 영역 상세 · 기준정보 (6개) | 16 | 1394×2609 | 3.0pt (6pt 경고) | 3.4pt (A안) |
+| 영역 상세 · 기타 (1개, 「단위」) | 2 | 634×102 | 12.0pt | — |
+
+- PDF 9쪽(가로 5 · 세로 4), 404KB. Mermaid 5개 5.5초, HTML→PDF 1.2초. 오류·외부 리소스 요청 없음.
+- 개요 글자는 모델 모양에 달려 있다. 이 모델은 품목(자식 8)·창고(자식 6)에 자식이 몰려 개요가 가로로 넓다(4.5pt). 배치 방향을 바꿔도 좋아지지 않았다(`LR` 3.3pt). 이 실측 뒤 개요에도 6pt 경고를 더했다(개요는 나누지 않음, 개발자 결정). 이 모델은 개요·기준정보 상세도 두 곳에서 경고가 난다. 개요에서 관계 이름을 뺀 뒤 같은 모델의 개요는 2459×756px · 5.0pt가 됐고(이름이 있을 때 2741×868px · 4.5pt, REL-04·REL-05 겹침), 상세도 4장은 그대로이며 이름 겹침이 없다. 이름을 되살려 ELK로 그린 뒤에는 1571×988px · 7.9pt로 6pt 경고가 없어졌다(아래 재실측).
+- 상세도 6pt 경고는 기대대로 기준정보 한 곳에서만 났다(다른 영역 참조 상자가 많아 상자 16개).
+- 「단위」는 팩 영역 낱말에 없어 「기타」로 갔다. 낱말 보완 후보다(`erd_areas.yaml`).
+
+**개요 ELK 재실측 (2026-11-10, 개발자, 후속):** 같은 실행 이미지 구성(mermaid 11.17.2, `MERMAID_CONFIG`)에서 테이블 5 · 관계 6 개요 변형 70개를 그려 관계 이름 상자를 비교했다. 기본 배치는 5개에서 두 이름이 겹쳤고, 모두 긴 관계선 두 개가 가운데에서 교차하는 자리였다. ELK는 70개 모두 겹침이 없었다. 위 20테이블 모델:
+
+| 그림 | 기본 배치 | ELK |
+|---|---|---|
+| 전체 관계 개요 (이름 있음) | 2741×868 · 4.5pt (6pt 경고) · 이름 겹침 1 | 1571×988 · 7.9pt · 겹침 0 |
+| 영역 상세 · 수불 | 1935×1138 · 6.4pt | 2275×714 · 5.4pt (6pt 경고) |
+| 영역 상세 · 재고 이력 | 1174×879 · 8.9pt | 1174×566 · 10.5pt |
+| 영역 상세 · 기준정보 | 1394×2609 · 3.0pt (6pt 경고) | 1594×1428 · 5.5pt (6pt 경고) |
+
+- 상세도까지 ELK로 바꾸면 수불 상세도가 6pt 아래로 내려가 경고가 새로 나므로 개요만 ELK로 그린다. 이 모델의 경고는 기준정보 상세도 한 곳이 된다.
+- ELK는 선을 직각으로 꺾어 그리고, 같은 자식으로 가는 선 몇 개가 한 통로를 함께 지날 수 있다. 어느 선인지는 끝 기호와 이름으로 구분된다.
+- 그림 한 장 시간은 0.5초 → 0.8초 안팎(컨테이너 안 mmdc 호출, 실행 시작 포함)이다.
+- 재현: `test_real_mermaid_cli_keeps_crossing_relationship_names_apart_with_elk`(교차 개요, ELK 이름 겹침 0)와 `test_pdf_scale.py`(개요 이름 25개·겹침 0·6pt 이상, 경고는 기준정보만). 둘 다 mmdc가 있는 실행 이미지에서 돈다.
+
+| 항목 | 결과 |
+|---|---|
+| 한글 | Noto Sans CJK KR 일반·굵게 서브셋 내장, 글자 추출 정상 |
+| ERD SVG | 15개 모두 오류 없음. 다른 영역 상자 `창고 (→ 기준정보)` 정상 |
+| 긴 표 | 258행 테이블 정의서가 8쪽으로 넘어가며 모든 쪽에 머리글 반복 |
+| 쪽 방향 | 세로(표지·긴 표)와 가로(ERD·CRUD 표)가 한 PDF 안에서 섞임 |
+| 초안 표시 | 초안 PDF는 21쪽 모두 머리 표식과 배경 「초안」, 승인본 PDF에는 없음 |
+| 시간·크기 | 21쪽: HTML 배치 2.4초 + PDF 쓰기 1.7초, 약 470KB. Mermaid SVG는 그림당 약 1.5초(컨테이너 시작 포함) |
+
+ERD 글자 크기 (297×210mm 가로 용지, 여백 12mm, 제목 자리 14mm, 원래 크기보다 키우지 않음, Mermaid 기본 글자 16px 기준. B안은 위아래·좌우 배치 중 큰 값):
+
+| 그림 | 상자 수 | 지금 표기(A안, 전체 속성) | B안(한글만) | 키 속성만 + `direction LR` |
+|---|---|---|---|---|
+| 전체 관계 개요(속성 없음) | 20 | 7.0pt | — | — |
+| 나누지 않은 전체 상세 | 20 | 3.1pt | — | 3.9pt |
+| 영역 상세 · 기준정보 | 15 (자기 7 + 다른 영역 8) | 3.4pt | 3.7pt | 3.6pt |
+| 영역 상세 · 수불 | 13 (7 + 6) | 5.0pt | 5.2pt | 6.8pt |
+| 영역 상세 · 재고 이력 | 10 (6 + 4) | 5.7pt | 6.2pt | 7.4pt |
+
+- B안(물리명 빼기)은 폭만 줄고 높이(속성 줄 수)는 그대로라 효과가 작다(+0.2~0.5pt).
+- 키 속성만 그리면 높이가 줄어 상자 13개 이하 영역은 6pt를 넘는다. 나머지 속성은 같은 PDF의 테이블 정의서에 있다.
+- 다른 영역과 많이 이어진 영역(상자 15개)은 어떤 표기로도 3~4pt라 영역을 더 나눠야 한다.
+- 개요(속성 없음)는 테이블 12개 9.3pt · 20개 5.6pt · 30개 4.0pt · 45개 2.7pt · 60개 2.1pt (크기 시험 모델).
+
+넓은 표 (297×210mm 가로 용지, 7.5pt, 기능 15행): 열 21개(기능 ID 1 + 엔티티 20)는 한 쪽에 들어가고, 열 41개는 넘치지는 않지만 머리글이 한 글자씩 꺾여 읽기 어렵다. 엔티티 열을 20개씩 나누고 기능 ID를 반복하면 2쪽으로 읽을 수 있다.
+
+출처:
+- HWP: [python-hwpx](https://github.com/airmang/python-hwpx) · [hwpkit](https://github.com/psychofict/hwpkit) · [hwp-hwpx-parser](https://libraries.io/pypi/hwp-hwpx-parser) · [jakal-hwpx](https://pypi.org/project/jakal-hwpx/1.0/) · [pyhwpxlib](https://pypi.org/project/pyhwpxlib/0.18.0/) · [rhwp-python](https://github.com/DanMeon/rhwp-python) · [rhwp](https://github.com/edwardkim/rhwp)
+- PDF: [PyTorch KR 레이아웃 벤치마크](https://discuss.pytorch.kr/t/llm-1-gpu-pdf-10/9808) · [docling vs pdfplumber](https://www.file2markdown.ai/blog/docling-vs-pdfplumber) · [pdfplumber vs pymupdf](https://www.file2markdown.ai/blog/pdfplumber-vs-pymupdf) · [Docling 지원 형식](https://docling-project.github.io/docling/usage/supported_formats/) · [WeasyPrint](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html)
+
+## HWP·HWPX 채택 (2026-11-08)
+
+- 결정: HWP 5.0·HWPX의 읽기·위치 추출 엔진으로 `rhwp-python==0.8.1`을 쓴다. 의존성은 `pyproject.toml`, 파서는 `specton/ingest/hangul_engine.py`에 연결한다.
+- 근거:
+  - 한 엔진으로.hwp와.hwpx를 모두 읽고, 원문 위치(구역·문단·표·칸 행·열·병합 범위)를 준다. 위치 추출까지 실측한 후보는 rhwp-python뿐이다. `hwp-hwpx-parser`는 위치를 주지 않았고, `hwpkit`은 표 안 문단까지 이어 세어 문단 번호가 달라졌다(위 「HWP 실측」). `python-hwpx`는 HWP 5.0을 읽지 못하고 위치 제공은 실측하지 않았다.
+  - 요구사항 상세표 양식의 공공 RFP 3건에서 요구사항 건수가 원문과 같았고(141·41·64건), 글자는 원문 XML(1건, 전수)과 다른 엔진(pyhwp)으로 변환한 사본(2건, 포함 대조라 줄 순서·중복은 보증하지 않음)으로 대조해 일치했다. 고유.hwp 152개 중 151개가 열렸고(못 연 1개는 PDF를 이름만.hwp로 바꾼 파일), 열린 151개는 HWPX로 내보낸 뒤 읽은 표와 같았다.
+- 위험과 대응: PyPI `Development Status :: 3 - Alpha`인 신생 바인딩이다(성숙도는 위 「HWPX·HWP 추출」 표). 버전을 0.8.1로 고정하고, 엔진 호출은 `specton/ingest/hangul_engine.py` 한 곳에만 두며, 엔진을 불러올 수 있는 환경에서는 엔진 블록 클래스 이름·필드가 바뀌면 CI 시험이 실패하게 했다.
+  - 리눅스 휠 문제: 0.8.1의 리눅스 휠은 묶어 둔 libfreetype에 `FT_Palette_Data_Get`가 없어 `import rhwp`가 실패한다(상류 DanMeon/rhwp-python, 미해결). 시스템 libfreetype을 `LD_PRELOAD`로 먼저 불러오면 import가 된다(Ubuntu 24.04 x86_64 컨테이너에서 확인). 엔진은 처음 읽을 때 불러와 실패해도 앱은 뜨고 한글 파일만 안내로 멈춘다. CI는 한글 시험을 시스템 libfreetype 선로드와 `SPECTON_REQUIRE_ENGINE=1`로 한 번 더 돌려 엔진 시험을 건너뛰지 않는다(`.github/workflows/ci.yml`). 실행 이미지(`Dockerfile`)도 시스템 libfreetype을 선로드하고, `--target check` 단계에서 `import rhwp`를 확인한다. arm64에서는 빠진 함수가 `FT_Palette_Select`로 다르지만 같은 선로드로 import된다.
+  - 0.5.1 이하 고정은 채택하지 않았다: import는 되지만 실제 hwpx에서 `<`·`>`·`&` 글자를 조용히 잃는다(실제 hwpx 3종 중 2종에서 확인).
+- 구현 범위 밖: 서술형(표가 아닌 문단) 요구사항과 완전 서술형 비정형 문서, 상세표가 아닌 양식, 수정된 요구사항(취소선 등 변경 표시)은 읽지 않는다. 상세표와 서술형이 섞인 파일의 서술형 부분은 안내 없이 빠질 수 있다. 상세표가 하나도 없는 파일은 안내로 멈춘다. 암호 걸린.hwpx는 읽지 못한 파일로 처리되어 일반 안내로 끝난다(암호 전용 안내는 업로드 단 팝업으로 따로 정했다).
+- 시험함: 암호 걸린.hwp 1개는 엔진이 거절해 파일 단위 안내로 멈춘다(2026-11-09). 업로드는 `.hwpx`·`.hwp` 모두 받고, `.hwp`는 OLE 복합 문서 서명이 없으면 415다.
+- 아직 시험하지 않음: 배포용(편집 불가) 문서, 구역이 2개 이상인 요구사항 RFP. HWP 5.0 이전 버전은 사용 현황을 조사한 뒤 지원 범위를 정한다(조사 전).
+- PDF 추출·스캔 OCR은 위 결정대로 제안 상태이고 PDF 입력은 이번 인수 범위 밖(후속)이다(ADR-0002). PDF 출력은 위 「PDF 출력」 결정대로 승인 상태다.
+
+## 결과
+
+- 좋아지는 점: 표가 많은 문서에 강하고 한글 PDF 출력 경로가 단순하다.
+- 감수할 점: Docling 모델 다운로드·한글 폰트를 컨테이너 이미지에 포함해야 한다.
+- 감수할 점 (PDF 출력): `mermaid-cli`는 Chromium을 포함해 이미지가 크다(실측 이미지 2.28GB, WeasyPrint 쪽 542MB). 배포 이미지(ADR-0013) 크기에 반영한다. WeasyPrint는 Windows에서 GTK가 따로 필요해, PDF 시험은 Docker·CI(리눅스)에서 돌리고 Windows 로컬에서는 건너뛴다.
+- 감수할 점 (Mermaid 11.17.2): 11.15.0의 mermaid 경보 5건(CSS 주입, 설정 API 프로토타입 오염, architecture 프로토타입 오염, XY 차트 무한 루프, radar DoS)은 11.16.1에서 고쳐졌다. katex 낮음 1건(GHSA-238p, 0.18.2에서 수정)은 mermaid 11.x가 katex `^0.16`을 요구해 남고 mermaid 12.x로만 해소된다. 이 경보는 이미 있는 프로토타입 오염을 전제로 한다. 설계 결정대로 웹·PDF 같은 버전 고정을 유지하되, `securityLevel: 'strict'`와 「서버가 만든 원문」만으로는 막히지 않는다( 개발자 실험: 별칭 따옴표 안의 `init` 지시문 `themeCSS`가 strict에서도 인식됨). 그래서 위 「Mermaid 설정 보안」을 웹과 PDF 모두에 적용한다. 올릴 때는 웹과 mermaid-cli를 함께 올리고 한글 ERD를 다시 실측한다.
+- 관련 문서: [10 문서 입출력](../10-io-and-packs.md), [11 배포](../11-deployment-security.md)

@@ -1,0 +1,28 @@
+# few-shot 예시 (maintenance · A04 relationship_design). 사람이 작성하는 입력 파일이다.
+# - 입력은 개발용 세트(비공개, 저장소에 올리지 않음)에서만 가져오고 source_id에 원문 ID를 적는다. 평가용 세트 문서는 넣지 않는다.
+# - output은 해당 노드의 LLM 출력 모델과 같은 모양이어야 한다. load_examples가 그 모델로 검증한다 (docs/04 "노드 작성 규칙").
+agent: A04
+role: relationship_design
+status: draft
+examples:
+- source_id: MNT-002
+  input:
+    entities:
+    - name: 설비
+      description: 정비 대상 설비
+      attributes:
+      - {name: 설비코드, data_type: varchar, is_key: true, nullable: false}
+      - {name: 설비명, data_type: varchar, is_key: false, nullable: false}
+    requirements:
+    - id: REQ-01
+      text: 한 설비는 상위 설비를 최대 하나 가질 수 있고 하위 설비는 여러 개 가질 수 있다.
+      type: FR
+  output:
+    relationships:
+    - parent_name: 설비
+      child_name: 설비
+      cardinality: 1:N
+      optional: true
+      identifying: false
+      rationale: '"한 설비는 상위 설비를 최대 하나 가질 수 있고 하위 설비는 여러 개 가질 수 있다." 상위 설비가 없는 설비도 있다.'
+      req_ids: [REQ-01]
