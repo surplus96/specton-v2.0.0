@@ -3,7 +3,7 @@
   "info": {
     "title": "Specton 실행 제어 API",
     "version": "0.1.0",
-    "description": "동결된 계약 (2026-10-26, #48, ADR-0009). 서버 구현은 진행 중이며 변경은 contract-change로 한다. 설명은 docs/06-api.md."
+    "description": "실행 제어 API 계약 (ADR-0009). 계약 변경은 영향 분석과 호환성 검증을 기록한다. 설명은 docs/06-api.md."
   },
   "security": [
     {
@@ -679,7 +679,7 @@
               "string",
               "null"
             ],
-            "description": "「자세히 보기」에 펼칠 문장. 없으면 null (#19)."
+            "description": "「자세히 보기」에 펼칠 문장. 없으면 null."
           },
           "run_id": {
             "type": [
@@ -789,7 +789,7 @@
       "ExtractionResponse": {
         "type": "object",
         "additionalProperties": false,
-        "description": "추출 확인 응답. 문장을 고치지 않고 확인 또는 제외만 한다 (ADR-0015, #95). confirmed=false는 중단이며 excluded_blocks를 비워야 한다.",
+        "description": "추출 확인 응답. 문장을 고치지 않고 확인 또는 제외만 한다 (ADR-0015). confirmed=false는 중단이며 excluded_blocks를 비워야 한다.",
         "properties": {
           "kind": {
             "type": "string",

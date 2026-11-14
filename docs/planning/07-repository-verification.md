@@ -4,6 +4,8 @@
 
 2026-11-14에 원본 커밋 `07efbf193eeea1b62e7c70a25b14758b00b00ef3`의 추적 파일 523개를 `specton-personal`로 복사하고 독립 Git 저장소를 초기화했다. 이전 Git 이력·브랜치·태그·원격 설정, 로컬 비밀값·고객 원문·실행 DB는 가져오지 않았다. 원본 추적 파일 전체의 SHA-256을 대조했으며 원본 변경은 0개다.
 
+새 원격 저장소는 [surplus96/specton-personal](https://github.com/surplus96/specton-personal)이며 비공개 설정을 확인했다. 로컬과 원격 main 커밋 일치도 확인했다.
+
 원본 파일 목록과 해시는 [소스 목록](source-inventory.json)에 있다. 이 값은 분리 출발점을 나타내며 새 저장소의 파일 해시와 혼동하지 않는다. 원본에 대한 단독 저작을 새로 주장하지 않는다.
 
 ## 정리한 범위
@@ -12,6 +14,7 @@
 
 - README 두 언어, CONTRIBUTING, CLAUDE, 개발문서·ADR·도메인 팩 설명을 정리했다.
 - CODEOWNERS와 외부 보드·알림 스크립트/워크플로 5개를 제거하고 기존 CI는 유지했다.
+- OpenAPI 설명의 이전 작업 참조를 제거하고 프런트 타입을 다시 생성했다. API 필드·타입은 유지했다.
 - 서비스 소개 화면을 프로젝트 안내로 바꾸고 사용하지 않는 소개 스타일을 제거했다.
 - 배포 Compose 프로젝트 이름을 `specton-personal-deploy`로 구분했다. 원본 배포 볼륨과 이름이 같지 않게 하며 이번 작업에서 컨테이너·운영 데이터는 변경하지 않았다.
 - 저장소 내부의 새 개발 기획서를 허용하도록 기존 문서 검사에서 일반 명사만으로 차단하던 규칙을 좁혔다. 외부 문서 의존 검사와 관련 예제는 유지했다.
@@ -30,6 +33,7 @@
 |---|---|
 | Python 기본 pytest | 2,143 passed, 17 skipped, 360 deselected, 약 177초 |
 | 변경된 문서 검사 | 19 passed |
+| OpenAPI 설명 정리 후 계약·문서 검사 | 47 passed |
 | Ruff check | 통과 |
 | Ruff format check | 통과 |
 | mypy | 120개 소스 검사 통과 |

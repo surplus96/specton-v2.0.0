@@ -168,7 +168,7 @@ export interface components {
             /** @description ErrorCode 스키마의 값을 쓴다. */
             code: string;
             message: string;
-            /** @description 「자세히 보기」에 펼칠 문장. 없으면 null (#19). */
+            /** @description 「자세히 보기」에 펼칠 문장. 없으면 null. */
             detail?: string | null;
             run_id?: string | null;
             retryable: boolean;
@@ -189,7 +189,7 @@ export interface components {
             interrupt?: components["schemas"]["Interrupt"] | null;
             error?: components["schemas"]["Error"] | null;
         };
-        /** @description 추출 확인 응답. 문장을 고치지 않고 확인 또는 제외만 한다 (ADR-0015, #95). confirmed=false는 중단이며 excluded_blocks를 비워야 한다. */
+        /** @description 추출 확인 응답. 문장을 고치지 않고 확인 또는 제외만 한다 (ADR-0015). confirmed=false는 중단이며 excluded_blocks를 비워야 한다. */
         ExtractionResponse: {
             /** @constant */
             kind: "extraction";

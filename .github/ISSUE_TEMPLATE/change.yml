@@ -14,7 +14,7 @@ body:
     attributes:
       label: 근거
       description: 저장소 안에서 확인 가능한 근거 (요구사항·리뷰·평가 결과·이슈)
-      placeholder: REQ-06, PR #48 리뷰, 평가 결과 #20
+      placeholder: REQ-06, docs/04-agents.md, 저장된 평가 결과
     validations:
       required: true
   - type: textarea
