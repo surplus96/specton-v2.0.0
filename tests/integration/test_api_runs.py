@@ -160,7 +160,9 @@ def test_schema_widens_the_document_format_check_of_an_older_database(
 
     with pool.connection() as conn:
         conn.execute(
-            "DROP TABLE implementation_adoption,"
+            "DROP TABLE feedback_revision,"
+            "feedback_event,feedback_job,feedback_change,feedback_message,"
+            "gmail_connection,gmail_oauth,implementation_adoption,"
             "implementation_preview,implementation_verification,implementation_source,"
             "spec_approval,spec_object,"
             "spec_revision,spec_document,"

@@ -75,7 +75,7 @@ jobs:
       - run: uv run python -m specton.persistence.migrate upgrade
       - run: uv run python -m specton.persistence.migrate check
       - name: Database and API regression
-        run: uv run pytest --require-db -m 'db and not native_pdf and not llm' --junitxml=var/test-results/database.xml
+        run: uv run pytest --require-db -m 'db and not native_pdf and not llm and not docker_browser' --junitxml=var/test-results/database.xml
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -132,6 +132,7 @@ jobs:
           uv run pytest --require-db -m db tests/integration/test_previews.py::test_preview_runtime_proxy_and_expiry
           npm --prefix frontend ci --no-audit --no-fund
           npm --prefix frontend run build
+          uv run pytest --require-db -m docker_browser tests/integration/test_feedback_browser.py
           docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
             --tmpfs /tmp:rw,size=256m --shm-size=256m --cpus=1 --memory=1g --pids-limit=256 \
             -v "$PWD/frontend/dist:/app:ro" \

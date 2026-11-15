@@ -30,7 +30,10 @@ def test_legacy_baseline_keeps_rows_and_library_tables(pool: Pool) -> None:
         before = conn.execute("SELECT * FROM run").fetchall()
         library = conn.execute("SELECT * FROM checkpoint_migrations ORDER BY v").fetchall()
         conn.execute(
-            "DROP TABLE implementation_adoption,implementation_preview,implementation_verification,"
+            "DROP TABLE feedback_revision,"
+            "feedback_event,feedback_job,feedback_change,feedback_message,"
+            "gmail_connection,gmail_oauth,implementation_adoption,"
+            "implementation_preview,implementation_verification,"
             "implementation_source,"
             "spec_approval,spec_object,"
             "spec_revision,spec_document,"
@@ -71,7 +74,9 @@ def test_unknown_schema_changes_fail_without_stamp_or_data_loss(
         before = conn.execute("SELECT * FROM run").fetchall()
         if not versioned:
             conn.execute(
-                "DROP TABLE implementation_adoption,"
+                "DROP TABLE feedback_revision,"
+                "feedback_event,feedback_job,feedback_change,feedback_message,"
+                "gmail_connection,gmail_oauth,implementation_adoption,"
                 "implementation_preview,implementation_verification,"
                 "implementation_source,"
                 "spec_approval,spec_object,"
@@ -107,7 +112,10 @@ def test_concurrent_upgrade_is_idempotent(pool: Pool) -> None:
     schema = _schema(pool)
     with pool.connection() as conn:
         conn.execute(
-            "DROP TABLE implementation_adoption,implementation_preview,implementation_verification,"
+            "DROP TABLE feedback_revision,"
+            "feedback_event,feedback_job,feedback_change,feedback_message,"
+            "gmail_connection,gmail_oauth,implementation_adoption,"
+            "implementation_preview,implementation_verification,"
             "implementation_source,"
             "spec_approval,spec_object,"
             "spec_revision,spec_document,"

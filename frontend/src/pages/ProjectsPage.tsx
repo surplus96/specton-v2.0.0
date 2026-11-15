@@ -46,6 +46,7 @@ export default function ProjectsPage() {
   }
   return <section style={{ padding: '2rem', maxWidth: 960 }}>
     <h1>내 프로젝트</h1>
+    <p><Link to="/feedback">Gmail 연결·고객 변경 요청</Link></p>
     <p>Google 계정으로 프로젝트와 승인한 설계를 이어서 관리합니다.</p>
     {error && <p role="alert">{error}</p>}
     {!email ? <a href="/api/v1/auth/google">Google 계정으로 로그인</a> : <>

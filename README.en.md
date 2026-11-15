@@ -99,7 +99,7 @@ tests/          unit · integration · e2e
 
 Follow the [development guide](CONTRIBUTING.md). Keep change rationale and verification results in the repository. Never commit customer documents, secrets, or runtime artifacts.
 
-See the [project analysis](docs/planning/00-project-analysis.md) and [extension plan](docs/planning/README.md) for the planned SDD and Gmail feedback workflows. Google sessions, project ownership, approved executable specifications, generated inventory applications, isolated verification workers, browser previews, and [candidate comparison and adoption](docs/planning/15-candidate-adoption-implementation.md) are implemented. Gmail API feedback remains planned.
+See the [project analysis](docs/planning/00-project-analysis.md) and [extension plan](docs/planning/README.md) for the planned SDD and Gmail feedback workflows. Google sessions, project ownership, approved executable specifications, generated inventory applications, isolated verification workers, browser previews, and [candidate comparison and adoption](docs/planning/15-candidate-adoption-implementation.md) are implemented. [Read-only Gmail feedback and reviewed screen/permission changes](docs/planning/16-gmail-feedback-implementation.md) are connected to generation, verification and adoption. General business/schema changes remain planned.
 
 ## License
 

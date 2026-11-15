@@ -298,6 +298,15 @@ def adopt(
             fail(409, "비교 이후 후보·검증·기준이 바뀌었습니다. 다시 비교하세요.")
         if not review["eligible"] or review["verification"]["id"] != str(payload.verification_id):
             fail(422, "채택 조건을 충족하지 않습니다. 최신 검증과 명세를 확인하세요.")
+        feedback = conn.execute(
+            "SELECT * FROM feedback_change WHERE implementation_id=%s FOR UPDATE",
+            (payload.implementation_id,),
+        ).fetchone()
+        if feedback and (
+            feedback["state"] != "validating"
+            or str(feedback["base_adoption_id"]) != (current["id"] if current else None)
+        ):
+            fail(409, "변경 요청의 채택 기준이 바뀌었습니다. 최신 기준에서 다시 검토하세요.")
         now = datetime.now(UTC)
         aid = uuid4()
         sequence = current["sequence"] + 1 if current else 1
@@ -344,4 +353,14 @@ def adopt(
             ),
         ).fetchone()
         assert row is not None
+        if feedback:
+            conn.execute(
+                "UPDATE feedback_change SET state='applied',version=version+1 WHERE id=%s",
+                (feedback["id"],),
+            )
+            conn.execute(
+                "INSERT INTO feedback_event(id,change_id,actor_id,action,target_hash,note) "
+                "VALUES(%s,%s,%s,'adopted',%s,'검증 후보를 새 구현 기준으로 채택')",
+                (uuid4(), feedback["id"], user["id"], row["record_hash"]),
+            )
         return event(row)

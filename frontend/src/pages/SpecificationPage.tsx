@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 import PreviewFrame from './PreviewFrame'
 import { specificationRequest, type Bundle, type Specification } from '../api/specifications'
 
@@ -10,6 +10,8 @@ const serialize = (bundle: Bundle) => JSON.stringify(bundle, null, 2)
 
 export default function SpecificationPage() {
   const { specId } = useParams()
+  const [params] = useSearchParams()
+  const linkedImplementation = params.get("implementation")
   const [spec, setSpec] = useState<Specification | null>(null)
   const [editor, setEditor] = useState('')
   const [busy, setBusy] = useState(false)
@@ -43,6 +45,14 @@ export default function SpecificationPage() {
     }).catch(e => { if (active) setError(e.message) })
     return () => { active = false }
   }, [specId])
+  useEffect(() => {
+    if (!linkedImplementation || !spec) return
+    let active = true
+    specificationRequest<{ id: string; source_hash: string; spec_version: number }>(`/implementations/${linkedImplementation}`)
+      .then(value => { if (active && value.spec_version === spec.bundle.spec_version) setImplementation(value) })
+      .catch(e => { if (active) setError(e instanceof Error ? e.message : '후보 조회 실패') })
+    return () => { active = false }
+  }, [linkedImplementation, spec])
   async function perform(action: () => Promise<void>) {
     setBusy(true); setError(''); setNotice('')
     try { await action() } catch (e) { setError(e instanceof Error ? e.message : '처리 실패') }

@@ -177,7 +177,11 @@ def test_adoption_migration_preserves_evidence(verified, pool):
 
     client, url, comparison, _ = review(verified)
     with pool.connection() as conn:
-        conn.execute("DROP TABLE implementation_adoption")
+        conn.execute(
+            "DROP TABLE feedback_revision,"
+            "feedback_event,feedback_job,feedback_change,feedback_message,"
+            "gmail_connection,gmail_oauth,implementation_adoption"
+        )
         conn.execute("UPDATE alembic_version SET version_num='0006_preview'")
     apply_schema(pool)
     assert review(verified)[2] == comparison

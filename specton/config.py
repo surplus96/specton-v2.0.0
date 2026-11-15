@@ -23,6 +23,10 @@ class Settings(BaseSettings):
 
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
+    gmail_token_key: SecretStr | None = None
+    gmail_poll_seconds: int = Field(default=300, ge=60, le=86400)
+    feedback_analysis_enabled: bool = False
+    feedback_daily_analysis_limit: int = Field(default=10, ge=1, le=100)
     preview_worker_host: str = ""  # Docker daemon ID; API and worker must share loopback.
     public_origin: str = "http://localhost:5173"
     login_days: int = Field(default=30, ge=1, le=90)

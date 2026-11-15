@@ -280,7 +280,10 @@ def test_upgrade_keeps_approved_source(source, pool):
     with pool.connection() as conn:
         before = conn.execute("SELECT * FROM implementation_source").fetchall()
         conn.execute(
-            "DROP TABLE implementation_adoption,implementation_preview,implementation_verification"
+            "DROP TABLE feedback_revision,"
+            "feedback_event,feedback_job,feedback_change,feedback_message,"
+            "gmail_connection,gmail_oauth,implementation_adoption,"
+            "implementation_preview,implementation_verification"
         )
         conn.execute("UPDATE alembic_version SET version_num='0004_implementation'")
     apply_schema(pool)

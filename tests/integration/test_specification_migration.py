@@ -22,7 +22,9 @@ def test_identity_upgrade_keeps_account_and_project(pool):
             "INSERT INTO project(id,owner_id,name) VALUES(%s,%s,'preserved')", (project, user)
         )
         conn.execute(
-            "DROP TABLE implementation_adoption,"
+            "DROP TABLE feedback_revision,"
+            "feedback_event,feedback_job,feedback_change,feedback_message,"
+            "gmail_connection,gmail_oauth,implementation_adoption,"
             "implementation_preview,implementation_verification,implementation_source,"
             "spec_approval,spec_object,spec_revision,spec_document"
         )

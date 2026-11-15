@@ -108,7 +108,7 @@ tests/          unit · integration · e2e
 
 ## 프로젝트 분석과 확장 계획
 
-[프로젝트 분석](docs/planning/00-project-analysis.md)과 [개발 계획](docs/planning/README.md)에서 현재 구현, 품질 개선, SDD 구현, Gmail 피드백 반영 범위를 확인할 수 있다. 기반·로그인·프로젝트·명세 검토와 [기준정보 소스 생성·격리 검증](docs/planning/11-generated-application-implementation.md)을 구현했다. [승인 재고 정책 기반 입출고·취소·원장](docs/planning/12-inventory-ledger-implementation.md)도 구현했다. [자동 검증 작업자·플랫폼 결과 등록](docs/planning/13-verification-worker-implementation.md)을 연결했다. [고정 브라우저 인수·격리 미리보기](docs/planning/14-browser-preview-implementation.md)도 구현했다. [검증 후보 비교·구현 기준 채택](docs/planning/15-candidate-adoption-implementation.md)을 연결했다. Gmail 피드백은 후속 범위다.
+[프로젝트 분석](docs/planning/00-project-analysis.md)과 [개발 계획](docs/planning/README.md)에서 현재 구현, 품질 개선, SDD 구현, Gmail 피드백 반영 범위를 확인할 수 있다. 기반·로그인·프로젝트·명세 검토와 [기준정보 소스 생성·격리 검증](docs/planning/11-generated-application-implementation.md)을 구현했다. [승인 재고 정책 기반 입출고·취소·원장](docs/planning/12-inventory-ledger-implementation.md)도 구현했다. [자동 검증 작업자·플랫폼 결과 등록](docs/planning/13-verification-worker-implementation.md)을 연결했다. [고정 브라우저 인수·격리 미리보기](docs/planning/14-browser-preview-implementation.md)도 구현했다. [검증 후보 비교·구현 기준 채택](docs/planning/15-candidate-adoption-implementation.md)을 연결했다. [Gmail 수집·고객 변경 검토·승인 재구현](docs/planning/16-gmail-feedback-implementation.md)을 연결했다. [브라우저 테스트 안내](docs/planning/17-feedback-browser-guide.md)에 따라 제한된 화면·권한 변경을 시험할 수 있다. 범용 업무·DB 구조 변경은 후속 범위다.
 
 ## 라이선스
 

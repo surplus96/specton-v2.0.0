@@ -59,6 +59,9 @@ def test_schema_can_be_applied_twice(pool: Pool) -> None:
         }
     assert tables == {
         "implementation_adoption",
+        "feedback_revision",
+        "feedback_event", "feedback_job", "feedback_change", "feedback_message",
+        "gmail_connection", "gmail_oauth",
         "implementation_preview", "implementation_verification",
         "implementation_source", "spec_document", "spec_revision", "spec_approval", "spec_object",
         "app_user", "login_session", "oauth_attempt", "project", "project_run", "design_baseline",
@@ -72,7 +75,9 @@ def test_schema_adds_new_run_columns_to_an_existing_table(pool: Pool) -> None:
     with pool.connection() as conn:
         run = create_run(conn, OWNER, "inventory")
         conn.execute(
-            "DROP TABLE implementation_adoption,"
+            "DROP TABLE feedback_revision,"
+            "feedback_event,feedback_job,feedback_change,feedback_message,"
+            "gmail_connection,gmail_oauth,implementation_adoption,"
             "implementation_preview,implementation_verification,implementation_source,"
             "spec_approval,spec_object,"
             "spec_revision,spec_document,"
@@ -91,7 +96,9 @@ def test_schema_updates_source_block_for_the_extraction_check(pool: Pool) -> Non
     """#95 이전 스키마의 source_block에도 원문 없음 허용과 결정 칸이 생긴다."""
     with pool.connection() as conn:
         conn.execute(
-            "DROP TABLE implementation_adoption,"
+            "DROP TABLE feedback_revision,"
+            "feedback_event,feedback_job,feedback_change,feedback_message,"
+            "gmail_connection,gmail_oauth,implementation_adoption,"
             "implementation_preview,implementation_verification,implementation_source,"
             "spec_approval,spec_object,"
             "spec_revision,spec_document,"

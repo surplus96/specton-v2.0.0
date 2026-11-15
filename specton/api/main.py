@@ -15,6 +15,8 @@ from specton.api.access_log import install_oauth_log_filter
 from specton.api.adoptions import router as adoptions_router
 from specton.api.auth import router as auth_router
 from specton.api.errors import install_error_handlers
+from specton.api.feedback import router as feedback_router
+from specton.api.gmail import router as gmail_router
 from specton.api.implementations import router as implementations_router
 from specton.api.previews import router as previews_router
 from specton.api.projects import router as projects_router
@@ -127,6 +129,8 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
     app.include_router(implementations_router)
     app.include_router(previews_router)
     app.include_router(adoptions_router)
+    app.include_router(gmail_router)
+    app.include_router(feedback_router)
 
     @app.get("/health", operation_id="health")
     def health() -> HealthResponse:

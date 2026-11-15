@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "change_id": "61f4fcb1-efa9-4632-908c-67fcce61935f",
+  "external_google": "scripted",
+  "external_llm": "scripted",
+  "platform_api_database": "real",
+  "generated_browser": "real",
+  "checks": [
+    "mail sync",
+    "quoted request",
+    "external consent gate",
+    "agent analysis",
+    "review approval gate",
+    "source generation",
+    "real verification",
+    "isolated preview",
+    "candidate comparison",
+    "adoption linked to change"
+  ],
+  "implementation_id": "809bab0f-6491-4ada-a5ee-d6b8bdb3ee88",
+  "verification": {
+    "id": "7fe26e7a-4381-49f4-b8b7-17d96ca836c1",
+    "status": "smoke_passed",
+    "browser_acceptance": "passed"
+  }
+}

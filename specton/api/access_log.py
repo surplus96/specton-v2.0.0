@@ -8,8 +8,11 @@ class OAuthQueryFilter(logging.Filter):
         args = record.args
         if isinstance(args, tuple) and len(args) == 5:
             path = args[2]
-            if isinstance(path, str) and path.split("?", 1)[0] == "/api/v1/auth/google/callback":
-                record.args = (*args[:2], "/api/v1/auth/google/callback", *args[3:])
+            if isinstance(path, str) and path.split("?", 1)[0] in {
+                "/api/v1/auth/google/callback",
+                "/api/v1/integrations/gmail/callback",
+            }:
+                record.args = (*args[:2], path.split("?", 1)[0], *args[3:])
         return True
 
 

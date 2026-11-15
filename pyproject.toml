@@ -23,6 +23,7 @@ dependencies = [
     "alembic>=1.14,<2",
     "sqlalchemy>=2.0,<3",
     "pyjwt[crypto]>=2.10,<3",
+    "cryptography>=44",
     "httpx>=0.27,<1",
 ]
 # PDF 출력은 ADR-0004 승인(#197)대로 WeasyPrint를 쓴다. 시스템 라이브러리(Pango)·한글 폰트·mermaid-cli는
@@ -62,6 +63,7 @@ packages = ["specton"]
 testpaths = ["tests"]
 addopts = "-m 'not db and not llm'"
 markers = [
+    "docker_browser: explicit Docker Chromium integration suite",
     "db: requires the isolated PostgreSQL sandbox",
     "llm: calls the real LLM API (manual run, run limits from ADR-0007)",
     "native_pdf: requires installed native PDF and browser tools",

@@ -7,6 +7,8 @@ import NotFoundPage from './pages/NotFoundPage.tsx'
 import RunPage from './pages/RunPage.tsx'
 import RunsPage from './pages/RunsPage.tsx'
 import CandidatesPage from './pages/CandidatesPage.tsx'
+import FeedbackPage from './pages/FeedbackPage.tsx'
+import ChangePage from './pages/ChangePage.tsx'
 import ProjectsPage from './pages/ProjectsPage.tsx'
 import SpecificationPage from './pages/SpecificationPage.tsx'
 import StartPage from './pages/StartPage.tsx'
@@ -46,6 +48,8 @@ function App() {
         />
         <Route index element={<Home />} />
         <Route path="projects" element={<ProjectsPage />} />
+        <Route path="feedback" element={<FeedbackPage />} />
+        <Route path="changes/:changeId" element={<ChangePage />} />
         <Route path="projects/:projectId/candidates" element={<CandidatesPage />} />
         <Route path="specifications/:specId" element={<SpecificationPage />} />
         <Route path="history" element={<RunsPage />} />
