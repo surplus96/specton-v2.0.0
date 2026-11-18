@@ -10,6 +10,8 @@ Specton analyzes requirement tables in Excel, CSV, HWP, and HWPX to produce **fu
 
 ## Demo videos
 
+[Watch the demos in your browser](https://surplus96.github.io/specton-demo.html)
+
 Four videos cover requirement analysis, customer application generation, and Gmail change handling. Total running time is approximately **8 min 10 sec**.
 
 | Video | Stage | Duration |
@@ -22,7 +24,7 @@ Four videos cover requirement analysis, customer application generation, and Gma
 [한국어 시연 가이드](docs/ko/demo.md) · [English demo guide](docs/en/demo.md)
 
 <details>
-<summary>Play the walkthrough — part_01 → part_04</summary>
+<summary>Descriptions and playback links — part_01 → part_04</summary>
 
 ### part_01
 
@@ -30,7 +32,7 @@ Four videos cover requirement analysis, customer application generation, and Gma
 
 Upload a requirements document, review the analysis and design, approve the result, and generate the function specification, ERD, DDL, and RTM.
 
-https://github.com/user-attachments/assets/a1f762ea-d0cb-4ba6-859c-3d469e324044
+[Watch part_01](https://surplus96.github.io/specton-demo.html#part_01)
 
 ### part_02
 
@@ -38,7 +40,7 @@ https://github.com/user-attachments/assets/a1f762ea-d0cb-4ba6-859c-3d469e324044
 
 Inspect analysis and design stages, table relationships, and requirement links in AI Workspace.
 
-https://github.com/user-attachments/assets/07aaf18c-73c0-4353-98bc-02764b9bd99e
+[Watch part_02](https://surplus96.github.io/specton-demo.html#part_02)
 
 ### part_03
 
@@ -46,7 +48,7 @@ https://github.com/user-attachments/assets/07aaf18c-73c0-4353-98bc-02764b9bd99e
 
 Review the executable specification against the approved design, generate and verify source, and inspect the resulting customer application screens and behavior.
 
-https://github.com/user-attachments/assets/82a5424c-db7e-4776-9238-20fead78588f
+[Watch part_03](https://surplus96.github.io/specton-demo.html#part_03)
 
 ### part_04
 
@@ -54,7 +56,7 @@ https://github.com/user-attachments/assets/82a5424c-db7e-4776-9238-20fead78588f
 
 Collect customer requests through Gmail, analyze their impact, review and approve changes, then inspect the updated result.
 
-https://github.com/user-attachments/assets/a2f50cdf-c712-4be7-87f6-919c8fbe890a
+[Watch part_04](https://surplus96.github.io/specton-demo.html#part_04)
 
 </details>
 

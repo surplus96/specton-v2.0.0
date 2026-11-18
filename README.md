@@ -10,6 +10,8 @@ Excel·CSV·HWP·HWPX의 요구사항 표를 분석해 **기능 명세서·ERD·
 
 ## 시연 영상
 
+[브라우저에서 시연 영상 보기](https://surplus96.github.io/specton-demo.html)
+
 요구사항 분석부터 고객 앱 생성과 Gmail 변경 반영까지 네 편으로 확인할 수 있습니다. 총 재생 시간은 약 **8분 10초**입니다.
 
 | 영상 | 내용 | 재생 시간 |
@@ -22,7 +24,7 @@ Excel·CSV·HWP·HWPX의 요구사항 표를 분석해 **기능 명세서·ERD·
 [한국어 시연 가이드](docs/ko/demo.md) · [English demo guide](docs/en/demo.md)
 
 <details>
-<summary>영상 펼쳐 보기 — part_01 → part_04</summary>
+<summary>영상 설명과 재생 링크 — part_01 → part_04</summary>
 
 ### part_01
 
@@ -30,7 +32,7 @@ Excel·CSV·HWP·HWPX의 요구사항 표를 분석해 **기능 명세서·ERD·
 
 요구사항 문서를 등록하고 분석·검토·승인을 거쳐 기능 명세서·ERD·DDL·RTM을 생성하는 흐름입니다.
 
-https://github.com/user-attachments/assets/a1f762ea-d0cb-4ba6-859c-3d469e324044
+[part_01 재생](https://surplus96.github.io/specton-demo.html#part_01)
 
 ### part_02
 
@@ -38,7 +40,7 @@ https://github.com/user-attachments/assets/a1f762ea-d0cb-4ba6-859c-3d469e324044
 
 분석·설계 단계별 결과, 테이블 관계와 요구사항의 연결을 AI Workspace에서 확인합니다.
 
-https://github.com/user-attachments/assets/07aaf18c-73c0-4353-98bc-02764b9bd99e
+[part_02 재생](https://surplus96.github.io/specton-demo.html#part_02)
 
 ### part_03
 
@@ -46,7 +48,7 @@ https://github.com/user-attachments/assets/07aaf18c-73c0-4353-98bc-02764b9bd99e
 
 승인 설계를 기준으로 실행 명세를 검토하고 소스를 생성·검증한 뒤, 실제 고객이 사용할 앱의 화면과 동작을 확인합니다.
 
-https://github.com/user-attachments/assets/82a5424c-db7e-4776-9238-20fead78588f
+[part_03 재생](https://surplus96.github.io/specton-demo.html#part_03)
 
 ### part_04
 
@@ -54,7 +56,7 @@ https://github.com/user-attachments/assets/82a5424c-db7e-4776-9238-20fead78588f
 
 Gmail로 받은 수정 요청을 수집하고 영향 분석·검토·승인을 거쳐 변경을 반영한 뒤 결과를 확인합니다.
 
-https://github.com/user-attachments/assets/a2f50cdf-c712-4be7-87f6-919c8fbe890a
+[part_04 재생](https://surplus96.github.io/specton-demo.html#part_04)
 
 </details>
 
