@@ -9,7 +9,7 @@ import { artifactText, saveArtifact } from './files.ts'
 import { downloadErrorText, erdFitScale, isAllowedErdSource, mermaidConfig, svgDataUri, svgSize, zoomSteps } from './rules.ts'
 
 // ERD 보기 (UI-05 「ERD는 확대·이동과 원문 다운로드」).
-// 서버가 만든 .mmd만 그린다. 웹·PDF 모두 Mermaid 11.17.2 (ADR-0004).
+// 서버가 만든 .mmd만 그린다. 웹·PDF 모두 Mermaid 12.3.0 (ADR-0004).
 // 보안: 1) erDiagram이 아니거나 지시문(%%{)이 있으면 그리지 않는다 2) 개발자가 정한 설정만 넘긴다
 //       3) 그린 SVG를 <img>(data URI)로 보여, 그림 안 CSS·스크립트가 화면에 닿지 않게 한다.
 type Props = {

@@ -55,7 +55,7 @@ const CODE_TEXT: Record<string, string> = {
 export const SQL_TEST_TEXT: Record<string, string> = { passed: '통과', failed: '실패', error: '테스트 중 문제', unverified: '검증 미완료' }
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}초`
 
-/** payload의 알려진 칸을 짧은 글로. 원문·비밀값은 payload에 없으므로(docs/06) 그대로 옮겨도 된다 */
+/** payload의 알려진 칸을 짧은 글로. 원문·비밀값은 payload에 없으므로(docs/ko/api.md) 그대로 옮겨도 된다 */
 export function payloadSummary(payload: Record<string, unknown> | undefined): string | null {
   if (!payload) return null
   const parts: string[] = []

@@ -31,7 +31,7 @@ import {
   type Decisions,
 } from './rules.ts'
 
-// UI-02 추출 확인 (docs/09, ADR-0015).
+// UI-02 추출 확인 (docs/ko/frontend.md, ADR-0015).
 // 원문은 고치지 않고 확인 또는 제외만 한다. 확인할 블록(실패·확인 필요)을 먼저 보인다.
 // - 확인 필요(review): 확인 또는 제외. 제외하면 사유 필수
 // - 실패(fail): 제외만 가능. 남아 있으면 보낼 수 없다

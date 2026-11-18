@@ -1,4 +1,4 @@
-// 산출물 파일 받기·저장. 파일 이름은 서버가 Content-Disposition으로 정한다 (docs/06).
+// 산출물 파일 받기·저장. 파일 이름은 서버가 Content-Disposition으로 정한다 (docs/ko/api.md).
 import { downloadArtifact } from '../../api/client.ts'
 import type { ArtifactRef } from '../../api/viewItems.ts'
 

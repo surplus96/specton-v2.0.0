@@ -1,0 +1,314 @@
+"""Trusted verifier, maintained separately from generated source and prose acceptance cases."""
+from decimal import Decimal
+import concurrent.futures
+import json
+import os
+import socket
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+import psycopg
+from psycopg import sql
+from psycopg.rows import dict_row
+
+config = json.loads(Path('/workspace/backend/contract.json').read_text())
+token = os.environ['PROBE_TOKEN']
+checks = []
+
+
+def request(op, payload=None, key=None, credential=token, command='one'):
+    path = op['path'].replace('{key}', urllib.parse.quote(str(key), safe=''))
+    headers = {'Authorization': 'Bearer ' + credential, 'Content-Type': 'application/json', 'Idempotency-Key': command}
+    data = None if payload is None else json.dumps(payload).encode()
+    req = urllib.request.Request('http://127.0.0.1:8000' + path, data=data, headers=headers, method=op['method'])
+    try:
+        response = urllib.request.urlopen(req, timeout=3)
+    except urllib.error.HTTPError as error:
+        response = error
+    body = response.read()
+    try:
+        decoded = json.loads(body)
+    except ValueError:
+        decoded = body.decode(errors='replace')
+    return response.status, decoded
+
+
+scenario_report={'status':'not_run','cases':[]}
+if config.get('executable_cases'):
+    from acceptance_runner import run_cases
+    domain=config['domain']
+    def scenario_reset():
+        with psycopg.connect(os.environ['APP_DATABASE_URL']) as conn:
+            assert conn.execute('SELECT current_database()').fetchone()[0]=='generated'
+            tables=[t['physical_name'] for t in domain['tables']]+['_specton_commands']
+            conn.execute(sql.SQL('TRUNCATE {} RESTART IDENTITY').format(sql.SQL(',').join(map(sql.Identifier,tables))))
+    def scenario_request(op,step):
+        credentials={'allowed':token,'unauthenticated':'invalid','denied':os.environ['PROBE_DENIED_TOKEN']}
+        return request(op,step['body'],command=step['request_key'] or 'read',credential=credentials[step['actor']])
+    scenario_report=run_cases(config['executable_cases'],{o['id']:o for o in domain['operations']},scenario_request,scenario_reset)
+    Path('/workspace/scenario-report.json').write_text(json.dumps(scenario_report))
+    if scenario_report['status']!='passed':
+        print(json.dumps({'status':'failed','checks':[], 'executable_acceptance':scenario_report,
+            'business_acceptance':'not_run','browser_acceptance':'not_run'}))
+        raise SystemExit(0)
+    for op in domain['operations']:
+        if op['action'] in {'command','calculation'}:
+            checks.append({'api_id':op['id'],'status':'passed','checks':['approved_'+op['action']+'_scenarios']})
+
+
+for insert in [o for o in config['operations'] if o['action'] == 'insert']:
+    get = next(o for o in config['operations'] if o['entity_id'] == insert['entity_id'] and o['action'] == 'get')
+    data = {f['name']: {'string': 'x', 'integer': 7, 'boolean': True, 'decimal': format(Decimal('1'), '.' + str(f.get('scale', 0)) + 'f')}[f['data_type']] for f in insert['fields']}
+    key = data[insert['key']['name']]
+    assert request(get, key=key, credential='invalid')[0] == 401, 'unauthenticated access'
+    assert request(get, key=key, credential=os.environ['PROBE_DENIED_TOKEN'])[0] == 403, 'role bypass'
+    assert request(insert, data, credential='invalid')[0] == 401, 'unauthenticated write'
+    assert request(insert, data, credential=os.environ['PROBE_DENIED_TOKEN'])[0] == 403, 'role write bypass'
+    assert request(insert, {**data, '__unexpected': 1})[0] == 422, 'unknown input accepted'
+    if insert['key']['data_type'] == 'string':
+        assert request(insert, {**data, insert['key']['name']: '../invalid'})[0] == 422, 'unaddressable key accepted'
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        replies = list(pool.map(lambda _: request(insert, data), range(4)))
+    assert all(status == 201 and body == data for status, body in replies), 'idempotent insert mismatch'
+    assert request(insert, data, command='two') == (409, {'detail': 'DUPLICATE_KEY'}), 'duplicate key accepted'
+    changed = {**data, insert['key']['name']: 8 if isinstance(key, int) else 'y'}
+    assert request(insert, changed) == (409, {'detail': 'IDEMPOTENCY_CONFLICT'}), 'idempotency conflict accepted'
+    assert request(get, key=key) == (200, data), 'persisted read mismatch'
+    assert request(get, key=changed[insert['key']['name']])[0] == 404, 'missing row accepted'
+    with psycopg.connect(os.environ['APP_DATABASE_URL'], row_factory=dict_row) as conn:
+        assert int(conn.execute('SHOW server_version_num').fetchone()['server_version_num']) // 10000 == 18, 'PostgreSQL target mismatch'
+        rows = conn.execute(sql.SQL('SELECT * FROM {}').format(sql.Identifier(insert['table']))).fetchall()
+        assert len(rows) == 1, 'transaction/idempotency row count'
+        assert all((format(rows[0][f['column']], 'f') if isinstance(rows[0][f['column']], Decimal) else rows[0][f['column']]) == data[f['name']] for f in insert['fields']), 'DB content mismatch'
+        assert not conn.execute('SELECT rolsuper FROM pg_roles WHERE rolname=current_user').fetchone()['rolsuper'], 'superuser runtime'
+    for op in [o for o in config['operations'] if o['entity_id'] == insert['entity_id'] and o['action'] in {'list','update'}]:
+        body = data if op['action'] == 'update' else None
+        assert request(op, body, key=key, credential='invalid')[0] == 401
+        assert request(op, body, key=key, credential=os.environ['PROBE_DENIED_TOKEN'])[0] == 403
+        if op['action'] == 'list':
+            assert request(op) == (200, [data]), 'list differs from persisted record'
+        else:
+            updated = {f['name']: (data[f['name']] if f['primary'] else
+                       {'string':'updated','integer':42,'boolean':False, 'decimal':format(Decimal('2'), '.' + str(f.get('scale', 0)) + 'f')}[f['data_type']]) for f in op['fields']}
+            result = request(op, updated, key=key, command='update-one')
+            assert result == (200, updated), 'update mismatch'
+            assert request(op, updated, key=key, command='update-one') == result, 'update retry mismatch'
+            assert request(get, key=key) == (200, updated), 'updated record not persisted'
+            assert request(op, changed, key=changed[insert['key']['name']], command='missing-update')[0] == 404
+            assert request(op, changed, key=key, command='change-key')[0] == 409, 'PK mutation allowed'
+            assert request(op, data, key=key, command='restore')[0] == 200
+        checks.append({'api_id':op['api_id'],'status':'passed','checks':['authentication','role',op['action']]})
+    checks.append({'entity_id': insert['entity_id'], 'status': 'passed', 'checks': ['authentication','role','input','idempotency','duplicate','read','database']})
+
+if config.get('inventory'):
+    inventory_ops = {op['action']: op for op in config['inventory']['operations']}
+    def stock(action, body=None, key=None, command='stock-one', credential=token, item='x'):
+        op = dict(inventory_ops[action])
+        if action == 'balance':
+            op['path'] += '?warehouse_id=x&item_id=' + item
+        return request(op, body, key=key, command=command, credential=credential)
+
+    def draft(id, kind, amount, item='x'):
+        return stock('draft', {'id':id,'warehouse_id':'x','item_id':item,'kind':kind,'quantity':amount}, command='draft-'+id)
+
+    def amount(item='x'):
+        status, body = stock('balance', item=item)
+        assert status == 200, 'balance lookup'
+        return body['quantity']
+
+    for invalid in ['0','-1','0.0001','NaN','1e3',1]:
+        assert draft('invalid','receive',invalid)[0] == 422, 'invalid decimal accepted'
+    assert draft('missing','receive','1.000',item='unknown')[0] == 404, 'missing reference accepted'
+    assert stock('movement',key='missing')[0] == 404, 'missing movement'
+    assert draft('receipt','receive','10.000')[0] == 201
+    assert amount() == '0.000', 'draft changed stock'
+    assert stock('edit',{'quantity':'10.125'},key='receipt',command='edit')[0] == 200
+    assert stock('edit',{'quantity':'10.125','warehouse_id':'other'},key='receipt',command='bad-edit')[0] == 422
+    confirmed = stock('confirm',{},key='receipt',command='confirm-receipt')
+    assert confirmed[0] == 200 and amount() == '10.125'
+    assert stock('confirm',{},key='receipt',command='confirm-receipt') == confirmed
+    assert stock('confirm',{},key='receipt',command='again')[1] == {'detail':'INVALID_STATE'}
+    assert stock('edit',{'quantity':'2.000'},key='receipt',command='after-confirm')[0] == 409
+    assert draft('issue','issue','3.125')[0] == 201
+    assert stock('confirm',{},key='issue',command='confirm-issue')[0] == 200 and amount() == '7.000'
+    assert stock('cancel',{},key='receipt',command='insufficient')[1] == {'detail':'INSUFFICIENT_STOCK'}
+    assert stock('cancel',{},key='issue',command='forbidden',credential=os.environ['PROBE_NON_CANCEL_TOKEN'])[0] == 403
+    cancelled = stock('cancel',{},key='issue',command='cancel-issue')
+    assert cancelled[0] == 200 and amount() == '10.125'
+    assert stock('cancel',{},key='issue',command='cancel-issue') == cancelled
+    assert stock('cancel',{},key='issue',command='cancel-again')[0] == 409
+    assert stock('cancel',{},key='receipt',command='cancel-receipt')[0] == 200 and amount() == '0.000'
+    assert draft('seed','receive','10.000')[0] == 201
+    assert stock('confirm',{},key='seed',command='seed-confirm')[0] == 200
+    for id in ('race-a','race-b'):
+        assert draft(id,'issue','7.000')[0] == 201
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda id: stock('confirm',{},key=id,command=id), ('race-a','race-b')))
+    assert sorted(status for status,_ in results) == [200,409] and amount() == '3.000', 'concurrent oversell'
+    assert stock('confirm',{},key='race-a',command='confirm-receipt')[1] == {'detail':'IDEMPOTENCY_CONFLICT'}, 'command key reused across targets'
+    assert draft('rollback','receive','2.000')[0] == 201
+    with psycopg.connect(os.environ['APP_DATABASE_URL']) as conn:
+        conn.execute("""CREATE FUNCTION fail_ledger() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+            IF NEW.movement_id='rollback' THEN RAISE EXCEPTION 'injected failure'; END IF;
+            RETURN NEW; END $$; CREATE TRIGGER fail_ledger BEFORE INSERT ON _specton_ledger FOR EACH ROW EXECUTE FUNCTION fail_ledger();""")
+    assert stock('confirm',{},key='rollback',command='retry-rollback')[0] == 500
+    assert amount() == '3.000' and stock('movement',key='rollback')[1]['status'] == 'draft', 'partial transaction committed'
+    with psycopg.connect(os.environ['APP_DATABASE_URL']) as conn:
+        assert conn.execute("SELECT count(*) FROM _specton_ledger WHERE movement_id='rollback'").fetchone()[0] == 0
+        conn.execute('DROP TRIGGER fail_ledger ON _specton_ledger; DROP FUNCTION fail_ledger()')
+    assert stock('confirm',{},key='rollback',command='retry-rollback')[0] == 200 and amount() == '5.000'
+    item_insert = next(op for op in config['operations'] if op['entity_id']==config['inventory']['item_entity_id'] and op['action']=='insert')
+    for id in ('y','z'):
+        values = {f['name']: {'string': id, 'integer': 7, 'boolean': True, 'decimal': format(Decimal('1'), '.' + str(f.get('scale', 0)) + 'f')}[f['data_type']] for f in item_insert['fields']}
+        assert request(item_insert, values, command='item-'+id)[0] == 201
+    for id,qty in [('first-a','1.000'),('first-b','2.000')]:
+        assert draft(id,'receive',qty,item='y')[0] == 201
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda id: stock('confirm',{},key=id,command=id), ('first-a','first-b')))
+    assert all(status==200 for status,_ in results) and amount('y')=='3.000', 'concurrent initial balance'
+    assert draft('maximum','receive','999999999999999.999',item='z')[0] == 201
+    assert stock('confirm',{},key='maximum',command='maximum')[0] == 200
+    assert draft('overflow','receive','0.001',item='z')[0] == 201
+    assert stock('confirm',{},key='overflow',command='overflow')[1] == {'detail':'QUANTITY_OVERFLOW'}
+    with psycopg.connect(os.environ['APP_DATABASE_URL'], row_factory=dict_row) as conn:
+        balances = conn.execute('SELECT * FROM _specton_balances').fetchall()
+        for balance in balances:
+            total = conn.execute("SELECT coalesce(sum(l.delta),0) AS total FROM _specton_ledger l JOIN _specton_movements m ON m.id=l.movement_id WHERE m.warehouse_id=%s AND m.item_id=%s", (balance['warehouse_id'],balance['item_id'])).fetchone()['total']
+            assert total == balance['quantity'] and total >= 0, 'ledger/balance mismatch'
+        assert conn.execute("SELECT count(*) AS count FROM _specton_ledger WHERE movement_id='receipt'").fetchone()['count'] == 2
+        assert conn.execute("SELECT status FROM _specton_movements WHERE id='overflow'").fetchone()['status']=='draft'
+    checks.append({'profile':'stock-ledger-v1','status':'passed','checks':['decimal','draft_edit','confirm','cancel','cancel_permission','receipt_cancel_shortage','concurrent_oversell','initial_balance_race','idempotency','cross_target_replay','fault_rollback','overflow','ledger_balance_agreement']})
+
+if config.get('commerce'):
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    import sys
+    sys.path.insert(0, '/workspace/backend')
+    import commerce
+    policy = config['commerce']
+    ops = {op['action']:op for op in policy['operations']}
+    def business(action, data=None, command=None, credential=token):
+        return request(ops[action], data, command=command or action, credential=credential)
+    def output(action, data=None, command=None):
+        status, result = business(action, data, command)
+        assert status == 200, (action, status, result)
+        return json.loads(result['result_json'])
+    for action in ops:
+        payload = {} if ops[action]['method']=='POST' else None
+        # Invalid typed inputs can be rejected before auth; valid read calls prove role isolation.
+        if payload is None:
+            assert business(action, credential='invalid')[0]==401
+            assert business(action, credential=os.environ['PROBE_DENIED_TOKEN'])[0]==403
+    product={'id':'probe-item','name':'상품','specification':'기본','barcode':'','tax':'taxable','safety_stock':'10'}
+    if policy.get('product_note_enabled'): product['note']='고객 비고'
+    assert business('product',product,credential='invalid')[0]==401
+    assert business('product',product,credential=os.environ['PROBE_DENIED_TOKEN'])[0]==403
+    first=business('product',product);assert first[0]==200
+    assert business('product',product)==first
+    assert business('product',{**product,'name':'different'})[0]==409
+    assert business('product',{**product,'safety_stock':'NaN'},command='invalid')[0]==422
+    output('unit',{'product_id':'probe-item','name':'box','factor':'5','is_default':True})
+    member={'id':'probe-member','name':'회원점','representative':'테스트','business_number':'1234567890','grade':'A'}
+    output('member',member)
+    assert business('member',{**member,'id':'duplicate'},'duplicate-member')[0]==409
+    today=commerce.now(policy).date()
+    output('receive',{'id':'expired','product_id':'probe-item','expires':str(today-timedelta(days=1)),'quantity':'100'},'expired')
+    output('receive',{'id':'probe-lot','product_id':'probe-item','expires':str(today+timedelta(days=1)),'quantity':'20'},'receipt')
+    lines=json.dumps([{'product_id':'probe-item','unit':'box','quantity':'2','price':'100'}])
+    order={'id':'probe-order','member_id':'probe-member','lines_json':lines}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+        replies=list(pool.map(lambda _:business('place',order,'place-once'),range(3)))
+    assert all(r==replies[0] and r[0]==200 for r in replies)
+    orders=output('orders');assert orders[0]['total']=='200.00'
+    assert next(r for r in output('stock') if r['id']=='probe-lot')['available']=='10.000'
+    # Two concurrent orders compete for ten units; exactly one may consume them.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        replies=list(pool.map(lambda i:business('place',{**order,'id':'race-'+str(i)},'race-'+str(i)),range(2)))
+    assert sorted(r[0] for r in replies)==[200,409], replies
+    assert next(r for r in output('stock') if r['id']=='probe-lot')['available']=='0.000'
+    assert next(r for r in output('stock') if r['id']=='expired')['available']=='100.000'
+    alerts=output('alerts');assert any(r['id']=='probe-item' for r in alerts['low_stock'])
+    assert any(r['id']=='expired' for r in alerts['expired'])
+    output('receive',{'id':'soon','product_id':'probe-item','expires':str(today+timedelta(days=policy['expiry_days'])),'quantity':'1'},'soon')
+    assert any(r['id']=='soon' for r in output('alerts')['expiring'])
+    # Current return is included; evaluate exact configured threshold, then exceed it.
+    percentage=Decimal(policy['return_warning_percent'])
+    amount=Decimal(400)*percentage/100
+    if amount>0:
+        assert not output('return',{'id':'return-limit','member_id':'probe-member','amount':str(amount)},'return-limit')['warning']
+    assert output('return',{'id':'return-over','member_id':'probe-member','amount':'0.01'},'return-over')['warning']
+    output('member',{**member,'id':'no-purchase','business_number':'0987654321'},'no-purchase')
+    assert output('return',{'id':'return-zero','member_id':'no-purchase','amount':'1'},'return-zero')['warning']
+    # Test clock boundaries at the service layer without a production time-override endpoint.
+    with psycopg.connect(os.environ['APP_DATABASE_URL'],row_factory=dict_row) as conn:
+        assert not conn.execute('SELECT rolsuper FROM pg_roles WHERE rolname=current_user').fetchone()['rolsuper']
+        instant=datetime(2030,1,10,10,tzinfo=ZoneInfo('Asia/Seoul'))
+        test_policy={**policy,'cutoff_hour':17}
+        conn.execute("UPDATE _specton_c_order SET created_at=%s WHERE id='probe-order'",(instant,))
+        conn.execute("UPDATE _specton_c_lot SET expires='2031-01-01' WHERE id='probe-lot'")
+        changed=commerce.Revise(id='probe-order',lines_json=json.dumps([{'product_id':'probe-item','unit':'box','quantity':'1','price':'100'}]))
+        commerce.execute(conn,'revise',changed,test_policy,instant)
+        assert conn.execute("SELECT available FROM _specton_c_lot WHERE id='probe-lot'").fetchone()['available']==5
+        # Failure after restoring old allocations rolls back both stock and order lines.
+        try:
+            with conn.transaction():
+                commerce.execute(conn,'revise',commerce.Revise(id='probe-order',lines_json=json.dumps([{'product_id':'probe-item','unit':'box','quantity':'999','price':'100'}])),test_policy,instant)
+        except commerce.HTTPException as e: assert e.detail=='INSUFFICIENT_STOCK'
+        else: raise AssertionError('shortage accepted')
+        assert commerce.order(conn,'probe-order')['total']==100
+        assert conn.execute("SELECT available FROM _specton_c_lot WHERE id='probe-lot'").fetchone()['available']==5
+        try: commerce.execute(conn,'cancel',commerce.Cancel(id='probe-order'),test_policy,instant.replace(hour=17))
+        except commerce.HTTPException as e: assert e.detail=='CUTOFF_PASSED'
+        else: raise AssertionError('cutoff ignored')
+        commerce.execute(conn,'cancel',commerce.Cancel(id='probe-order'),test_policy,instant)
+        assert conn.execute("SELECT available FROM _specton_c_lot WHERE id='probe-lot'").fetchone()['available']==10
+        try: commerce.execute(conn,'cancel',commerce.Cancel(id='probe-order'),test_policy,instant)
+        except commerce.HTTPException as e: assert e.detail=='INVALID_STATE'
+        else: raise AssertionError('cancel applied twice')
+        conn.rollback()
+    for action in ops:
+        checks.append({'api_id':ops[action]['id'],'profile':'wholesale-demo-v1','status':'passed','checks':['role','persistence','atomic_commands','unit_conversion','expiry_allocation','cutoff','return_threshold','rollback','concurrent_stock','retry_idempotency']})
+
+if config.get('domain'):
+    d=config['domain'];ops={o['id']:o for o in d['operations']}
+    for fixture in d['fixtures']:
+        op=ops[fixture['api_id']];payload=fixture['values']
+        assert request(op,payload,credential='invalid')[0]==401
+        assert request(op,payload,credential=os.environ['PROBE_DENIED_TOKEN'])[0]==403
+        status,body=request(op,payload,command=op['id'])
+        assert status==200,(op['label'],status,body)
+        assert request(op,payload,command=op['id'])==(status,body)
+        read=next(o for o in d['operations'] if o['table_id']==op['table_id'] and o['action']=='list')
+        assert request(read,credential='invalid')[0]==401
+        assert request(read,credential=os.environ['PROBE_DENIED_TOKEN'])[0]==403
+        rows=request(read)[1];assert body in rows
+        checks.append({'api_id':op['id'],'status':'passed','checks':['authentication','role','typed_insert','idempotency','persisted_read']})
+        checks.append({'api_id':read['id'],'status':'passed','checks':['authentication','role','persisted_list']})
+        for update in [o for o in d['operations'] if o['table_id']==op['table_id'] and o['action']=='update']:
+            assert request(update,payload,credential='invalid')[0]==401
+            assert request(update,payload,credential=os.environ['PROBE_DENIED_TOKEN'])[0]==403
+            updated=request(update,payload,command=update['id']);assert updated[0]==200
+            assert request(update,payload,command=update['id'])==updated
+            assert updated[1] in request(read)[1]
+            checks.append({'api_id':update['id'],'status':'passed','checks':['authentication','role','update','idempotency','persisted_read']})
+        for transition in [o for o in d['operations'] if o['table_id']==op['table_id'] and o['action']=='transition']:
+            key={f['name']:payload[f['name']] for f in transition['keys']}
+            assert request(transition,key,credential='invalid')[0]==401
+            assert request(transition,key,credential=os.environ['PROBE_DENIED_TOKEN'])[0]==403
+            changed=request(transition,key,command=transition['id']);assert changed[0]==200,changed
+            assert request(transition,key,command=transition['id'])==changed
+            assert changed[1] in request(read)[1]
+            if transition['transition']['to_value'] not in transition['transition']['from_values']:
+                assert request(transition,key,command=transition['id']+'repeat')[0]==409
+            checks.append({'api_id':transition['id'],'status':'passed','checks':['authentication','role','declared_transition','idempotency','persisted_read']})
+        checks.append({'table_id':op['table_id'],'status':'passed','checks':['authentication','role','typed_insert','idempotency','foreign_key_order','list','update','declared_transitions']})
+
+assert not Path('/var/run/docker.sock').exists(), 'docker socket exposed'
+try:
+    with socket.create_connection(('1.1.1.1', 443), timeout=0.5):
+        raise AssertionError('external egress allowed')
+except OSError:
+    pass
+print(json.dumps({'status': 'smoke_passed', 'checks': checks, 'executable_acceptance':scenario_report, 'business_acceptance': 'not_run', 'browser_acceptance': 'not_run'}))

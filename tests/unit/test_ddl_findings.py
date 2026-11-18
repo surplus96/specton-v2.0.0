@@ -275,7 +275,8 @@ def _allowed_failed(*issues: tuple[int, str]) -> SqlValidation:
 
 
 def test_same_fingerprint_becomes_one_finding_with_every_quote() -> None:
-    # docs/04 「지적 확정 절차」: 지문이 같은 지적은 하나로 합치고 근거는 모두 남긴다.
+    # docs/ko/architecture.md 「지적 확정 절차」: 지문이 같은 지적은 하나로 합치고 근거는
+    # 모두 남긴다.
     result = _allowed_failed((0, "문제 가"), (2, "문제 나"), (0, "문제 다"), (0, "문제 가"))
     findings = ddl_validation_findings(_design(), result, severities={"RULE-07": Severity.CRITICAL})
 

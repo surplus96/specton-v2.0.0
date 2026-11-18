@@ -13,8 +13,9 @@ pglast 노드마다 「쓰는 칸」만 정해 두고, 나머지 칸은 비어 �
 (`WITH (...)`, `TABLESPACE`, `DEFERRABLE` 등)이나 pglast가 새로 더한 칸은 따로 적지 않아도 막힌다.
 
 규칙 상태:
-- 확정 (문서): 실행 전 문법 검사·허용 AST 정의(docs/11), 트랜잭션 제어는 실행기 소유(docs/11),
-  허용 타입 11개(docs/05)
+- 확정 (문서): 실행 전 문법 검사·허용 AST 정의(docs/ko/deployment.md), 트랜잭션 제어는
+실행기 소유(docs/ko/deployment.md),
+  허용 타입 11개(docs/ko/architecture.md)
 - 확정 (#167·#176): 결과 모양(공용 계약), 대상 DB 값은 DDL 생성기의 `DDL_TARGET`
 - R4 제안 (#15 확인 전): 허용 문장 목록, 제약 이름 허용, FK 동작은 기본값만,
   스키마 없는 내장 타입(`text`·`date`·`timestamptz`) 허용

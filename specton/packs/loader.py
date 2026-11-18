@@ -1,4 +1,4 @@
-"""도메인 팩 로더 (#11, docs/10 "도메인 팩").
+"""도메인 팩 로더 (#11, docs/ko/domain-packs.md "도메인 팩").
 
 팩 폴더(`domain_packs/<pack>/`)의 파일을 Pydantic 모델로 읽고 검증한다.
 팩 위치는 `root` 인자 한 곳에서 받는다.
@@ -208,7 +208,7 @@ class StandardCompliance(_Strict):
 
 
 class Rules(_Strict):
-    """규칙 검사 설정 (#15, docs/04 "규칙 검사")."""
+    """규칙 검사 설정 (#15, docs/ko/architecture.md "규칙 검사")."""
 
     rules: tuple[Rule, ...]
     standard_compliance: StandardCompliance

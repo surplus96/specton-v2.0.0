@@ -6,6 +6,7 @@ LLM 모델·예산·한도의 기본값은 ADR-0007을 따른다.
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, PostgresDsn, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,6 +20,16 @@ DEFAULT_MAX_SOURCE_BLOCKS = 1_000  # 초기 운영 상한. LLM 처리량·문장
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="SPECTON_", extra="ignore")
+
+    google_client_id: str | None = None
+    google_client_secret: SecretStr | None = None
+    gmail_token_key: SecretStr | None = None
+    gmail_poll_seconds: int = Field(default=300, ge=60, le=86400)
+    feedback_analysis_enabled: bool = False
+    feedback_daily_analysis_limit: int = Field(default=10, ge=1, le=100)
+    preview_worker_host: str = ""  # Docker daemon ID; API and worker must share loopback.
+    public_origin: str = "http://localhost:5173"
+    login_days: int = Field(default=30, ge=1, le=90)
 
     openai_api_key: SecretStr | None = None
     design_model: str = "gpt-6.1-sol"
@@ -60,7 +71,7 @@ class Settings(BaseSettings):
     # 실행기가 `queued`·lease 만료 run을 찾는 간격 (ADR-0012)
     runner_poll_seconds: float = Field(default=1.0, gt=0)
 
-    # 업로드 원문·산출물 저장 위치(git 제외). 응답에는 경로를 넣지 않는다 (docs/11).
+    # 업로드 원문·산출물 저장 위치(git 제외). 응답에는 경로를 넣지 않는다 (docs/ko/deployment.md).
     storage_dir: Path = Path("var/storage")
     pack_root: Path = Path("domain_packs")
     # SSE가 새 이벤트를 확인하는 간격. 확인할 때만 DB 연결을 빌린다 (ADR-0012).
@@ -75,6 +86,25 @@ class Settings(BaseSettings):
     session_cookie_secure: bool = False
     max_structured_retries: int = Field(default=2, ge=0)
     max_rework_iterations: int = Field(default=3, ge=0)
+
+    @model_validator(mode="after")
+    def _check_identity_origin(self) -> Self:
+        origin = urlsplit(self.public_origin)
+        if (
+            origin.scheme not in {"http", "https"}
+            or not origin.hostname
+            or origin.username
+            or origin.password
+            or origin.query
+            or origin.fragment
+            or origin.path not in {"", "/"}
+        ):
+            raise ValueError("public_origin은 경로·인증정보가 없는 HTTP(S) origin이어야 합니다")
+        if origin.scheme == "http" and origin.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            raise ValueError("외부 로그인 origin에는 HTTPS가 필요합니다")
+        if origin.scheme == "https" and not self.session_cookie_secure:
+            raise ValueError("HTTPS origin에는 Secure 세션 쿠키가 필요합니다")
+        return self
 
     @model_validator(mode="after")
     def _check_runner_limits(self) -> Self:

@@ -1,0 +1,13 @@
+{
+  "name": "specton-erd-renderer",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "@mermaid-js/mermaid-cli": "12.2.0",
+    "mermaid": "12.3.0",
+    "puppeteer": "25.18.1"
+  }
+}

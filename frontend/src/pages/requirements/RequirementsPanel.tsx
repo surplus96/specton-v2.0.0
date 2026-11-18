@@ -1,4 +1,5 @@
 import RunEyebrow from '../run/RunEyebrow.tsx'
+import ScopeAssessment from '../../ui/ScopeAssessment'
 import { useEffect, useMemo, useState } from 'react'
 import { getView } from '../../api/client.ts'
 import { errorMessage } from '../../api/errors.ts'
@@ -15,7 +16,7 @@ import Segmented from '../../ui/Segmented.tsx'
 import { useResume } from '../run/useResume.ts'
 import { needsAttention, sortRequirements, splitFromSameSource, typeText } from './rules.ts'
 
-// UI-03 분석 확인 (docs/09). 보기 전용: 요구사항을 보여 주고, 버튼 하나로 모두 유지(빈 answers)로 보내 설계를 시작한다.
+// UI-03 분석 확인 (docs/ko/frontend.md). 보기 전용: 요구사항을 보여 주고, 버튼 하나로 모두 유지(빈 answers)로 보내 설계를 시작한다.
 // 수정·분할 입력은 쓰지 않는다. 서버 계약(빈 answers = 모두 keep)은 그대로다.
 // 상세 보기의 미확인·확인함은 화면의 검토 표시다. 서버로 보내지 않는다.
 // 품질 경고·질문이 있거나 같은 원문에서 나뉜 요구사항을 먼저 보인다. 질문을 「자동으로 고쳤다」고 표시하지 않는다.
@@ -137,6 +138,7 @@ function RequirementsPanel({ run, onChanged, label }: Props) {
           <div className="muted" style={{ fontSize: 15 }}>
             요구사항 {reqs.length}건 · 확인 사항 {toCheck.length}건{reviewed.size > 0 ? ` · 확인함 ${reviewed.size}건` : ''}
           </div>
+          <ScopeAssessment path={`/runs/${run.run_id}/scope`} />
           {notice && <Notice kind="warning" title={notice} />}
           <section aria-label="품질 경고·질문" className="stack-sm">
             <h2 className="section-title" style={{ margin: 0 }}>

@@ -4,7 +4,7 @@
 # - 요구사항 문장은 개발용 세트(MNT-021·MNT-022)의 것이고, 검토 대상 기능·엔티티는 예시를 위해 만든 가상 설계다.
 agent: A07
 role: nfr_review
-status: draft
+status: approved
 examples:
 # 지적 예시: 설비에 수정자·수정일시는 있지만 변경 전후 값과 사유를 남길 곳이 없다.
 # 마지막 수정자만 남기는 속성은 「변경 전후 값과 사유로 추적」을 충족하지 않는다 (A07 checklist 2).

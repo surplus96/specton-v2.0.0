@@ -77,7 +77,7 @@ describe('실행 만들기 (UI-01)', () => {
   })
 
   it('없는 팩은 422 PACK_UNSUPPORTED', async () => {
-    // @ts-expect-error 계약에 없는 팩을 일부러 보낸다
+    // 팩 이름은 동적 문자열이며 서버의 등록·승인 정책이 최종 판단한다.
     const err = await rejection(createRun(csv(), 'hospital'))
     expect([err.status, err.code]).toEqual([422, 'PACK_UNSUPPORTED'])
   })

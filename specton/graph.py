@@ -463,9 +463,10 @@ def _ask_requirements(state: GraphState) -> dict[str, Any]:
 def _answered(
     requirements: tuple[Requirement, ...], response: RequirementsResponse
 ) -> tuple[Requirement, ...]:
-    """분석 확인 답을 반영한다 (docs/06 resume). 답이 없는 요구사항은 그대로(keep) 둔다.
+    """분석 확인 답을 반영한다 (docs/ko/api.md resume). 답이 없는 요구사항은 그대로(keep) 둔다.
 
-    - edit: 문장 하나로 `text`를 바꾼다. A01이 낸 `draft_text`는 그대로 둔다 (docs/05).
+    - edit: 문장 하나로 `text`를 바꾼다. A01이 낸 `draft_text`는 그대로 둔다
+    (docs/ko/architecture.md).
     - split: 문장 2개 이상. 첫 조각은 원래 ID, 나머지는 이어지는 새 ID다. 원문 연결·분류는
       부모 값을 쓰고, `parent_id`는 A01 분할처럼 비운다(원문으로 잇는다).
       경고 기록은 원래 ID에 남긴다.

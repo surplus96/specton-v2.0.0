@@ -11,3 +11,11 @@ frontend/package-lock.json            linguist-generated=true
 
 # 컨테이너 안에서 실행하는 셸 스크립트는 Windows 체크아웃에서도 LF로 둔다 (CRLF면 bash가 실패한다).
 *.sh text eol=lf
+
+# 승인 해시와 결정론 패키지에 사용하는 템플릿·합성 입력 바이트는 개행을 변환하지 않는다.
+specton/implementation/templates/** -text
+tests/fixtures/implementation/** -text
+tests/fixtures/implementation/design/rtm.csv -diff
+
+# 브라우저 검증 이미지와 작업자의 스크립트 해시를 동일하게 유지한다.
+specton/implementation/browser/** -text

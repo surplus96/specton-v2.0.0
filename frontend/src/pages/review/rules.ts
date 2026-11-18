@@ -1,5 +1,5 @@
 // UI-06 최종 검토 규칙. 화면(ReviewPanel)과 분리해 테스트한다.
-// 규칙: docs/06-api.md 「사용자 확인 응답」·「SSE」, docs/09 UI-06, ADR-0010, 구현 가이드 강의 07·10.
+// 규칙: docs/ko/api.md 「사용자 확인 응답」·「SSE」, docs/ko/frontend.md UI-06, ADR-0010.
 // - 승인: decision 'approve', feedback ''(필수 칸). critical 지적이 남아 있으면 승인할 수 없다
 //   (서버도 422 「차단 오류가 남아 있어 승인할 수 없습니다.」로 막는다)
 // - 수정 요청: decision 'revise', feedback에 요청 문장
@@ -50,7 +50,7 @@ export function canApprove(findings: readonly Finding[]): boolean {
   return !findings.some((f) => f.severity === 'critical')
 }
 
-/** 검토 관점 이름 (docs/04-agents.md 「검토 관점 A05~A08」) */
+/** 검토 관점 이름 (docs/ko/architecture.md 「검토 관점 A05~A08」) */
 export const REVIEWER_LABEL: Record<string, string> = {
   A05: '관계 모순',
   A06: '데이터 누락',
@@ -58,7 +58,7 @@ export const REVIEWER_LABEL: Record<string, string> = {
   A08: '중복 정리',
 }
 
-/** 규칙 코드의 쉬운 이름 (docs/05 규칙 표). 코드 자체는 화면에 쓰지 않고 마우스를 올리면 보인다 */
+/** 규칙 코드의 쉬운 이름 (docs/ko/architecture.md 규칙 표). 코드 자체는 화면에 쓰지 않고 마우스를 올리면 보인다 */
 const RULE_NAME: Record<string, string> = {
   'RULE-01': '참조 확인',
   'RULE-02': '요구사항 연결',
@@ -140,7 +140,7 @@ export const HITL_REASON_TEXT: Record<string, string> = {
 }
 
 /**
- * 최종 검토 안내. 지금 확인 요청(interrupt_id)의 SSE interrupt 이벤트 payload에서 읽는다 (docs/06 「SSE」).
+ * 최종 검토 안내. 지금 확인 요청(interrupt_id)의 SSE interrupt 이벤트 payload에서 읽는다 (docs/ko/api.md 「SSE」).
  * - failedBranches: 실패하거나 빠진 검토 관점. 비어 있지 않으면 불완전 검토 (TC-F14)
  * - hitlReason: 자동 루프를 멈춘 이유 (있을 때)
  */

@@ -59,7 +59,7 @@ def _marker(agent: str) -> str:
 @pytest.fixture
 def pack_root(tmp_path: Path) -> Path:
     root = tmp_path / "custom-packs"
-    for pack in ("common", "inventory"):
+    for pack in ("common", "inventory", "sources"):
         shutil.copytree(DEFAULT_ROOT / pack, root / pack)
     for agent in AGENTS:
         path = root / "inventory" / "examples" / f"{agent}.yaml"

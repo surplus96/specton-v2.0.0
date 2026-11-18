@@ -1,4 +1,4 @@
-"""검토 관점 평가 고정 설계 (#40, docs/07 「검토 관점 평가」)."""
+"""검토 관점 평가 고정 설계 (#40, docs/ko/testing.md 「검토 관점 평가」)."""
 
 import json
 from dataclasses import replace

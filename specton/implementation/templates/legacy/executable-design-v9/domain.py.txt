@@ -1,0 +1,117 @@
+"""Domain-neutral runtime: only verified identifiers, typed inputs and declarative rules."""
+from datetime import date, datetime
+from decimal import Decimal
+from uuid import UUID
+import hashlib,json,operator
+from typing import Annotated
+import psycopg
+from psycopg import sql
+from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
+from fastapi import HTTPException,Header,Request,Query
+from pydantic import ConfigDict,Field,StrictStr,StrictInt,StrictBool,create_model,TypeAdapter,ValidationError
+
+
+def enforce_invariants(op, values):
+    def value(expr):
+        if expr['kind']=='field':return values[expr['name']]
+        if expr['kind']=='number':return Decimal(expr['value'])
+        return expr['value']
+    for rule in op.get('invariants',[]):
+        results=[]
+        for comparison in rule['comparisons']:
+            left,right=value(comparison['left']),value(comparison['right'])
+            compare={'eq':operator.eq,'ne':operator.ne,'lt':operator.lt,'le':operator.le,'gt':operator.gt,'ge':operator.ge}[comparison['operator']]
+            try:result=left is not None and right is not None and compare(left,right)
+            except (TypeError,ValueError):result=False
+            results.append(result)
+        if not (all(results) if rule['match']=='all' else any(results)):
+            raise HTTPException(409,detail='RULE_VIOLATION')
+
+
+def models(op):
+    fields={}
+    for f in op['fields']:
+        kind=f['data_type'];typ={'string':StrictStr,'integer':StrictInt,'decimal':Decimal,'boolean':StrictBool,'date':date,'datetime':datetime,'uuid':UUID}[kind]
+        limits={}
+        if kind=='string':limits={'max_length':f['length'] or 20000}
+        if kind=='decimal':limits={'max_digits':f['precision'],'decimal_places':f['scale'],'allow_inf_nan':False}
+        if kind=='integer':
+            bits={'smallint':16,'integer':32,'bigint':64}.get(f['sql_type'],32)
+            limits={'ge':-(2**(bits-1)),'le':2**(bits-1)-1}
+        if not f['required']:typ=typ|None
+        fields[f['name']]=(typ,Field(... if f['required'] else None,**limits))
+    full=create_model(op['id'].replace('-','_'),__config__=ConfigDict(extra='forbid'),**fields)
+    inputs=fields if op['action']!='transition' else {f['name']:fields[f['name']] for f in op['keys']}
+    request=create_model(op['id'].replace('-','_')+'_Input',__config__=ConfigDict(extra='forbid'),**inputs)
+    return full,request
+
+
+def register(app,config,dsn,principal):
+    def bind(op):
+        full,inputs=models(op)
+        fields=op['fields'];names=[f['name'] for f in fields];keys=[f['name'] for f in op['keys']]
+        columns={f['column_id']:f['name'] for f in fields}
+        projection=sql.SQL(',').join(map(sql.Identifier,names));table=sql.Identifier(op['table'])
+        where=sql.SQL(' AND ').join(sql.SQL('{}=%s').format(sql.Identifier(k)) for k in keys)
+        def typed(column_id,value):
+            field=full.model_fields[columns[column_id]]
+            return TypeAdapter(Annotated[field.annotation,*field.metadata]).validate_python(value)
+        def guards(values):
+            for rule in op['guards']:
+                left=values[columns[rule['column_id']]];right=typed(rule['column_id'],rule['value'])
+                try:valid={'eq':operator.eq,'ne':operator.ne,'lt':operator.lt,'le':operator.le,'gt':operator.gt,'ge':operator.ge}[rule['operator']](left,right)
+                except TypeError:valid=False
+                if not valid:raise HTTPException(409,detail='RULE_VIOLATION')
+        # Reject invalid rule literals at construction, not after a user's transaction.
+        for rule in op['guards']:typed(rule['column_id'],rule['value'])
+        if op['transition']:
+            transition=op['transition'];to_value=typed(transition['column_id'],transition['to_value'])
+            from_values=[typed(transition['column_id'],v) for v in transition['from_values']]
+        if op['action']=='list':
+            def endpoint(request:Request, q:Annotated[str,Query(max_length=100)]='', offset:Annotated[int,Query(ge=0,le=100000)]=0, limit:Annotated[int,Query(ge=1,le=100)]=100):
+                principal(request,op['actor_roles'])
+                with psycopg.connect(dsn,row_factory=dict_row) as c:
+                    search = sql.SQL(' OR ').join(sql.SQL("strpos(lower({}::text),lower(%s))>0").format(sql.Identifier(n)) for n in names)
+                    return c.execute(sql.SQL("SELECT {} FROM {} WHERE (%s='' OR ({})) ORDER BY {} LIMIT %s OFFSET %s").format(projection,table,search,sql.SQL(',').join(map(sql.Identifier,keys))), [q]+[q]*len(names)+[limit,offset]).fetchall()
+        else:
+            def endpoint(payload,request:Request,idempotency_key:Annotated[str,Header(min_length=1,max_length=128)]):
+                actor=principal(request,op['actor_roles']);values=payload.model_dump();keyvalues=[values[k] for k in keys]
+                digest=hashlib.sha256(json.dumps(payload.model_dump(mode='json'),sort_keys=True).encode()).hexdigest();scope=actor+':'+op['id']
+                try:
+                    with psycopg.connect(dsn,row_factory=dict_row) as c:
+                        c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',(scope+':'+idempotency_key,))
+                        prior=c.execute('SELECT * FROM _specton_commands WHERE scope=%s AND key=%s',(scope,idempotency_key)).fetchone()
+                        if prior:
+                            if prior['request_hash']!=digest:raise HTTPException(409,detail='IDEMPOTENCY_CONFLICT')
+                            return prior['result']
+                        if op['action']=='insert':
+                            guards(values)
+                            enforce_invariants(op,values)
+                            result=c.execute(sql.SQL('INSERT INTO {} ({}) VALUES ({}) RETURNING {}').format(table,projection,sql.SQL(',').join(sql.Placeholder() for _ in names),projection),[values[n] for n in names]).fetchone()
+                        else:
+                            old=c.execute(sql.SQL('SELECT {} FROM {} WHERE {} FOR UPDATE').format(projection,table,where),keyvalues).fetchone()
+                            if old is None:raise HTTPException(404,detail='NOT_FOUND')
+                            if op['action']=='transition':
+                                guards(old)
+                                name=columns[op['transition']['column_id']]
+                                if old[name] not in from_values:raise HTTPException(409,detail='INVALID_STATE')
+                                values={**old,name:to_value}
+                            else:
+                                controlled={columns[t['transition']['column_id']] for t in config['operations'] if t['table_id']==op['table_id'] and t['transition']}
+                                if any(values[n]!=old[n] for n in controlled):raise HTTPException(409,detail='RULE_VIOLATION')
+                                guards(values)
+                            enforce_invariants(op,values)
+                            mutable=[n for n in names if n not in keys]
+                            if mutable:
+                                result=c.execute(sql.SQL('UPDATE {} SET {} WHERE {} RETURNING {}').format(table,sql.SQL(',').join(sql.SQL('{}=%s').format(sql.Identifier(n)) for n in mutable),where,projection),[values[n] for n in mutable]+keyvalues).fetchone()
+                            else:result=old
+                        output=full.model_validate(result).model_dump(mode='json')
+                        c.execute('INSERT INTO _specton_commands VALUES(%s,%s,%s,%s)',(scope,idempotency_key,digest,Jsonb(output)))
+                        return output
+                except psycopg.errors.UniqueViolation:raise HTTPException(409,detail='DUPLICATE_KEY') from None
+                except psycopg.errors.ForeignKeyViolation:raise HTTPException(409,detail='REFERENCE_NOT_FOUND') from None
+                except (psycopg.errors.CheckViolation,psycopg.errors.NumericValueOutOfRange,psycopg.errors.NotNullViolation):raise HTTPException(422,detail='CONSTRAINT_VIOLATION') from None
+            endpoint.__annotations__['payload']=inputs
+        app.add_api_route(op['path'],endpoint,methods=[op['method']],operation_id=op['id'],response_model=list[full] if op['action']=='list' else full)
+    for op in config['operations']:bind(op)

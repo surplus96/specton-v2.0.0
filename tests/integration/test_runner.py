@@ -339,7 +339,7 @@ def test_unreadable_document_fails_the_run_as_extraction_failed(
 def test_skipped_sheets_are_recorded_for_the_extraction_screen(
     world: Callable[..., _World], tmp_path: Path
 ) -> None:
-    """요구사항 표가 없는 시트는 안내 한 줄로 status 이벤트에 남는다 (docs/09 UI-02)."""
+    """요구사항 표가 없는 시트는 안내 한 줄로 status 이벤트에 남는다 (docs/ko/frontend.md UI-02)."""
     book = Workbook()
     book.active.title = "표지"
     sheet = book.create_sheet("요구사항")
@@ -551,7 +551,7 @@ def test_requirements_are_saved_for_the_view_before_the_requirements_check(
 
 
 def test_requirements_answer_is_applied_to_the_saved_model(world: Callable[..., _World]) -> None:
-    """HITL 1의 split 답이 설계 모델에 반영되고, 새 ID는 서버가 붙인다 (docs/06 resume)."""
+    """HITL 1의 split 답이 설계 모델에 반영되고, 새 ID는 서버가 붙인다 (docs/ko/api.md resume)."""
     w = world({"a01": _with_requirement})
     run_id = w.create()
     w.runner.run_pending()

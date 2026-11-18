@@ -1,0 +1,38 @@
+{
+  "origin": "synthetic",
+  "version": "inventory-baseline-v1",
+  "pack": "inventory",
+  "pack_version": "0.1.23",
+  "scenarios": [
+    ["창고 관리", "사용자는 창고 코드와 창고명을 등록하고 조회한다."],
+    ["품목 관리", "사용자는 품목 코드와 품목명을 등록하고 조회한다."],
+    ["입고 등록", "사용자는 창고에 품목을 입고하고 입고 내역과 수량을 남긴다."]
+  ],
+  "entities": [
+    {"id": "ENT-01", "pack": "inventory", "name": "창고", "description": "합성 창고", "req_ids": ["REQ-01"],
+      "attributes": [
+        {"id": "ATTR-01", "name": "창고코드", "data_type": "varchar", "length": 10, "is_key": true, "nullable": false, "req_ids": ["REQ-01"]},
+        {"id": "ATTR-02", "name": "창고명", "data_type": "varchar", "length": 200, "req_ids": ["REQ-01"]}
+      ]},
+    {"id": "ENT-02", "pack": "inventory", "name": "품목", "description": "합성 품목", "req_ids": ["REQ-02"],
+      "attributes": [
+        {"id": "ATTR-03", "name": "품목코드", "data_type": "varchar", "length": 10, "is_key": true, "nullable": false, "req_ids": ["REQ-02"]},
+        {"id": "ATTR-04", "name": "품목명", "data_type": "varchar", "length": 100, "req_ids": ["REQ-02"]}
+      ]},
+    {"id": "ENT-03", "pack": "inventory", "name": "입고", "description": "합성 입고", "req_ids": ["REQ-03"],
+      "attributes": [
+        {"id": "ATTR-05", "name": "입고번호", "data_type": "varchar", "length": 50, "is_key": true, "nullable": false, "req_ids": ["REQ-03"]},
+        {"id": "ATTR-06", "name": "입고일자", "data_type": "char", "length": 8, "req_ids": ["REQ-03"]}
+      ]},
+    {"id": "ENT-04", "pack": "inventory", "name": "입고내역", "description": "합성 입고 내역", "req_ids": ["REQ-03"],
+      "attributes": [
+        {"id": "ATTR-07", "name": "일련번호", "data_type": "numeric", "precision": 10, "scale": 0, "is_key": true, "nullable": false, "req_ids": ["REQ-03"]},
+        {"id": "ATTR-08", "name": "입고수량", "data_type": "numeric", "precision": 10, "scale": 3, "nullable": false, "req_ids": ["REQ-03"]}
+      ]}
+  ],
+  "relationships": [
+    {"id": "REL-01", "parent": "ENT-01", "child": "ENT-03", "cardinality": "1:N", "optional": false, "rationale": "합성 입고의 창고", "req_ids": ["REQ-03"]},
+    {"id": "REL-02", "parent": "ENT-03", "child": "ENT-04", "cardinality": "1:N", "optional": false, "identifying": true, "rationale": "합성 입고의 상세 내역", "req_ids": ["REQ-03"]},
+    {"id": "REL-03", "parent": "ENT-02", "child": "ENT-04", "cardinality": "1:N", "optional": false, "rationale": "합성 내역의 품목", "req_ids": ["REQ-03"]}
+  ]
+}

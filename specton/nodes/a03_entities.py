@@ -48,11 +48,12 @@ from specton.nodes.common import (
 from specton.packs.build import DEFAULT_ROOT
 from specton.packs.examples import load_examples
 from specton.packs.loader import PgType, load_pack
+from specton.review.standard_compliance import StorageTypePolicy, storage_type_policy
 from specton.type_limits import type_limit_problems
 
 logger = logging.getLogger(__name__)
 
-PROMPT_VERSION = "a03-v9"
+PROMPT_VERSION = "a03-v11"
 SYSTEM_PROMPT = """\
 너는 업무 시스템의 데이터 모델 설계자다.
 요구사항과 기능으로 저장할 엔티티·속성과 기능별 CRUD를 정한다.
@@ -66,6 +67,15 @@ SYSTEM_PROMPT = """\
 - pack.terms에 맞는 용어가 있으면 그 term을 name으로 쓰고
   data_type·length·precision·scale을 그대로 쓴다.
   맞는 용어가 없으면 요구사항에 근거해 직접 정하되, 없는 타입을 만들지 않는다.
+- storage_policy는 최종 표준 검사와 동일한 저장 타입 정책이다. pack.terms 외의 속성도
+  이름이 공통표준 용어이면 그 타입·길이·정밀도를 지킨다. exact_terms_in_source는 입력에서
+  발견한 일부 용어이며 전부가 아니다. classifier_types에 있는 끝 분류어의 타입도 지킨다.
+  strict 프로필의 문자형 날짜·여부를 date·boolean으로 임의 교체하지 않는다.
+  값 표현을 description에 명시한다. 원문의 값 범위와 표준이 충돌하면 근거를 보존하고
+  충돌을 설명한다. 검사를 피하려고 이름을 바꾸거나 업무 속성·키·원문 조건을 삭제하지 않는다.
+- 공통표준의 정확한 용어나 단일 도메인으로 확정되는 분류어는 코드가 선택된 프로필의
+  저장 타입으로 연결하고 변경 근거를 속성 설명에 남긴다. 이는 새 초안의 저장 형식 결정이며
+  업무 값·조건·기존 승인 데이터를 바꾸는 작업이 아니다. 여러 도메인이 가능하면 자동 선택하지 않는다.
 - 업무 키는 is_key=true이고 nullable=false다. 키가 아닌 값의 중복을 막아야 하면 is_unique=true다.
 - nullable은 필수라는 단어 유무만으로 정하지 않는다. 해당 행이 유효하려면 항상 필요한 값
   (요구된 계산의 수량, 소유 범위 식별값, 적용할 상태 등)은 요구사항·기능 근거를 확인해 false로 한다.
@@ -236,6 +246,7 @@ def _checked_against(
     terms: Sequence[PackTerm],
     exemption_reasons: Mapping[str, Collection[Crud]],
     required_fk_attributes: Collection[tuple[str, str]] = (),
+    storage_policy: StorageTypePolicy | None = None,
 ) -> type[A03Output]:
     """이번 입력으로 검사하는 출력 모델. 어기면 형식 오류처럼 재요청 대상이 된다.
 
@@ -249,6 +260,16 @@ def _checked_against(
     official = _official_names(terms)
 
     class CheckedA03Output(A03Output):
+        @model_validator(mode="after")
+        def _bind_standard_storage(self) -> Self:
+            if storage_policy is None:
+                return self
+            entities = tuple(
+                e.evolve(attributes=tuple(storage_policy.resolve(a) for a in e.attributes))
+                for e in self.entities
+            )
+            return self.model_copy(update={"entities": entities})
+
         @model_validator(mode="after")
         def _check_against_input(self) -> Self:
             nullable_fk = [
@@ -310,6 +331,15 @@ def _checked_against(
             ]
             if mismatched:
                 raise ValueError(f"팩 용어와 타입·길이가 다릅니다: {', '.join(mismatched)}")
+            if storage_policy is not None:
+                conflicts = [
+                    f"{e.name}: {message}"
+                    for e in self.entities
+                    for a in e.attributes
+                    for message in storage_policy.problems(a)
+                ]
+                if conflicts:
+                    raise ValueError("공통표준 저장 타입 정책 불일치: " + "; ".join(conflicts))
             return self
 
     return CheckedA03Output
@@ -446,6 +476,8 @@ def run(
             for e, a in sorted(required_fk_attributes)
         ]
     examples = load_examples(pack, "A03", A03Output, root=settings.pack_root)
+    type_policy = storage_type_policy(pack, root=settings.pack_root)
+    data["storage_policy"] = type_policy.guidance("\n".join(r.text for r in state.requirements))
     if naming_lexicon is not None:
         data["evaluation_naming"] = {
             "approved_name_forms": dict(naming_guidance or {}),
@@ -473,6 +505,7 @@ def run(
         context.terms,
         context.exemption_reasons,
         required_fk_attributes,
+        storage_policy=type_policy,
     )
     result = ask(data, token_budget)
     draft, calls = result.output, result.calls

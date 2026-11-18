@@ -1,5 +1,12 @@
 name: ci
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
   push:
@@ -8,14 +15,19 @@ on:
 jobs:
   python:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v7
       - run: uv sync --locked
+      - name: Check bilingual documentation and repository contents
+        run: uv run python scripts/check_docs.py
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest
+      - name: Verify deterministic baseline
+        run: uv run python -m specton.evaluation.baseline --repeats 1
       # 한글 엔진 시험 (ADR-0004): rhwp-python 0.8.1 리눅스 휠은 묶어 둔 libfreetype에 함수가 빠져
       # `import rhwp`가 실패한다(상류 DanMeon/rhwp-python #31). 위 단계에서는 엔진 시험이 건너뛰어지므로,
       # 시스템 libfreetype을 먼저 불러온 채 다시 돌리고, 엔진을 못 불러와 건너뛰는 것은 실패로 둔다
@@ -28,9 +40,115 @@ jobs:
           test -f "$FREETYPE" || { echo "시스템 libfreetype이 없음: $FREETYPE"; exit 1; }
           LD_PRELOAD="$FREETYPE" uv run pytest -rs tests/unit/test_ingest_hangul.py tests/unit/test_hangul_engine_lazy_import.py tests/unit/test_hangul_input.py
       - run: uv run python -m specton.packs.build --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deterministic-baseline
+          path: var/baseline/report.json
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: specton
+          POSTGRES_PASSWORD: specton
+          POSTGRES_DB: specton_app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U specton -d specton_app"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      SPECTON_APP_DATABASE_URL: postgresql://specton:specton@127.0.0.1:5432/specton_app
+      SPECTON_SANDBOX_DATABASE_URL: postgresql://specton_sandbox:specton_sandbox@127.0.0.1:5432/specton_sandbox
+      SPECTON_TEST_SOURCE_OUTPUT: /tmp/specton-generated-source.zip
+      SPECTON_TEST_INVENTORY_OUTPUT: /tmp/specton-inventory-source.zip
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync --locked
+      - name: Create isolated SQL validation database
+        run: >-
+          docker exec -i -e SANDBOX_PASSWORD=specton_sandbox
+          "${{ job.services.postgres.id }}" bash < docker/postgres/init/01_sandbox.sh
+      - run: uv run python -m specton.persistence.migrate upgrade
+      - run: uv run python -m specton.persistence.migrate check
+      - name: Database and API regression
+        run: uv run pytest --require-db -m 'db and not native_pdf and not llm and not docker_browser' --junitxml=var/test-results/database.xml
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Build the application produced by the approved-spec API test
+        run: |
+          uv run python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          from specton.implementation.verify import inspect_package
+          for variant, archive in [("master", "/tmp/specton-generated-source.zip"), ("inventory", "/tmp/specton-inventory-source.zip")]:
+              source = Path(archive).read_bytes()
+              files, _ = inspect_package(source, hashlib.sha256(source).hexdigest())
+              for name, content in files.items():
+                  if name.startswith("frontend/"):
+                      target = Path("var/generated-web") / variant / name.removeprefix("frontend/")
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      target.write_bytes(content)
+          PY
+          npm --prefix var/generated-web/master ci --no-audit --no-fund
+          npm --prefix var/generated-web/master run build
+          npm --prefix var/generated-web/inventory ci --no-audit --no-fund
+          npm --prefix var/generated-web/inventory run build
+      - name: Verify generated inventory against isolated PostgreSQL and HTTP
+        run: |
+          docker build -f docker/implementation/Dockerfile -t specton-generated-runtime:inventory-ledger-v1 .
+          uv run python - <<'PY'
+          import hashlib
+          import json
+          import subprocess
+          from pathlib import Path
+          from specton.implementation.verify import verify
+          def image_id(name):
+              return subprocess.check_output(["docker", "image", "inspect", name, "--format", "{{.Id}}"], text=True).strip()
+          source = Path("/tmp/specton-inventory-source.zip").read_bytes()
+          report = verify(source, hashlib.sha256(source).hexdigest(), image_id("specton-generated-runtime:inventory-ledger-v1"), image_id("postgres:18"))
+          Path("var/test-results/inventory-runtime.json").write_text(json.dumps(report, indent=2))
+          assert report["status"] == "smoke_passed", "Isolated inventory verification failed"
+          PY
+      - name: Verify platform queue and actual worker result registration
+        run: |
+          export SPECTON_TEST_WORKER_RUNTIME="$(docker image inspect specton-generated-runtime:inventory-ledger-v1 --format '{{.Id}}')"
+          export SPECTON_TEST_WORKER_POSTGRES="$(docker image inspect postgres:18 --format '{{.Id}}')"
+          export SPECTON_TEST_WORKER_REPORT=var/test-results/worker-runtime.json
+          uv run pytest --require-db -m db tests/integration/test_verification_jobs.py::test_worker_registers_report
+      - name: Browser acceptance and expiring isolated preview
+        run: |
+          docker build -f docker/browser/Dockerfile -t specton-browser:generated-ui-v1 .
+          export SPECTON_TEST_WORKER_RUNTIME="$(docker image inspect specton-generated-runtime:inventory-ledger-v1 --format '{{.Id}}')"
+          export SPECTON_TEST_WORKER_POSTGRES="$(docker image inspect postgres:18 --format '{{.Id}}')"
+          export SPECTON_TEST_BROWSER_IMAGE="$(docker image inspect specton-browser:generated-ui-v1 --format '{{.Id}}')"
+          export SPECTON_TEST_ADOPTION_REPORT=var/test-results/adoption.json
+          uv run pytest --require-db -m db tests/integration/test_adoptions.py::test_adoption_comparison_history_and_idempotency
+          export SPECTON_TEST_PREVIEW_REPORT=var/test-results/browser-preview.json
+          uv run pytest --require-db -m db tests/integration/test_previews.py::test_preview_runtime_proxy_and_expiry
+          npm --prefix frontend ci --no-audit --no-fund
+          npm --prefix frontend run build
+          uv run pytest --require-db -m docker_browser tests/integration/test_feedback_browser.py
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,size=256m --shm-size=256m --cpus=1 --memory=1g --pids-limit=256 \
+            -v "$PWD/frontend/dist:/app:ro" \
+            -v "$PWD/tests/browser/candidate-adoption.mjs:/runner/candidate-adoption.mjs:ro" \
+            specton-browser:generated-ui-v1 node /runner/candidate-adoption.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: database-test-results
+          path: var/test-results/
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
@@ -42,5 +160,15 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - name: Audit frontend production dependencies
+        run: npm audit --omit=dev --audit-level=low
+      - name: Audit ERD renderer production dependencies
+        run: |
+          mkdir -p "$RUNNER_TEMP/specton-renderer-audit"
+          cp ../docker/api/mermaid-package.json "$RUNNER_TEMP/specton-renderer-audit/package.json"
+          cp ../docker/api/mermaid-package-lock.json "$RUNNER_TEMP/specton-renderer-audit/package-lock.json"
+          npm --prefix "$RUNNER_TEMP/specton-renderer-audit" audit --package-lock-only --omit=dev --audit-level=low
       - run: npm run lint
+      - run: npm run check:api
+      - run: npm test
       - run: npm run build

@@ -13,7 +13,7 @@
 #   인건비는 시간과 시급으로 계산하는 값이라 저장 속성으로 두지 않았다.
 agent: A08
 role: normalization_review
-status: draft
+status: approved
 examples:
 - source_id: MNT-004
   input:

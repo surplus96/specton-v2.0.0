@@ -9,7 +9,6 @@ from collections.abc import AsyncIterator
 from typing import Annotated
 from uuid import UUID, uuid4
 
-import yaml
 from anyio import to_thread
 from fastapi import APIRouter, File, Form, Header, Path, Query, Request, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
@@ -30,12 +29,14 @@ from specton.contracts import (
     RunView,
     SseEvent,
 )
-from specton.packs.build import discover_packs
+from specton.packs.build import BuildError
+from specton.packs.catalog import require_selectable
 from specton.packs.provenance import ExecutionPolicyError, capture_policy, verify_policy
 from specton.persistence import runs, snapshots
 from specton.persistence.db import Pool
 from specton.persistence.lease import FINAL_STATES
 from specton.persistence.snapshots import ArtifactKind, FileFormat, Section
+from specton.specification.capabilities import ScopeReport, ScopeRequirement, assess
 
 router = APIRouter(prefix="/runs")
 
@@ -60,14 +61,15 @@ class CancelRequest(BaseModel):
 
 
 def _pack_version(settings: Settings, pack: str) -> str:
-    """선택한 팩의 버전. 없는 팩이면 422 PACK_UNSUPPORTED. 팩 목록은 domain_packs에서 읽는다."""
-    packs = {p.name: p for p in discover_packs(settings.pack_root)}
-    if pack not in packs:
+    """신규 실행은 검토·해시 검증된 팩만 허용한다. 기존 실행은 고정 정책을 유지한다."""
+    try:
+        return require_selectable(settings.pack_root, pack)
+    except (ValueError, OSError, BuildError) as exc:
         raise ApiError(
-            422, ErrorCode.PACK_UNSUPPORTED, f"지원하는 팩은 {', '.join(sorted(packs))}입니다."
-        )
-    manifest = yaml.safe_load((packs[pack] / "manifest.yaml").read_text(encoding="utf-8"))
-    return str(manifest["version"])
+            422,
+            ErrorCode.PACK_UNSUPPORTED,
+            "선택한 팩이 없거나 승인·버전 검증을 통과하지 못했습니다. 팩 목록을 새로고침하세요.",
+        ) from exc
 
 
 def _model_config(settings: Settings) -> dict[str, str]:
@@ -149,6 +151,15 @@ def list_runs(
 def get_run(run_id: RunId, owner: OwnerRef, conn: ConnDep) -> RunStatus:
     """현재 상태·revision·단계·확인 요청·실패 원인."""
     return runs.get_run(conn, run_id, owner)
+
+
+@router.get("/{id}/scope", operation_id="assessRunScope")
+def scope(run_id: RunId, owner: OwnerRef, conn: ConnDep) -> ScopeReport:
+    view = snapshots.get_view(conn, run_id, owner, "requirements")
+    return assess(
+        tuple(ScopeRequirement(id=r["id"], text=r["text"], kind=r["type"]) for r in view.items),
+        view.revision,
+    )
 
 
 @router.post("/{id}/resume", status_code=202, operation_id="resumeRun")

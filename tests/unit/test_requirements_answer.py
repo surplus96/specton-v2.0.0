@@ -1,4 +1,5 @@
-"""#17 분석 확인(HITL 1) 답을 요구사항에 반영한다: keep·edit·split (docs/06 resume, REQ-05)."""
+"""#17 분석 확인(HITL 1) 답을 요구사항에 반영한다: keep·edit·split (docs/ko/api.md resume,
+REQ-05)."""
 
 from collections.abc import Mapping
 from typing import Any
@@ -101,7 +102,7 @@ def test_split_keeps_the_first_id_and_gives_new_ids_to_the_rest() -> None:
 
 
 def test_split_pieces_keep_the_source_link_of_the_original() -> None:
-    """분할한 요구사항은 부모의 원문·분류를 그대로 쓴다 (docs/05).
+    """분할한 요구사항은 부모의 원문·분류를 그대로 쓴다 (docs/ko/architecture.md).
 
     parent_id는 A01 분할처럼 비운다.
     """

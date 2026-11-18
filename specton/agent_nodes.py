@@ -35,6 +35,7 @@ from specton.nodes import (
 )
 from specton.nodes.a03_entities import A03Result
 from specton.nodes.common import NodeRun
+from specton.nodes.reference_storage import bind_reference_storage
 from specton.review.perspective import Perspective, load_perspectives
 from specton.review.reviewer import ReviewRun, review_combined, review_perspective
 
@@ -206,8 +207,11 @@ def _design_node(
                 )
             },
         )
+        updated = agent.apply(design, result.output).evolve(versions=versions)
+        if agent.agent_id == "A04":
+            updated = bind_reference_storage(updated, root=settings.pack_root)
         return {
-            "design": agent.apply(design, result.output).evolve(versions=versions),
+            "design": updated,
             "tokens_used": _used(design.run_id, result.calls),
             "call_summaries": {
                 agent.agent_id: tuple(c.model_dump(mode="json") for c in result.calls)
@@ -279,9 +283,11 @@ def _remaining(state: GraphState, settings: Settings, agent_id: str) -> int:
 
 
 def _used(run_id: str, calls: Sequence[CallRecord]) -> int:
-    """호출 기록을 한 줄씩 로그로 남기고 쓴 토큰을 돌려준다 (docs/13 단계별 비용 확인).
+    """호출 기록을 한 줄씩 로그로 남기고 쓴 토큰을 돌려준다 (docs/ko/contributing.md
+    단계별 비용 확인).
 
-    기록에는 단계·프롬프트 버전·모델·시도·결과·토큰·시간만 있다. 원문·키는 없다 (docs/04).
+    기록에는 단계·프롬프트 버전·모델·시도·결과·토큰·시간만 있다. 원문·키는 없다
+    (docs/ko/architecture.md).
     """
     for c in calls:
         try:

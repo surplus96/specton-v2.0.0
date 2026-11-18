@@ -21,6 +21,7 @@ from specton.persistence.db import Pool
 
 pytestmark = [
     pytest.mark.db,
+    pytest.mark.native_pdf,
     pytest.mark.skipif(
         os.environ.get("SPECTON_TEST_NATIVE_PDF") != "1",
         reason="실제 DB·Mermaid·WeasyPrint·한글 폰트 환경에서 SPECTON_TEST_NATIVE_PDF=1로 실행",

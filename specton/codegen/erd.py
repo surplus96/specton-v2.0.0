@@ -6,7 +6,7 @@ N:M은 정리 단계에서 연결 테이블과 FK 둘로 바뀌어 있으므로 
 
 - 표기 (#13 결정, A안): 엔티티는 물리명을 식별자로, 한글 이름을 별칭으로 둔다.
   속성은 `타입 한글이름 키 "물리명"`이다. 예: `varchar(20) 창고코드 PK "wrhus_cd"`
-- 웹(mermaid JS)·PDF(mermaid-cli)가 같은 원문을 쓴다. 둘 다 Mermaid 11.17.2로 고정한다 (ADR-0004).
+- 웹(mermaid JS)·PDF(mermaid-cli)가 같은 원문을 쓴다. 둘 다 Mermaid 12.3.0으로 고정한다.
 - 같은 입력이면 항상 같은 문자열이다 (테이블·FK는 정리 결과의 ID 순서를 따른다).
 - 이 모듈은 LLM client를 import하지 않는다 (CLAUDE.md, `codegen/` 규칙).
 """

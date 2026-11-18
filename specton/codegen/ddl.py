@@ -6,8 +6,9 @@
   참조와 상관없이 실행 순서가 깨지지 않는다.
 
 규칙 상태:
-- 확정 (문서): 허용 타입 11개(docs/05), 물리명은 소문자·`max_bytes` 이하(naming.yaml,
-  RATIONALE.md), DDL에 대상·모델 버전을 남김(docs/10). 검증 상태는 파일이 아니라
+- 확정 (문서): 허용 타입 11개(docs/ko/architecture.md), 물리명은 소문자·`max_bytes`
+이하(naming.yaml,
+  RATIONALE.md), DDL에 대상·모델 버전을 남김(docs/ko/domain-packs.md). 검증 상태는 파일이 아니라
   검증 기록(API `validation`·승인 검사)에 둔다 (#22)
 - R4 제안 (#15 확인 전): 제약 이름을 짓지 않고 PostgreSQL 자동 이름을 씀, `COMMENT ON` 없음,
   식별자는 항상 큰따옴표, 생성 직후 검증 상태는 `unverified`, 반환형 `DdlResult`는 공용 계약
@@ -33,7 +34,8 @@ from specton.type_limits import MAX_CHAR_LENGTH, MAX_NUMERIC_PRECISION
 
 # 생성기 버전. 출력 모양(문장 종류·순서·타입 표기)이 바뀌면 올린다. 임시 값이다.
 DDL_GENERATOR_VERSION = "ddl-v2"
-# 대상 DB. 프로젝트 대상 버전(docs/10, naming.yaml 예약어 목록 postgresql_18)과 같다.
+# 대상 DB. 프로젝트 대상 버전(docs/ko/domain-packs.md, naming.yaml 예약어 목록
+# postgresql_18)과 같다.
 DDL_TARGET = "postgresql-18"
 # PostgreSQL 18 식별자 한도(NAMEDATALEN - 1). 팩의 max_bytes는 이 값을 넘을 수 없다.
 # 넘으면 PostgreSQL이 긴 이름을 잘라, 생성기가 다르다고 본 두 이름이 같은 이름이 된다.

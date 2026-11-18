@@ -239,7 +239,7 @@ def test_example_passes_the_checks_for_its_own_input() -> None:
 
 
 def test_prompt_version_is_fixed() -> None:
-    assert PROMPT_VERSION == "a03-v9"
+    assert PROMPT_VERSION == "a03-v11"
     assert SYSTEM_PROMPT.strip()
 
 
@@ -669,7 +669,14 @@ def test_request_uses_design_model_prompt_version_few_shot_and_input() -> None:
     assert [m.role for m in request.messages] == ["system", *["user", "assistant"] * shots, "user"]
     context = load_pack_context("inventory")
     expected = input_data(state, terms=context.terms, exemption_reasons=context.exemption_reasons)
-    assert json.loads(unwrap_data(request.messages[-1].content)) == expected
+    actual = json.loads(unwrap_data(request.messages[-1].content))
+    policy = actual.pop("storage_policy")
+    assert policy["profile"] == "strict" and set(policy["source_hashes"]) == {
+        "words",
+        "terms",
+        "domains",
+    }
+    assert actual == expected
 
 
 def test_operations_of_functions_sharing_an_entity_do_not_mix() -> None:
@@ -795,7 +802,9 @@ def _partner() -> dict[str, Any]:
         "name": "거래처",
         "description": "거래 상대",
         "req_ids": ["REQ-01"],
-        "attributes": [{"name": "거래처명", "data_type": "text", "req_ids": ["REQ-01"]}],
+        "attributes": [
+            {"name": "거래처명", "data_type": "varchar", "length": 100, "req_ids": ["REQ-01"]}
+        ],
     }
 
 

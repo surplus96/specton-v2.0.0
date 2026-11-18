@@ -41,7 +41,7 @@ def condition_file(tmp_path: Path) -> Path:
         "dictionary_version": "synthetic-1",
         "pack": "inventory",
         "base_pack_version": "0.1.23",
-        "base_common_version": "0.1.7",
+        "base_common_version": "0.1.8",
         "base_policy_digest": policy_digest(DEFAULT_ROOT, "inventory"),
         "sources": {
             "synthetic": {

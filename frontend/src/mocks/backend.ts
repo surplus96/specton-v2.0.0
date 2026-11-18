@@ -179,13 +179,13 @@ export function createMockBackend(options: MockOptions = {}) {
       }
       const payload: Item = { interrupt_id: interruptId, kind: step.interrupt }
       if (step.interrupt === 'review') {
-        // 불완전 검토 안내 (docs/06 SSE interrupt payload)
+        // 불완전 검토 안내 (docs/ko/api.md SSE interrupt payload)
         payload.failed_branches = run.scenario === 'partial-review' ? ['A07'] : []
         if (run.scenario === 'partial-review') payload.hitl_reason = 'rework_limit'
       }
       pushEvent(run, 'interrupt', run.interrupt.message, payload)
     } else if (step.error) {
-      // 서버처럼 상태 조회 error.detail과 SSE payload.detail에 같은 값을 넣는다 (#204·#230, docs/06)
+      // 서버처럼 상태 조회 error.detail과 SSE payload.detail에 같은 값을 넣는다 (#204·#230, docs/ko/api.md)
       run.error = {
         code: step.error.code,
         message: step.error.message,
@@ -265,7 +265,7 @@ export function createMockBackend(options: MockOptions = {}) {
       default:
         return [
           parsing,
-          // 엑셀에서 요구사항 표가 없는 시트는 정보 한 줄로 알린다 (docs/06 SSE). 확인을 멈추게 하지는 않는다
+          // 엑셀에서 요구사항 표가 없는 시트는 정보 한 줄로 알린다 (docs/ko/api.md SSE). 확인을 멈추게 하지는 않는다
           {
             status: 'parsing',
             stage: 'parsing',
@@ -392,7 +392,7 @@ export function createMockBackend(options: MockOptions = {}) {
     const artifacts = run.artifactRevisions.has(revision)
       ? Object.entries(ARTIFACT_FORMATS).filter(([kind]) => kind !== 'review' && (kind !== 'manifest' || run.approvedRevisions.has(revision))).flatMap(([kind, formats]) =>
           formats
-            // 서버처럼 ERD PDF는 승인 전에도 비공개 후보(approved=false)로 목록에 있다. 받으면 409 (docs/06, #217).
+            // 서버처럼 ERD PDF는 승인 전에도 비공개 후보(approved=false)로 목록에 있다. 받으면 409 (docs/ko/api.md, #217).
             // 기능 명세 PDF 연결은 후속 범위라 승인 뒤에만 넣는다.
             .filter((f) => f !== 'pdf' || kind === 'erd' || run.approvedRevisions.has(revision))
             .map((file_format) => ({
@@ -479,7 +479,7 @@ export function createMockBackend(options: MockOptions = {}) {
 
     // review
     if (answer.decision === 'hold') {
-      // 같은 확인 요청으로 계속 기다린다. 상태 이벤트만 남긴다 (docs/06).
+      // 같은 확인 요청으로 계속 기다린다. 상태 이벤트만 남긴다 (docs/ko/api.md).
       pushEvent(run, 'status', '최종 검토를 보류했습니다')
       return statusOf(run)
     }
@@ -557,7 +557,7 @@ export function createMockBackend(options: MockOptions = {}) {
 
   // ── SSE (백엔드 api/runs.py stream_events와 같은 규칙) ────────
 
-  /** Last-Event-ID 검사. 숫자가 아니거나 아직 없는 ID면 409 (docs/06 「SSE」) */
+  /** Last-Event-ID 검사. 숫자가 아니거나 아직 없는 ID면 409 (docs/ko/api.md 「SSE」) */
   function replayFrom(run: MockRun, header: string | null): number {
     if (header === null || header === '') return 0
     if (!/^\d+$/.test(header) || Number(header) > run.events.length) {
@@ -613,6 +613,10 @@ export function createMockBackend(options: MockOptions = {}) {
   }
 
   const handlers = [
+    http.get('*/api/v1/packs', () => HttpResponse.json([
+      { name: 'inventory', label: '재고관리', summary: '재고 설계', version: '0.1.23', common_version: '0.1.8', status: 'available', selectable: true, reason: '설계 분석에 사용 가능', terms: 32, patterns: 6 },
+      { name: 'maintenance', label: '설비보전', summary: '설비 설계', version: '0.1.8', common_version: '0.1.8', status: 'draft', selectable: false, reason: '팩 검토·승인 대기', terms: 43, patterns: 8 },
+    ])),
     http.get('*/health', () => respond(() => ({ status: 'ok', version: 'mock' }))),
 
     http.post('*/runs', ({ request }) =>

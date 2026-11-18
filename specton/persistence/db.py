@@ -8,7 +8,6 @@ import importlib
 import inspect
 import pkgutil
 from enum import Enum
-from importlib.resources import files
 from typing import Any
 
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -44,11 +43,15 @@ def create_pool(settings: Settings, *, schema: str | None = None, open: bool = T
 
 
 def apply_schema(pool: Pool) -> None:
-    """플랫폼 저장 표를 만든다. 이미 있는 표는 지우지 않고 빠진 칸만 더한다."""
-    sql = files("specton.persistence").joinpath("schema.sql").read_text(encoding="utf-8")
-    with pool.connection() as conn, conn.transaction():
-        # 고정된 패키지 파일이다. 여러 문장이라 prepared statement로 보내지 않는다
-        conn.execute(sql.encode(), prepare=False)
+    """명시적으로 플랫폼 migration을 실행한다. API 시작은 버전 확인만 한다."""
+    from specton.persistence.migrate import upgrade
+
+    with pool.connection() as conn:
+        row = conn.execute("SELECT current_schema() AS schema").fetchone()
+        assert row is not None
+        schema = row["schema"]
+    dsn = pool.conninfo
+    upgrade(dsn() if callable(dsn) else dsn, schema=schema)
 
 
 # 그래프 상태에 들어가는, 계약 밖의 타입 (R1 그래프). 상태에 새 타입을 넣으면 여기에 더한다

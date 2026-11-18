@@ -1,16 +1,15 @@
-import { useRef, useState, type DragEvent } from 'react'
+import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { useNavigate } from 'react-router'
-import { createRun } from '../../api/client.ts'
+import { createRun, listDomainPacks } from '../../api/client.ts'
 import { notifyRunsChanged, rememberRunName } from '../../api/runNames.ts'
-import type { Pack } from '../../api/types.ts'
+import type { Pack, PackEntry } from '../../api/types.ts'
 import Icon from '../../layout/Icon.tsx'
 import Button from '../../ui/Button.tsx'
 import Notice from '../../ui/Notice.tsx'
 import {
   ACCEPT_ATTR,
-  ENABLED_PACKS,
   MAX_UPLOAD_MB,
-  PACK_OPTIONS,
+  selectablePacks,
   checkFile,
   placeError,
 } from '../upload/rules.ts'
@@ -32,7 +31,23 @@ function UploadPanel() {
   const navigate = useNavigate()
   const input = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [pack, setPack] = useState<Pack | null>(ENABLED_PACKS.length === 1 ? ENABLED_PACKS[0] : null)
+  const [pack, setPack] = useState<Pack | null>(null)
+  const [packs, setPacks] = useState<PackEntry[]>([])
+  const [catalogLoading, setCatalogLoading] = useState(true)
+  const [catalogError, setCatalogError] = useState('')
+  const [catalogRefresh, setCatalogRefresh] = useState(0)
+  useEffect(() => {
+    let active = true
+    setCatalogLoading(true); setCatalogError('')
+    listDomainPacks().then(rows => {
+      if (!active) return
+      setPacks(rows)
+      const available = selectablePacks(rows)
+      setPack(current => available.some(p => p.name === current) ? current : available.length === 1 ? available[0].name : null)
+    }).catch(() => { if (active) { setPacks([]); setPack(null); setCatalogError('업무 분야 목록을 불러오지 못했습니다.') } })
+      .finally(() => { if (active) setCatalogLoading(false) })
+    return () => { active = false }
+  }, [catalogRefresh])
   const [over, setOver] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
   const [packError, setPackError] = useState<string | null>(null)
@@ -70,7 +85,7 @@ function UploadPanel() {
     if (inFlight.current) return
     if (!file) setFileError('요구사항 문서를 골라 주세요.')
     if (!pack) setPackError('업무 분야를 골라 주세요.')
-    if (!file || !pack || fileError) return
+    if (!file || !pack || fileError || catalogLoading || !selectablePacks(packs).some(p => p.name === pack)) return
     inFlight.current = true
     setSubmitting(true)
     setFormError(null)
@@ -156,7 +171,7 @@ function UploadPanel() {
                 onClick={submit}
                 loading={submitting}
                 loadingText="파일을 보내고 있어요"
-                disabled={!!fileError}
+                disabled={!!fileError || catalogLoading || !pack || !!catalogError}
                 iconEnd={<Icon name="arrowRight" size={18} />}
               >
                 설계 시작
@@ -175,22 +190,26 @@ function UploadPanel() {
           value={pack ?? ''}
           aria-invalid={!!packError}
           aria-describedby={packError ? 'pack-help' : undefined}
-          disabled={submitting}
+          disabled={submitting || catalogLoading || !!catalogError}
           onChange={(e) => {
             setPack((e.target.value || null) as Pack | null)
             setPackError(null)
             setFormError(null)
           }}
         >
-          {ENABLED_PACKS.length > 1 && <option value="">업무 분야 선택</option>}
-          {PACK_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
+          <option value="">{catalogLoading ? '업무 분야 불러오는 중' : '업무 분야 선택'}</option>
+          {packs.map((o) => (
+            <option key={o.name} value={o.name} disabled={!o.selectable}>
+              {o.label}{!o.selectable ? ` · ${o.reason}` : ''}
             </option>
           ))}
         </select>
         {packError && <span id="pack-help" className="field__error" role="alert">{packError}</span>}
       </div>
+      {packs.find(p => p.name === pack) && <p>{packs.find(p => p.name === pack)?.summary} · 버전 {packs.find(p => p.name === pack)?.version}</p>}
+      {catalogError && <Notice kind="error" title={catalogError} />}
+      {!catalogLoading && !catalogError && !selectablePacks(packs).length && <Notice title="현재 선택할 수 있는 승인 팩이 없습니다." />}
+      <Button disabled={catalogLoading || submitting} onClick={() => setCatalogRefresh(v => v + 1)}>업무 분야 새로고침</Button>
 
       {formError && <Notice kind="error" title={formError} />}
 

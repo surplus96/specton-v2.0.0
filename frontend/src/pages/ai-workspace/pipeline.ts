@@ -13,7 +13,7 @@ import { nodeEvent, nodeState } from './nodeEvents.ts'
 
 export type NodeState = 'waiting' | 'running' | 'awaiting' | 'done' | 'failed' | 'skipped' | 'cancelled'
 
-/** 상태 글자와 아이콘. 색만으로 구분하지 않는다 (docs/09 표현 기준). */
+/** 상태 글자와 아이콘. 색만으로 구분하지 않는다 (docs/ko/frontend.md 표현 기준). */
 export const STATE_LABEL: Record<NodeState, { icon: string; text: string }> = {
   waiting: { icon: '○', text: '대기' },
   running: { icon: '◐', text: '진행 중' },

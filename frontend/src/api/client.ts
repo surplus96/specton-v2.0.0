@@ -1,7 +1,10 @@
 // 백엔드 API를 부르는 함수 모음. 화면 코드는 fetch를 직접 쓰지 않고 이 함수들만 쓴다.
-// 엔드포인트와 규칙: docs/06-api.md, 계약: docs/api/openapi.json
+// 엔드포인트와 규칙: docs/ko/api.md, 계약: docs/api/openapi.json
 import { ApiError } from './errors.ts'
 import type {
+  PackEntry,
+  ScopeReport,
+  HandoffReport,
   ArtifactKind,
   FileFormat,
   Pack,
@@ -25,7 +28,10 @@ async function send(path: string, init?: RequestInit): Promise<Response> {
   let res: Response
   try {
     // credentials: 세션 쿠키(specton_session)를 함께 보낸다 (ADR-0011)
-    res = await fetch(baseUrl + path, { credentials: 'include', ...init })
+    const headers = new Headers(init?.headers)
+    const csrf = typeof document !== 'undefined' ? document.cookie.split('; ').find(v => v.startsWith('specton_csrf='))?.split('=')[1] : undefined
+    if (csrf) headers.set('X-CSRF-Token', csrf)
+    res = await fetch(baseUrl + path, { credentials: 'include', ...init, headers })
   } catch (cause) {
     throw new ApiError(0, null, cause)
   }
@@ -43,6 +49,18 @@ function jsonBody(body: unknown): RequestInit {
 }
 
 const runPath = (runId: string) => `/runs/${encodeURIComponent(runId)}`
+
+export function listDomainPacks(): Promise<PackEntry[]> {
+  return sendJson('/api/v1/packs')
+}
+
+export function getScope(path: string): Promise<ScopeReport> {
+  return sendJson(path)
+}
+
+export function getHandoff(path: string): Promise<HandoffReport> {
+  return sendJson(path)
+}
 
 /** POST /runs — 파일을 올려 실행을 만든다. 202는 접수됐다는 뜻이지 설계 성공이 아니다. */
 export function createRun(file: File, pack: Pack): Promise<RunStatus> {

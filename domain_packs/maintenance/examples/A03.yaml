@@ -6,7 +6,7 @@
 # - 설비·팀·기술자는 이 요구사항에서 참조만 하므로 키 속성만 둔다. 팀코드·기술자코드·변경이력번호와 식별값·변경값의 타입은 팩에 용어가 없어 정한 예시 가정이다.
 agent: A03
 role: entity_attribute_crud
-status: draft
+status: approved
 examples:
 - source_id: MNT-009,MNT-011,MNT-021,MNT-022
   input:

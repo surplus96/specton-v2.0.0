@@ -14,7 +14,10 @@ export interface paths {
         /** 소유자의 실행 목록 조회 */
         get: operations["listRuns"];
         put?: never;
-        /** 요구사항 문서(Excel·CSV·HWPX) 업로드·실행 등록 */
+        /**
+         * Create Run
+         * @description 요구사항 문서를 받아 `queued` 실행을 등록한다. 실행기가 찾아가 시작한다.
+         */
         post: operations["createRun"];
         delete?: never;
         options?: never;
@@ -71,7 +74,7 @@ export interface paths {
         };
         /**
          * 화면 표시용 실행 내용 조회
-         * @description Interrupt는 확인 대상만 알리며 추출 블록·요구사항·설계 모델·지적은 이 조회로 가져온다. 항목 구조는 docs/06-api.md "화면용 조회"를 따른다.
+         * @description Interrupt는 확인 대상만 알리며 추출 블록·요구사항·설계 모델·지적은 이 조회로 가져온다. 항목 구조는 docs/ko/api.md "화면용 조회"를 따른다.
          */
         get: operations["getRunView"];
         put?: never;
@@ -132,7 +135,7 @@ export interface paths {
         };
         /**
          * 같은 revision의 문서 다운로드
-         * @description kind-file_format 허용 조합은 docs/06-api.md를 따른다. 미허용 조합 422, 미생성 409(PDF는 승인한 revision만). 초안은 파일명에 -draft. manifest JSON의 generator_versions.common_version·policy_digest는 정리 때 기록한 공통 팩 버전·정책 해시이며 기존 실행에는 null일 수 있다. 다운로드 때 현재 값으로 소급하지 않는다.
+         * @description kind-file_format 허용 조합은 docs/ko/api.md를 따른다. 미허용 조합 422, 미생성 409(PDF는 승인한 revision만). 초안은 파일명에 -draft. manifest JSON의 generator_versions.common_version·policy_digest는 정리 때 기록한 공통 팩 버전·정책 해시이며 기존 실행에는 null일 수 있다. 다운로드 때 현재 값으로 소급하지 않는다.
          */
         get: operations["downloadArtifact"];
         put?: never;
@@ -152,6 +155,913 @@ export interface paths {
         };
         /** 기동 확인 */
         get: operations["health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Google Login */
+        get: operations["googleLogin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Callback */
+        get: operations["googleCallback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me */
+        get: operations["currentUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listing */
+        get: operations["listProjects"];
+        put?: never;
+        /** Create */
+        post: operations["createProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["getProject"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/runs/{run_id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim */
+        post: operations["claimRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/baselines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Baseline */
+        post: operations["createBaseline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/baselines/{baseline_id}/specs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: operations["createSpecification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["getSpecification"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit */
+        patch: operations["editSpecification"];
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/versions/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History */
+        get: operations["getSpecificationVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approveSpecification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/implementations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: operations["generateImplementation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/implementations/{impl_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["getImplementation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/implementations/{impl_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download */
+        get: operations["downloadImplementation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/storage-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog */
+        get: operations["getStorageCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/implementations/{impl_id}/verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Verifications */
+        get: operations["listVerifications"];
+        put?: never;
+        /** Request Verification */
+        post: operations["requestVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/implementations/{impl_id}/verifications/{job_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Verification */
+        post: operations["cancelVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/implementations/{impl_id}/previews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listing */
+        get: operations["listPreviews"];
+        put?: never;
+        /** Create */
+        post: operations["requestPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/previews/{preview_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close */
+        post: operations["closePreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/previews/{preview_id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Document */
+        get: operations["getPreviewDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/previews/{preview_id}/rpc": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rpc */
+        post: operations["previewRPC"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Candidates */
+        get: operations["listImplementationCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/candidates/{candidate_id}/comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comparison */
+        get: operations["compareImplementationCandidate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/implementation-baseline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Baseline */
+        get: operations["getImplementationBaseline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/adoptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adopt */
+        post: operations["adoptImplementationCandidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/gmail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["getGmailConnection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/gmail/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Connect */
+        post: operations["connectGmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/gmail/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Callback */
+        get: operations["gmailCallback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/gmail/{connection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect */
+        delete: operations["disconnectGmail"];
+        options?: never;
+        head?: never;
+        /** Configure */
+        patch: operations["configureGmailCollection"];
+        trace?: never;
+    };
+    "/api/v1/integrations/gmail/{connection_id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync */
+        post: operations["syncGmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inbox */
+        get: operations["listFeedbackMessages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["getFeedbackMessage"];
+        put?: never;
+        post?: never;
+        /** Erase */
+        delete: operations["eraseFeedbackMessage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Work */
+        get: operations["listFeedbackJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/{message_id}/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: operations["createFeedbackChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listing */
+        get: operations["listProjectChanges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/changes/{change_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["getFeedbackChange"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/changes/{change_id}/analyse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyse */
+        post: operations["analyseFeedbackChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/changes/{change_id}/proposal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Review */
+        put: operations["reviewFeedbackProposal"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/changes/{change_id}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide */
+        post: operations["decideFeedbackChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/changes/{change_id}/implement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Implement */
+        post: operations["implementFeedbackChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/changes/{change_id}/clarification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Clarify */
+        patch: operations["clarifyFeedbackChange"];
+        trace?: never;
+    };
+    "/api/v1/changes/{change_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reviews */
+        get: operations["listFeedbackReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{id}/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scope */
+        get: operations["assessRunScope"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/packs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Packs */
+        get: operations["listDomainPacks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capabilities */
+        get: operations["listImplementationCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scope */
+        get: operations["assessSpecificationScope"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete */
+        post: operations["proposeExecutableSpecification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/demo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demo */
+        post: operations["proposeDemoSpecification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/business": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Business */
+        post: operations["proposeBusinessSpecification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/derive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Derive Domain */
+        post: operations["deriveDomainSpecification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/handoff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Handoff */
+        get: operations["assessHandoffReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specs/{spec_id}/design": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Design */
+        get: operations["downloadExecutableDesign"];
         put?: never;
         post?: never;
         delete?: never;
@@ -269,6 +1179,1712 @@ export interface components {
             event: "status" | "interrupt" | "artifact" | "error" | "completed" | "cancelled";
             data: components["schemas"]["SseEventData"];
         };
+        /** BaselineInput */
+        BaselineInput: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Revision */
+            revision: number;
+        };
+        /** Body_createRun */
+        Body_createRun: {
+            /** File */
+            file: string;
+            /** Pack */
+            pack: string;
+        };
+        /** CancelRequest */
+        CancelRequest: {
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /**
+         * ExcludedBlock
+         * @description 추출 확인에서 뺄 원문 블록. 사유는 `review` 블록이면 필수, `fail` 블록이면 선택이다.
+         *
+         *     다음 답은 resume API가 422 `INVALID_RESPONSE`로 막는다: 없는 블록, `pass` 블록,
+         *     `review` 블록의 빈 사유(공백만 있는 사유 포함), 같은 블록 두 번 (06 문서, #120).
+         *     `fail` 블록의 빈 사유(`""`)는 사유 없음으로 블록에 남긴다 (`SourceRequirement.excluded_reason`).
+         */
+        ExcludedBlock: {
+            /** Block Id */
+            block_id: string;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HealthResponse */
+        HealthResponse: {
+            /** Status */
+            status: string;
+            /** Version */
+            version: string;
+        };
+        /**
+         * InterruptKind
+         * @description 사람 확인(HITL) 지점. 값은 resume 응답의 `kind`와 같다 (05 문서 「모델별 `kind` 뜻」).
+         *
+         *     - extraction: 추출 확인(UI-02). `review`·`fail` 블록이 있을 때만 멈춘다 (ADR-0015)
+         *     - requirements: 분석 확인(HITL 1, UI-03). 품질 경고·질문·분할이 있을 때만 멈춘다 (ADR-0015)
+         *     - review: 최종 검토(HITL 2, UI-06). 내보내기 전에 항상 멈춘다
+         * @enum {string}
+         */
+        InterruptKind: "extraction" | "requirements" | "review";
+        /** ProjectInput */
+        ProjectInput: {
+            /** Name */
+            name: string;
+        };
+        /**
+         * RequirementAnswer
+         * @description 분석 확인(HITL 1)에서 요구사항 하나에 대한 답 (06 문서 resume).
+         *
+         *     - keep: 그대로 둔다. `texts`는 비운다
+         *     - edit: `texts` 1개로 문장(`text`)을 바꾼다. A01이 낸 `draft_text`는 남는다
+         *     - split: `texts` 2개 이상으로 나눈다. 첫 조각은 원래 ID, 나머지는 서버가 새 ID를 붙이고
+         *       원문 연결·분류는 원래 요구사항과 같다
+         */
+        RequirementAnswer: {
+            /** Req Id */
+            req_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "keep" | "edit" | "split";
+            /** Texts */
+            texts: string[];
+        };
+        /**
+         * RunState
+         * @description run 상태. 값은 `docs/api/openapi.json`의 RunStatus.status와 같다.
+         * @enum {string}
+         */
+        RunState: "queued" | "parsing" | "awaiting_input" | "analysing" | "awaiting_requirements" | "designing" | "generating" | "reviewing" | "awaiting_review" | "exporting" | "completed" | "failed" | "cancel_requested" | "cancelled";
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, unknown>;
+        };
+        /** AcceptanceCase */
+        AcceptanceCase: {
+            /** Id */
+            id: string;
+            /** Req Ids */
+            req_ids: string[];
+            /** Use Case Ids */
+            use_case_ids: string[];
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "unit" | "database" | "api" | "browser" | "policy";
+            /** Given */
+            given: string[];
+            /** When */
+            when: string;
+            /** Then */
+            then: string[];
+            /** Fixture Ids */
+            fixture_ids: string[];
+            execution?: components["schemas"]["ApiScenario"] | null;
+        };
+        /** ActorRole */
+        ActorRole: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** ApiOperation */
+        ApiOperation: {
+            /** Id */
+            id: string;
+            /** Use Case Id */
+            use_case_id: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+            /** Path */
+            path: string;
+            /** Actor Roles */
+            actor_roles: string[];
+            /** Request Fields */
+            request_fields: components["schemas"]["SpecField"][];
+            /** Response Fields */
+            response_fields: components["schemas"]["SpecField"][];
+            /** Success Status */
+            success_status: number;
+            /** Error Codes */
+            error_codes: string[];
+            /**
+             * Pagination
+             * @enum {string}
+             */
+            pagination: "none" | "cursor";
+            /**
+             * Concurrency
+             * @enum {string}
+             */
+            concurrency: "read_only" | "row_lock" | "optimistic";
+        };
+        /** ArtifactDigest */
+        ArtifactDigest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "functions" | "erd" | "ddl" | "rtm";
+            /**
+             * File Format
+             * @enum {string}
+             */
+            file_format: "md" | "mmd" | "sql" | "csv" | "xlsx";
+            /** Sha256 */
+            sha256: string;
+        };
+        /** BaselineReference */
+        BaselineReference: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Baseline Id
+             * Format: uuid
+             */
+            baseline_id: string;
+            /**
+             * Source Run Id
+             * Format: uuid
+             */
+            source_run_id: string;
+            /** Source Revision */
+            source_revision: number;
+            /** Model Hash */
+            model_hash: string;
+            /** Manifest Hash */
+            manifest_hash: string;
+            /**
+             * Approval Id
+             * Format: uuid
+             */
+            approval_id: string;
+            /** Artifacts */
+            artifacts: components["schemas"]["ArtifactDigest"][];
+        };
+        /** BooleanLiteral */
+        BooleanLiteral: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "boolean";
+            /** Value */
+            value: boolean;
+        };
+        /** Comparison */
+        Comparison: {
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "eq" | "ne" | "lt" | "le" | "gt" | "ge";
+            /** Left */
+            left: components["schemas"]["FieldRef"] | components["schemas"]["NumberLiteral"] | components["schemas"]["TextLiteral"] | components["schemas"]["BooleanLiteral"];
+            /** Right */
+            right: components["schemas"]["FieldRef"] | components["schemas"]["NumberLiteral"] | components["schemas"]["TextLiteral"] | components["schemas"]["BooleanLiteral"];
+        };
+        /** Edit */
+        Edit: {
+            /** Expected Version */
+            expected_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+            bundle: components["schemas"]["SpecBundle"];
+        };
+        /** Expected */
+        Expected: {
+            /** Expected Version */
+            expected_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+        };
+        /** FieldRef */
+        FieldRef: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "field";
+            /** Entity Id */
+            entity_id: string;
+            /** Field Id */
+            field_id: string;
+        };
+        /** Invariant */
+        Invariant: {
+            /** Id */
+            id: string;
+            /** Req Ids */
+            req_ids: string[];
+            /** Description */
+            description: string;
+            /**
+             * Match
+             * @enum {string}
+             */
+            match: "all" | "any";
+            /** Comparisons */
+            comparisons: components["schemas"]["Comparison"][];
+            /** Layers */
+            layers: ("database" | "api")[];
+        };
+        /** NumberLiteral */
+        NumberLiteral: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "number";
+            /** Value */
+            value: string;
+        };
+        /** OpenQuestion */
+        OpenQuestion: {
+            /** Id */
+            id: string;
+            /** Req Ids */
+            req_ids: string[];
+            /** Question */
+            question: string;
+            /** Answer */
+            answer?: string | null;
+        };
+        /** ReadinessIssue */
+        ReadinessIssue: {
+            /** Code */
+            code: string;
+            /** Target */
+            target: string;
+            /** Message */
+            message: string;
+        };
+        /** ReadinessReport */
+        ReadinessReport: {
+            /** Spec Hash */
+            spec_hash: string;
+            /** Ready For Review */
+            ready_for_review: boolean;
+            /** Issues */
+            issues: components["schemas"]["ReadinessIssue"][];
+        };
+        /** Screen */
+        Screen: {
+            /** Id */
+            id: string;
+            /** Route */
+            route: string;
+            /** Name */
+            name: string;
+            /** Actor Roles */
+            actor_roles: string[];
+            /** Api Ids */
+            api_ids: string[];
+            /** Empty State */
+            empty_state: string;
+            /** Loading State */
+            loading_state: string;
+            /** Error State */
+            error_state: string;
+        };
+        /** SpecBundle */
+        SpecBundle: {
+            /**
+             * Schema Version
+             * @default spec-v0.1
+             * @enum {string}
+             */
+            schema_version: "spec-v0.1" | "spec-v0.2" | "spec-v0.3" | "spec-v0.4" | "spec-v0.5" | "spec-v0.6" | "spec-v0.7" | "spec-v0.8" | "spec-v0.9";
+            domain?: components["schemas"]["DomainPlan"] | null;
+            commerce?: components["schemas"]["CommercePolicy"] | null;
+            inventory?: components["schemas"]["InventoryPolicy"] | null;
+            /**
+             * Storage Bindings
+             * @default []
+             */
+            storage_bindings: components["schemas"]["StorageBinding"][];
+            /**
+             * Operation Bindings
+             * @default []
+             */
+            operation_bindings: components["schemas"]["OperationBinding"][];
+            /**
+             * Spec Id
+             * Format: uuid
+             */
+            spec_id: string;
+            /** Spec Version */
+            spec_version: number;
+            /** Parent Spec Hash */
+            parent_spec_hash?: string | null;
+            baseline: components["schemas"]["BaselineReference"];
+            /**
+             * Template
+             * @enum {string}
+             */
+            template: "inventory-fastapi-react-v1" | "domain-fastapi-react-v1";
+            /** Requirements */
+            requirements: components["schemas"]["SpecRequirement"][];
+            /** Roles */
+            roles: components["schemas"]["ActorRole"][];
+            /** Entities */
+            entities: components["schemas"]["SpecEntity"][];
+            /** Use Cases */
+            use_cases: components["schemas"]["UseCase"][];
+            /** Invariants */
+            invariants: components["schemas"]["Invariant"][];
+            /** Apis */
+            apis: components["schemas"]["ApiOperation"][];
+            /** Screens */
+            screens: components["schemas"]["Screen"][];
+            /** Acceptance Cases */
+            acceptance_cases: components["schemas"]["AcceptanceCase"][];
+            /** Questions */
+            questions: components["schemas"]["OpenQuestion"][];
+        };
+        /** SpecEntity */
+        SpecEntity: {
+            /** Id */
+            id: string;
+            /** Legacy Id */
+            legacy_id: string;
+            /** Name */
+            name: string;
+            /** Fields */
+            fields: components["schemas"]["SpecField"][];
+        };
+        /** SpecField */
+        SpecField: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Data Type
+             * @enum {string}
+             */
+            data_type: "string" | "integer" | "decimal" | "boolean" | "date" | "datetime" | "uuid";
+            /** Required */
+            required: boolean;
+        };
+        /** SpecRequirement */
+        SpecRequirement: {
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "FR" | "NFR";
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "Must" | "Should" | "Could" | "Won't";
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "design" | "user";
+            /** Legacy Id */
+            legacy_id?: string | null;
+            /** Rationale */
+            rationale: string;
+            /** Requires Ui */
+            requires_ui: boolean;
+        };
+        /** SpecView */
+        SpecView: {
+            bundle: components["schemas"]["SpecBundle"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_input" | "ready_for_review" | "approved";
+            readiness: components["schemas"]["ReadinessReport"];
+            /** Approved By */
+            approved_by: string | null;
+            /** Versions */
+            versions: number[];
+        };
+        /** TextLiteral */
+        TextLiteral: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "text";
+            /** Value */
+            value: string;
+        };
+        /** UseCase */
+        UseCase: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Req Ids */
+            req_ids: string[];
+            /** Actor Roles */
+            actor_roles: string[];
+            /** Preconditions */
+            preconditions: string[];
+            /** Inputs */
+            inputs: components["schemas"]["SpecField"][];
+            /** Steps */
+            steps: string[];
+            /** Outputs */
+            outputs: components["schemas"]["SpecField"][];
+            /** Error Codes */
+            error_codes: string[];
+            /**
+             * Transaction
+             * @enum {string}
+             */
+            transaction: "read_only" | "atomic";
+            /**
+             * Idempotency
+             * @enum {string}
+             */
+            idempotency: "not_applicable" | "key";
+        };
+        /** OperationBinding */
+        OperationBinding: {
+            /** Api Id */
+            api_id: string;
+            /** Entity Id */
+            entity_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "insert" | "get" | "list" | "update";
+            /** Key Field Id */
+            key_field_id: string;
+            /**
+             * Key Format
+             * @constant
+             */
+            key_format: "url-safe-segment";
+        };
+        /** StorageBinding */
+        StorageBinding: {
+            /** Entity Id */
+            entity_id: string;
+            /** Table Id */
+            table_id: string;
+            /** Columns */
+            columns: {
+                [key: string]: string;
+            };
+        };
+        /** InventoryPolicy */
+        InventoryPolicy: {
+            /**
+             * Profile
+             * @constant
+             */
+            profile: "stock-ledger-v1";
+            /**
+             * Storage
+             * @constant
+             */
+            storage: "generated-ledger-v1";
+            /** Warehouse Entity Id */
+            warehouse_entity_id: string;
+            /** Item Entity Id */
+            item_entity_id: string;
+            /**
+             * Quantity Scale
+             * @constant
+             */
+            quantity_scale: 3;
+            /**
+             * Negative Stock
+             * @constant
+             */
+            negative_stock: false;
+            /**
+             * Cancel Received
+             * @constant
+             */
+            cancel_received: "require_available_stock";
+            /** Api Ids */
+            api_ids: {
+                [key: string]: string;
+            };
+        };
+        /** VerificationRequest */
+        VerificationRequest: {
+            /** Expected Version */
+            expected_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+            /** Source Hash */
+            source_hash: string;
+            /**
+             * Request Key
+             * Format: uuid
+             */
+            request_key: string;
+        };
+        /** PreviewRequest */
+        PreviewRequest: {
+            /**
+             * Verification Id
+             * Format: uuid
+             */
+            verification_id: string;
+            /**
+             * Request Key
+             * Format: uuid
+             */
+            request_key: string;
+        };
+        /** PreviewRPC */
+        PreviewRPC: {
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "GET" | "POST" | "PATCH";
+            /** Path */
+            path: string;
+            /** Body */
+            body?: string | null;
+            /** Command Key */
+            command_key?: string | null;
+        };
+        /** AdoptionRequest */
+        AdoptionRequest: {
+            /**
+             * Implementation Id
+             * Format: uuid
+             */
+            implementation_id: string;
+            /**
+             * Verification Id
+             * Format: uuid
+             */
+            verification_id: string;
+            /** Expected Current Id */
+            expected_current_id: string | null;
+            /** Comparison Hash */
+            comparison_hash: string;
+            /**
+             * Request Key
+             * Format: uuid
+             */
+            request_key: string;
+            /** Rationale */
+            rationale: string;
+            /**
+             * Acknowledge Unverified Acceptance
+             * @constant
+             */
+            acknowledge_unverified_acceptance: true;
+        };
+        /** Filter */
+        Filter: {
+            /** Query */
+            query: string;
+            /**
+             * Automatic
+             * @default false
+             */
+            automatic: boolean;
+        };
+        /** Suggestion */
+        Suggestion: {
+            /**
+             * Section
+             * @enum {string}
+             */
+            section: "apis" | "use_cases" | "screens" | "requirements" | "commerce" | "domain_operations" | "domain_commands" | "domain_calculations";
+            /** Object Id */
+            object_id: string;
+            /** Field */
+            field: string;
+            /** Value Json */
+            value_json: string;
+            /** Rationale */
+            rationale: string;
+        };
+        /** NewChange */
+        NewChange: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Request Key
+             * Format: uuid
+             */
+            request_key: string;
+            /** Title */
+            title: string;
+            /** Quote */
+            quote: string;
+            /**
+             * Instruction
+             * @default
+             */
+            instruction: string;
+        };
+        /** Clarification */
+        Clarification: {
+            /** Expected Version */
+            expected_version: number;
+            /** Instruction */
+            instruction: string;
+        };
+        /** Analysis */
+        Analysis: {
+            /** Summary */
+            summary: string;
+            /** Quotes */
+            quotes: string[];
+            /** Requests */
+            requests: string[];
+            /** Questions */
+            questions: string[];
+            /** Unsupported */
+            unsupported: string[];
+            /** Suggestions */
+            suggestions: components["schemas"]["Suggestion"][];
+        };
+        /** Review */
+        Review: {
+            /** Expected Version */
+            expected_version: number;
+            analysis: components["schemas"]["Analysis"];
+            /**
+             * Acceptance Reviews
+             * @default []
+             */
+            acceptance_reviews: components["schemas"]["AcceptanceReview"][];
+        };
+        /** Decision */
+        Decision: {
+            /** Expected Version */
+            expected_version: number;
+            /** Target Hash */
+            target_hash: string;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approve" | "reject";
+            /** Note */
+            note: string;
+            /**
+             * Acknowledge Unverified Acceptance
+             * @constant
+             */
+            acknowledge_unverified_acceptance: true;
+        };
+        /** Analyse */
+        Analyse: {
+            /** Expected Version */
+            expected_version: number;
+            /**
+             * Consent External Analysis
+             * @constant
+             */
+            consent_external_analysis: true;
+        };
+        /** Version */
+        Version: {
+            /** Expected Version */
+            expected_version: number;
+        };
+        /** AcceptanceOutline */
+        AcceptanceOutline: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "normal" | "boundary" | "failure" | "concurrency" | "security" | "recovery";
+            /** Given */
+            given: string;
+            /** When */
+            when: string;
+            /** Expected */
+            expected: string;
+            /**
+             * Execution
+             * @default not_executable
+             * @constant
+             */
+            execution: "not_executable";
+        };
+        /** ApiScenario */
+        ApiScenario: {
+            /**
+             * Version
+             * @default api-scenario-v1
+             * @constant
+             */
+            version: "api-scenario-v1";
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "normal" | "boundary" | "failure";
+            /**
+             * Initial State
+             * @default empty_database
+             * @constant
+             */
+            initial_state: "empty_database";
+            /** Steps */
+            steps: components["schemas"]["ApiTestStep"][];
+        };
+        /** ApiTestStep */
+        ApiTestStep: {
+            /** Api Id */
+            api_id: string;
+            /**
+             * Actor
+             * @default allowed
+             * @enum {string}
+             */
+            actor: "allowed" | "unauthenticated" | "denied";
+            /** Body */
+            body?: {
+                [key: string]: string | number | boolean | null;
+            } | null;
+            /** Request Key */
+            request_key?: string | null;
+            /** Expect */
+            expect: components["schemas"]["ExactResponse"] | components["schemas"]["ErrorResponse"];
+        };
+        /** BusinessContractWorksheet */
+        BusinessContractWorksheet: {
+            /** Requirement Id */
+            requirement_id: string;
+            /** Source Id */
+            source_id: string | null;
+            /** Text */
+            text: string;
+            /** Kind */
+            kind: string;
+            /** Priority */
+            priority: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "included" | "excluded";
+            /** Rationale */
+            rationale: string;
+            /** Coverage */
+            coverage: string;
+            /** Coverage Explanation */
+            coverage_explanation: string;
+            /** Role Ids */
+            role_ids: string[];
+            /** Use Case Ids */
+            use_case_ids: string[];
+            /** Api Ids */
+            api_ids: string[];
+            /** Entity Ids */
+            entity_ids: string[];
+            /** Table Ids */
+            table_ids: string[];
+            /** Invariant Ids */
+            invariant_ids: string[];
+            /** Unresolved Question Ids */
+            unresolved_question_ids: string[];
+            /** Executable Case Ids */
+            executable_case_ids: string[];
+            /** Missing Api Case Categories */
+            missing_api_case_categories: string[];
+            /** Topics */
+            topics: components["schemas"]["ContractTopic"][];
+            /**
+             * Status
+             * @default draft_requires_review
+             * @constant
+             */
+            status: "draft_requires_review";
+            /**
+             * Business Acceptance
+             * @default not_run
+             * @constant
+             */
+            business_acceptance: "not_run";
+        };
+        /** BusinessRequest */
+        BusinessRequest: {
+            /** Expected Version */
+            expected_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+            /**
+             * Acknowledge Demo Defaults
+             * @constant
+             */
+            acknowledge_demo_defaults: true;
+        };
+        /** Capability */
+        Capability: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "supported" | "not_supported";
+            /** Scope */
+            scope: string;
+            /**
+             * Signals
+             * @default []
+             */
+            signals: string[];
+        };
+        /** CommercePolicy */
+        CommercePolicy: {
+            /**
+             * Profile
+             * @default wholesale-demo-v1
+             * @constant
+             */
+            profile: "wholesale-demo-v1";
+            /**
+             * Storage
+             * @default derived-commerce-v1
+             * @constant
+             */
+            storage: "derived-commerce-v1";
+            /** Source Tables */
+            source_tables: {
+                [key: string]: string;
+            };
+            /** Api Ids */
+            api_ids: {
+                [key: string]: string;
+            };
+            /**
+             * Defaults Acknowledged
+             * @constant
+             */
+            defaults_acknowledged: true;
+            /**
+             * Product Note Enabled
+             * @default false
+             */
+            product_note_enabled: boolean;
+            /**
+             * Timezone
+             * @default Asia/Seoul
+             * @constant
+             */
+            timezone: "Asia/Seoul";
+            /**
+             * Cutoff Hour
+             * @default 17
+             */
+            cutoff_hour: number;
+            /**
+             * Expiry Days
+             * @default 30
+             */
+            expiry_days: number;
+            /**
+             * Return Warning Percent
+             * @default 5
+             */
+            return_warning_percent: number;
+            /**
+             * Stock Deduction
+             * @default order_acceptance
+             * @constant
+             */
+            stock_deduction: "order_acceptance";
+            /**
+             * Shortage
+             * @default reject_entire_order
+             * @constant
+             */
+            shortage: "reject_entire_order";
+            /**
+             * Cancellation
+             * @default restore_allocations
+             * @constant
+             */
+            cancellation: "restore_allocations";
+            /**
+             * Return Stock
+             * @default no_automatic_restock
+             * @constant
+             */
+            return_stock: "no_automatic_restock";
+            /**
+             * Return Zero Purchase
+             * @default warn_if_positive_return
+             * @constant
+             */
+            return_zero_purchase: "warn_if_positive_return";
+            /**
+             * Notifications
+             * @default in_app_on_read
+             * @constant
+             */
+            notifications: "in_app_on_read";
+        };
+        /** CompletionRequest */
+        CompletionRequest: {
+            /** Expected Version */
+            expected_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+            /**
+             * Instruction
+             * @default
+             */
+            instruction: string;
+            /**
+             * Consent External Analysis
+             * @constant
+             */
+            consent_external_analysis: true;
+        };
+        /** CompletionView */
+        CompletionView: {
+            bundle: components["schemas"]["SpecBundle"];
+            readiness: components["schemas"]["ReadinessReport"];
+            /** Generation Ready */
+            generation_ready: boolean;
+            /** Generation Issue */
+            generation_issue: string | null;
+            /** Calls */
+            calls: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** ContractTopic */
+        ContractTopic: {
+            /** Capability Id */
+            capability_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Detection
+             * @enum {string}
+             */
+            detection: "text_hint" | "baseline_review";
+            /**
+             * Matched Expressions
+             * @default []
+             */
+            matched_expressions: string[];
+            /** Decisions Required */
+            decisions_required: string[];
+            /** Acceptance Outline */
+            acceptance_outline: components["schemas"]["AcceptanceOutline"][];
+        };
+        /** Coverage */
+        Coverage: {
+            /** Requirement Id */
+            requirement_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_review" | "mapped" | "unsupported";
+            /** Api Ids */
+            api_ids?: string[];
+            /** Explanation */
+            explanation: string;
+        };
+        /** DemoRequest */
+        DemoRequest: {
+            /** Expected Version */
+            expected_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+            /** Table Id */
+            table_id: string;
+            /** Screen Name */
+            screen_name: string;
+            /**
+             * Acknowledge Demo Scope
+             * @constant
+             */
+            acknowledge_demo_scope: true;
+        };
+        /** DomainOperation */
+        DomainOperation: {
+            /** Api Id */
+            api_id: string;
+            /** Table Id */
+            table_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "insert" | "list" | "update" | "transition";
+            /** Guards */
+            guards?: components["schemas"]["Guard"][];
+            transition?: components["schemas"]["Transition"] | null;
+        };
+        /** DomainPlan */
+        DomainPlan: {
+            /**
+             * Version
+             * @default domain-ir-v1
+             * @enum {string}
+             */
+            version: "domain-ir-v1" | "domain-ir-v2" | "domain-ir-v3";
+            /** Operations */
+            operations: components["schemas"]["DomainOperation"][];
+            /** Coverage */
+            coverage: components["schemas"]["Coverage"][];
+            /**
+             * Commands
+             * @default []
+             */
+            commands: components["schemas"]["AtomicCommand"][];
+            /**
+             * Calculations
+             * @default []
+             */
+            calculations: components["schemas"]["CalculationQuery"][];
+        };
+        /** ErrorResponse */
+        ErrorResponse: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "error";
+            /**
+             * Status
+             * @enum {integer}
+             */
+            status: 401 | 403 | 404 | 409 | 422;
+            /** Code */
+            code: string;
+        };
+        /** ExactResponse */
+        ExactResponse: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "exact";
+            /**
+             * Status
+             * @default 200
+             * @constant
+             */
+            status: 200;
+            /** Body */
+            body: {
+                [key: string]: string | number | boolean | null;
+            } | {
+                [key: string]: string | number | boolean | null;
+            }[];
+        };
+        /** Guard */
+        Guard: {
+            /** Column Id */
+            column_id: string;
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "eq" | "ne" | "lt" | "le" | "gt" | "ge";
+            /** Value */
+            value: string | number | boolean | null;
+        };
+        /** HandoffGate */
+        HandoffGate: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "blocked" | "review_required" | "not_run";
+            /** Detail */
+            detail: string;
+        };
+        /** HandoffReport */
+        HandoffReport: {
+            /**
+             * Version
+             * @default handoff-readiness-v1
+             * @constant
+             */
+            version: "handoff-readiness-v1";
+            /**
+             * Catalog Version
+             * @default domain-capabilities-v6
+             */
+            catalog_version: string;
+            /**
+             * Assessment Kind
+             * @default read_only_review
+             * @constant
+             */
+            assessment_kind: "read_only_review";
+            /**
+             * Spec Id
+             * Format: uuid
+             */
+            spec_id: string;
+            /** Spec Version */
+            spec_version: number;
+            /** Spec Hash */
+            spec_hash: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Baseline Id
+             * Format: uuid
+             */
+            baseline_id: string;
+            /** Is Latest */
+            is_latest: boolean;
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "contract_work_required" | "technical_review_only";
+            /** Included Requirements */
+            included_requirements: number;
+            /** Excluded Requirements */
+            excluded_requirements: number;
+            /** Extension Hint Requirements */
+            extension_hint_requirements: number;
+            /** Requirements Without Executable Cases */
+            requirements_without_executable_cases: number;
+            /** Gates */
+            gates: components["schemas"]["HandoffGate"][];
+            /** Contracts */
+            contracts: components["schemas"]["BusinessContractWorksheet"][];
+            source?: components["schemas"]["SourceAssessment"] | null;
+            /**
+             * Business Acceptance
+             * @default not_run
+             * @constant
+             */
+            business_acceptance: "not_run";
+            /**
+             * Customer Handoff
+             * @default not_recorded
+             * @constant
+             */
+            customer_handoff: "not_recorded";
+            /**
+             * Notice
+             * @default 저장된 명세와 해당 소스의 근거를 확인한 읽기 전용 점검입니다. 표현 기반 확장 후보는 제외·부정 문맥까지 검토해야 합니다. 계약 초안의 기대 조건은 실행된 테스트가 아니며 답변·구현·승인을 대신하지 않습니다. 기술 검사 통과와 고객의 업무 인수·실제 환경 납품은 별도입니다.
+             */
+            notice: string;
+        };
+        /** PackEntry */
+        PackEntry: {
+            /** Name */
+            name: string;
+            /** Label */
+            label: string;
+            /** Summary */
+            summary: string;
+            /** Version */
+            version: string | null;
+            /** Common Version */
+            common_version: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "available" | "draft" | "invalid";
+            /** Selectable */
+            selectable: boolean;
+            /** Reason */
+            reason: string;
+            /**
+             * Terms
+             * @default 0
+             */
+            terms: number;
+            /**
+             * Patterns
+             * @default 0
+             */
+            patterns: number;
+        };
+        /** ScopeHint */
+        ScopeHint: {
+            /** Capability Id */
+            capability_id: string;
+            /** Capability Name */
+            capability_name: string;
+            /** Evidence */
+            evidence: string[];
+            /** Message */
+            message: string;
+        };
+        /** ScopeItem */
+        ScopeItem: {
+            /** Requirement Id */
+            requirement_id: string;
+            /** Text */
+            text: string;
+            /**
+             * Disposition
+             * @enum {string}
+             */
+            disposition: "needs_review" | "extension_candidate";
+            /** Hints */
+            hints: components["schemas"]["ScopeHint"][];
+            /** Next Action */
+            next_action: string;
+        };
+        /** ScopeReport */
+        ScopeReport: {
+            /**
+             * Catalog Version
+             * @default domain-capabilities-v6
+             */
+            catalog_version: string;
+            /**
+             * Assessment Kind
+             * @default advisory
+             * @constant
+             */
+            assessment_kind: "advisory";
+            /** Revision */
+            revision: number;
+            /** Items */
+            items: components["schemas"]["ScopeItem"][];
+            /** Needs Review */
+            needs_review: number;
+            /** Extension Candidates */
+            extension_candidates: number;
+            /**
+             * Business Acceptance
+             * @default not_run
+             * @constant
+             */
+            business_acceptance: "not_run";
+            /**
+             * Notice
+             * @default 문장의 표현을 근거로 한 검토 안내입니다. 부정·제외 조건은 직접 확인하세요. 표시가 없는 요구도 구현 완료가 아니며 실행 계약과 업무 인수 검증이 필요합니다.
+             */
+            notice: string;
+        };
+        /** SourceAssessment */
+        SourceAssessment: {
+            /**
+             * Implementation Id
+             * Format: uuid
+             */
+            implementation_id: string;
+            /** Source Hash */
+            source_hash: string;
+            /** Template Version */
+            template_version: string;
+            /** Verification Id */
+            verification_id?: string | null;
+            integrity: components["schemas"]["HandoffGate"];
+            verification: components["schemas"]["HandoffGate"];
+            /**
+             * Passed Case Ids
+             * @default []
+             */
+            passed_case_ids: string[];
+        };
+        /** Transition */
+        Transition: {
+            /** Column Id */
+            column_id: string;
+            /** From Values */
+            from_values: (string | number | boolean | null)[];
+            /** To Value */
+            to_value: string | number | boolean | null;
+        };
+        /** AtomicCommand */
+        AtomicCommand: {
+            /** Api Id */
+            api_id: string;
+            /** Input Bindings */
+            input_bindings: components["schemas"]["CommandBinding"][];
+            /** Targets */
+            targets: components["schemas"]["CommandTarget"][];
+            /**
+             * Before
+             * @default []
+             */
+            before: components["schemas"]["CommandCondition"][];
+            /** Writes */
+            writes: components["schemas"]["CommandWrite"][];
+            /**
+             * After
+             * @default []
+             */
+            after: components["schemas"]["CommandCondition"][];
+            /** Returns */
+            returns: {
+                [key: string]: components["schemas"]["CommandInput"] | components["schemas"]["CommandRowValue"] | components["schemas"]["CommandLiteral"] | components["schemas"]["CalculatedValue"];
+            };
+            /**
+             * Column Units
+             * @default []
+             */
+            column_units: components["schemas"]["ColumnUnit"][];
+            /**
+             * Calculations
+             * @default []
+             */
+            calculations: components["schemas"]["CalculationStep"][];
+        };
+        /** CommandArithmetic */
+        CommandArithmetic: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "arithmetic";
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "add" | "subtract";
+            /** Left */
+            left: components["schemas"]["CommandInput"] | components["schemas"]["CommandRowValue"] | components["schemas"]["CommandLiteral"] | components["schemas"]["CalculatedValue"];
+            /** Right */
+            right: components["schemas"]["CommandInput"] | components["schemas"]["CommandRowValue"] | components["schemas"]["CommandLiteral"] | components["schemas"]["CalculatedValue"];
+        };
+        /** CommandBinding */
+        CommandBinding: {
+            /** Field Id */
+            field_id: string;
+            /** Table Id */
+            table_id: string;
+            /** Column Id */
+            column_id: string;
+        };
+        /** CommandCondition */
+        CommandCondition: {
+            /** Left */
+            left: components["schemas"]["CommandInput"] | components["schemas"]["CommandRowValue"] | components["schemas"]["CommandLiteral"] | components["schemas"]["CalculatedValue"];
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "eq" | "ne" | "lt" | "le" | "gt" | "ge";
+            /** Right */
+            right: components["schemas"]["CommandInput"] | components["schemas"]["CommandRowValue"] | components["schemas"]["CommandLiteral"] | components["schemas"]["CalculatedValue"];
+        };
+        /** CommandInput */
+        CommandInput: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "input";
+            /** Field Id */
+            field_id: string;
+        };
+        /** CommandLiteral */
+        CommandLiteral: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "literal";
+            /** Value */
+            value: string | number | boolean | null;
+        };
+        /** CommandRowValue */
+        CommandRowValue: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "row";
+            /** Target */
+            target: string;
+            /** Column Id */
+            column_id: string;
+        };
+        /** CommandTarget */
+        CommandTarget: {
+            /** Id */
+            id: string;
+            /** Table Id */
+            table_id: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "read" | "update" | "insert";
+            /** Keys */
+            keys: {
+                [key: string]: components["schemas"]["CommandInput"] | components["schemas"]["CommandLiteral"];
+            };
+        };
+        /** CommandWrite */
+        CommandWrite: {
+            /** Target */
+            target: string;
+            /** Values */
+            values: {
+                [key: string]: components["schemas"]["CommandInput"] | components["schemas"]["CommandRowValue"] | components["schemas"]["CommandLiteral"] | components["schemas"]["CommandArithmetic"] | components["schemas"]["CalculatedValue"];
+            };
+        };
+        /** AggregateMeasure */
+        AggregateMeasure: {
+            /** Id */
+            id: string;
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "count" | "sum" | "average" | "min" | "max";
+            /** Column Id */
+            column_id?: string | null;
+            /**
+             * Null Policy
+             * @enum {string}
+             */
+            null_policy: "ignore" | "error";
+            /**
+             * Empty Policy
+             * @enum {string}
+             */
+            empty_policy: "zero" | "null" | "error";
+            result: components["schemas"]["NumericPolicy"];
+        };
+        /** AggregateValue */
+        AggregateValue: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "aggregate";
+            /** Aggregate Id */
+            aggregate_id: string;
+        };
+        /** CalculatedValue */
+        CalculatedValue: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "calculated";
+            /** Calculation Id */
+            calculation_id: string;
+        };
+        /** CalculationQuery */
+        CalculationQuery: {
+            /** Api Id */
+            api_id: string;
+            /** Table Id */
+            table_id: string;
+            /** Input Bindings */
+            input_bindings: components["schemas"]["QueryBinding"][];
+            /** Column Units */
+            column_units: components["schemas"]["ColumnUnit"][];
+            /** Filters */
+            filters: components["schemas"]["QueryFilter"][];
+            /** Windows */
+            windows: components["schemas"]["QueryWindow"][];
+            /** Max Rows */
+            max_rows: number;
+            /** Aggregates */
+            aggregates: components["schemas"]["AggregateMeasure"][];
+            /** Calculations */
+            calculations: components["schemas"]["CalculationStep"][];
+            /** Returns */
+            returns: {
+                [key: string]: components["schemas"]["AggregateValue"] | components["schemas"]["CalculatedValue"];
+            };
+        };
+        /** CalculationStep */
+        CalculationStep: {
+            /** Id */
+            id: string;
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "add" | "subtract" | "multiply" | "divide" | "absolute";
+            /** Left */
+            left: components["schemas"]["NumericInput"] | components["schemas"]["NumericRow"] | components["schemas"]["AggregateValue"] | components["schemas"]["CalculatedValue"] | components["schemas"]["NumericLiteral"];
+            /** Right */
+            right?: (components["schemas"]["NumericInput"] | components["schemas"]["NumericRow"] | components["schemas"]["AggregateValue"] | components["schemas"]["CalculatedValue"] | components["schemas"]["NumericLiteral"]) | null;
+            result: components["schemas"]["NumericPolicy"];
+            /**
+             * Null Policy
+             * @enum {string}
+             */
+            null_policy: "error" | "propagate";
+            /**
+             * Zero Division
+             * @default error
+             * @enum {string}
+             */
+            zero_division: "error" | "zero" | "null";
+        };
+        /** ColumnUnit */
+        ColumnUnit: {
+            /** Table Id */
+            table_id: string;
+            /** Column Id */
+            column_id: string;
+            /** Unit */
+            unit: {
+                [key: string]: number;
+            };
+        };
+        /** NumericInput */
+        NumericInput: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "input";
+            /** Field Id */
+            field_id: string;
+        };
+        /** NumericLiteral */
+        NumericLiteral: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "number";
+            /** Value */
+            value: string;
+            /** Unit */
+            unit: {
+                [key: string]: number;
+            };
+        };
+        /** NumericPolicy */
+        NumericPolicy: {
+            /** Precision */
+            precision: number;
+            /** Scale */
+            scale: number;
+            /**
+             * Rounding
+             * @enum {string}
+             */
+            rounding: "half_even" | "half_up" | "down";
+            /** Unit */
+            unit: {
+                [key: string]: number;
+            };
+        };
+        /** NumericRow */
+        NumericRow: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "row";
+            /** Target */
+            target: string;
+            /** Column Id */
+            column_id: string;
+        };
+        /** QueryBinding */
+        QueryBinding: {
+            /** Field Id */
+            field_id: string;
+            /** Table Id */
+            table_id: string;
+            /** Column Id */
+            column_id: string;
+        };
+        /** QueryFilter */
+        QueryFilter: {
+            /** Column Id */
+            column_id: string;
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "eq" | "ne" | "lt" | "le" | "gt" | "ge";
+            /** Input Field Id */
+            input_field_id: string;
+        };
+        /** QueryWindow */
+        QueryWindow: {
+            /** Column Id */
+            column_id: string;
+            /** Start Field Id */
+            start_field_id: string;
+            /** End Field Id */
+            end_field_id: string;
+            /** Start Inclusive */
+            start_inclusive: boolean;
+            /** End Inclusive */
+            end_inclusive: boolean;
+        };
+        /** AcceptanceReview */
+        AcceptanceReview: {
+            /** Case Id */
+            case_id: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Replacements
+             * @default []
+             */
+            replacements: components["schemas"]["ExpectedResultReview"][];
+        };
+        /** ExpectedResultReview */
+        ExpectedResultReview: {
+            /** Step Index */
+            step_index: number;
+            expect: components["schemas"]["ExactResponse"];
+        };
     };
     responses: never;
     parameters: never;
@@ -328,19 +2944,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": {
-                    /**
-                     * Format: binary
-                     * @description 허용 확장자: .xlsx, .csv, .hwpx, .hwp (한글은 요구사항 상세표를 읽음, PDF는 이번 범위 밖)
-                     */
-                    file: string;
-                    /** @enum {string} */
-                    pack: "inventory" | "maintenance";
-                };
+                "multipart/form-data": components["schemas"]["Body_createRun"];
             };
         };
         responses: {
-            /** @description 등록됨; 실행 성공을 의미하지 않음 */
+            /** @description Successful Response */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -349,40 +2957,13 @@ export interface operations {
                     "application/json": components["schemas"]["RunStatus"];
                 };
             };
-            /** @description code/message/retryable 형식 오류 */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description code/message/retryable 형식 오류 */
-            415: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description code/message/retryable 형식 오류 */
+            /** @description Validation Error */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description code/message/retryable 형식 오류 */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -440,7 +3021,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description id/event/data SSE. 각 이벤트의 논리 구조는 SseEvent 스키마, 종류·payload는 docs/06-api.md 참고 */
+            /** @description id/event/data SSE. 각 이벤트의 논리 구조는 SseEvent 스키마, 종류·payload는 docs/ko/api.md 참고 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -710,6 +3291,1903 @@ export interface operations {
                         /** @constant */
                         status: "ok";
                     };
+                };
+            };
+        };
+    };
+    googleLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    googleCallback: {
+        parameters: {
+            query?: {
+                state?: string;
+                code?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    currentUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listProjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    createProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claimRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createBaseline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaselineInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                baseline_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Edit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSpecificationVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approveSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Expected"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generateImplementation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Expected"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getImplementation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    downloadImplementation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getStorageCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listVerifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    requestVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancelVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listPreviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    requestPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impl_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    closePreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                preview_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getPreviewDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                preview_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previewRPC: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                preview_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewRPC"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listImplementationCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compareImplementationCandidate: {
+        parameters: {
+            query?: {
+                base_id?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getImplementationBaseline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adoptImplementationCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdoptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getGmailConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    connectGmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    gmailCallback: {
+        parameters: {
+            query?: {
+                state?: string;
+                code?: string;
+                error?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnectGmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configureGmailCollection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Filter"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    syncGmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listFeedbackMessages: {
+        parameters: {
+            query?: {
+                before?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getFeedbackMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eraseFeedbackMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listFeedbackJobs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    createFeedbackChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listProjectChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getFeedbackChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                change_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analyseFeedbackChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                change_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Analyse"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reviewFeedbackProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                change_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Review"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decideFeedbackChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                change_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Decision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    implementFeedbackChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                change_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Version"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clarifyFeedbackChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                change_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Clarification"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listFeedbackReviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                change_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assessRunScope: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopeReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listDomainPacks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackEntry"][];
+                };
+            };
+        };
+    };
+    listImplementationCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Capability"][];
+                };
+            };
+        };
+    };
+    assessSpecificationScope: {
+        parameters: {
+            query?: {
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopeReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    proposeExecutableSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompletionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompletionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    proposeDemoSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DemoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompletionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    proposeBusinessSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompletionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deriveDomainSpecification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Expected"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompletionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assessHandoffReadiness: {
+        parameters: {
+            query?: {
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandoffReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    downloadExecutableDesign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                spec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

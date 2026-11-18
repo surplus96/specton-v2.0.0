@@ -11,8 +11,19 @@ from pydantic import BaseModel
 
 from specton import __version__
 from specton.agent_nodes import openai_agent_nodes
+from specton.api.access_log import install_oauth_log_filter
+from specton.api.adoptions import router as adoptions_router
+from specton.api.auth import router as auth_router
+from specton.api.catalog import router as catalog_router
 from specton.api.errors import install_error_handlers
+from specton.api.feedback import router as feedback_router
+from specton.api.gmail import router as gmail_router
+from specton.api.handoff import router as handoff_router
+from specton.api.implementations import router as implementations_router
+from specton.api.previews import router as previews_router
+from specton.api.projects import router as projects_router
 from specton.api.runs import router as runs_router
+from specton.api.specifications import router as specifications_router
 from specton.config import Settings, get_settings
 from specton.ddl_node import ddl_node
 from specton.design_rules_node import design_rules_node
@@ -24,7 +35,8 @@ from specton.manifest_node import manifest_node
 from specton.normalization_node import normalization_node
 from specton.parse_node import parse_node
 from specton.pdf_adapter import erd_pdf_renderer, function_spec_pdf_renderer
-from specton.persistence.db import Pool, apply_schema, create_checkpointer, create_pool
+from specton.persistence.db import Pool, create_checkpointer, create_pool
+from specton.persistence.migrate import require_current_schema
 from specton.review.normalization_findings import failure_mapper, rule_severities
 from specton.review.rule_policy import load_policies
 from specton.runner import Runner
@@ -84,6 +96,7 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
     시작 순서는 docs/11을 따른다: DB 연결 → 앱 표·checkpointer 준비 → 실행기 → API.
     중지할 때는 실행기를 먼저 멈춰 실행 중인 run을 노드 경계에서 저장하고 lease를 반납한다.
     """
+    install_oauth_log_filter()
     settings = settings or get_settings()
 
     @asynccontextmanager
@@ -95,7 +108,7 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
         owned.open(wait=True)
         runner: Runner | None = None
         try:
-            apply_schema(owned)
+            require_current_schema(owned)
             graph = create_graph(settings, create_checkpointer(owned))
             runner = Runner(owned, graph, settings)
             runner.start()
@@ -112,6 +125,16 @@ def create_app(settings: Settings | None = None, pool: Pool | None = None) -> Fa
         app.state.pool = pool
     install_error_handlers(app)
     app.include_router(runs_router)
+    app.include_router(catalog_router)
+    app.include_router(auth_router)
+    app.include_router(projects_router)
+    app.include_router(specifications_router)
+    app.include_router(handoff_router)
+    app.include_router(implementations_router)
+    app.include_router(previews_router)
+    app.include_router(adoptions_router)
+    app.include_router(gmail_router)
+    app.include_router(feedback_router)
 
     @app.get("/health", operation_id="health")
     def health() -> HealthResponse:

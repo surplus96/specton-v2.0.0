@@ -1,4 +1,4 @@
-// 실행 진행 이벤트(SSE) 받기. GET /runs/{id}/events (docs/06-api.md「SSE」, 구현 가이드 강의 08)
+// 실행 진행 이벤트(SSE) 받기. GET /runs/{id}/events (docs/ko/api.md「SSE」.)
 //
 // - 서버는 이름 있는 이벤트(event: status 등)를 보낸다. onmessage로는 받지 못해 이름마다 addEventListener로 받는다.
 // - 끊기면 브라우저가 Last-Event-ID를 붙여 알아서 다시 연결한다. 직접 다시 열지 않는다.

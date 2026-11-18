@@ -8,14 +8,15 @@
 #   만들기(빌드하는 곳): docker compose -f compose.deploy.yml --env-file .env.deploy build
 #                        docker compose -f compose.deploy.yml --env-file .env.deploy push
 #   기동(서버):          docker compose -f compose.deploy.yml --env-file .env.deploy pull
+#                        docker compose -f compose.deploy.yml --env-file .env.deploy run --rm migrate
 #                        docker compose -f compose.deploy.yml --env-file .env.deploy up -d --no-build
 #   로컬 확인만 할 때:   ... up -d --build  (이미지 이름 기본값 specton-api:local·specton-web:local)
 #   중지: docker compose -f compose.deploy.yml --env-file .env.deploy down
 #
-# 비밀값은 기본값이 없다. 비어 있으면 compose가 기동을 거부한다 (docs/11 「배포 전 할 일」).
+# 비밀값은 기본값이 없다. 비어 있으면 compose가 기동을 거부한다 (docs/ko/deployment.md 「배포 전 할 일」).
 # 비밀번호는 DB 접속 URL에 그대로 들어가므로 영문·숫자로 만든다 (예: openssl rand -hex 24).
 
-name: specton-personal-deploy  # 독립 저장소의 배포 볼륨
+name: specton-personal-deploy  # 저장소 이름 변경 후에도 기존 배포 볼륨을 유지하는 식별자
 
 services:
   db:
@@ -38,6 +39,18 @@ services:
       timeout: 3s
       retries: 10
 
+  migrate:
+    profiles: [tools]
+    build: .
+    image: ${SPECTON_API_IMAGE:-specton-api:local}
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPECTON_APP_DATABASE_URL: postgresql://specton:${POSTGRES_PASSWORD}@db:5432/specton_app
+    command: ["python", "-m", "specton.persistence.migrate", "upgrade"]
+
   api:
     build: .
     # 레지스트리 이름·태그(예: ghcr.io/<owner>/specton-api:<커밋>)를 .env.deploy에 둔다.
@@ -47,6 +60,9 @@ services:
       db:
         condition: service_healthy
     environment:
+      SPECTON_PUBLIC_ORIGIN: ${SPECTON_PUBLIC_ORIGIN:-http://localhost}
+      SPECTON_GOOGLE_CLIENT_ID: ${SPECTON_GOOGLE_CLIENT_ID:-}
+      SPECTON_GOOGLE_CLIENT_SECRET: ${SPECTON_GOOGLE_CLIENT_SECRET:-}
       SPECTON_OPENAI_API_KEY: ${SPECTON_OPENAI_API_KEY:?SPECTON_OPENAI_API_KEY를 .env.deploy에 넣어 주세요}
       SPECTON_APP_DATABASE_URL: postgresql://specton:${POSTGRES_PASSWORD}@db:5432/specton_app
       SPECTON_SANDBOX_DATABASE_URL: postgresql://specton_sandbox:${SANDBOX_PASSWORD}@db:5432/specton_sandbox

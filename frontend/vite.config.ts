@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
+        '/api/v1': apiOrigin,
         '/runs': apiOrigin,
         '/health': apiOrigin,
       },

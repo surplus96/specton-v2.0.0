@@ -1,5 +1,5 @@
 // UI-05 결과 작업공간·UI-07 다운로드의 규칙. 화면 코드와 분리해 테스트한다.
-// 산출물 종류·형식은 docs/06 「산출물 형식」, 화면 흐름은 docs/09를 따른다.
+// 산출물 종류·형식은 docs/ko/api.md 「산출물 형식」, 화면 흐름은 docs/09를 따른다.
 import type { MermaidConfig } from 'mermaid'
 import { ApiError } from '../../api/errors.ts'
 import type { RunState } from '../../api/types.ts'
@@ -8,7 +8,7 @@ import type { ArtifactRef } from '../../api/viewItems.ts'
 export type ArtifactKind = ArtifactRef['kind']
 export type ArtifactFormat = ArtifactRef['file_format']
 
-/** 종류마다 받을 수 있는 형식 (docs/06). 다른 조합은 서버가 422로 거절한다. */
+/** 종류마다 받을 수 있는 형식 (docs/ko/api.md). 다른 조합은 서버가 422로 거절한다. */
 export const ARTIFACT_FORMATS: Record<ArtifactKind, readonly ArtifactFormat[]> = {
   functions: ['md', 'pdf'],
   erd: ['mmd', 'pdf'],
@@ -90,7 +90,7 @@ export type DownloadRow = {
 
 /**
  * 지금 내려받을 수 있는 파일인지. 승인 전 PDF는 서버가 비공개 후보로 목록에 넣지만
- * 받으면 409다 (docs/06 「승인 전 PDF 다운로드는 계속 409」, #217).
+ * 받으면 409다 (docs/ko/api.md 「승인 전 PDF 다운로드는 계속 409」, #217).
  */
 export function isDownloadable(a: Pick<ArtifactRef, 'file_format' | 'approved'>): boolean {
   return a.file_format !== 'pdf' || a.approved
@@ -128,7 +128,7 @@ export function downloadRows(artifacts: readonly ArtifactRef[], approved: boolea
   }))
 }
 
-/** 화면에 보일 파일 이름. 서버와 같은 규칙: specton-<kind>-r<revision>[-draft].<format> (docs/06) */
+/** 화면에 보일 파일 이름. 서버와 같은 규칙: specton-<kind>-r<revision>[-draft].<format> (docs/ko/api.md) */
 export function fileNameOf(a: Pick<ArtifactRef, 'kind' | 'file_format' | 'revision' | 'approved'>): string {
   return `specton-${a.kind}-r${a.revision}${a.approved ? '' : '-draft'}.${a.file_format}`
 }

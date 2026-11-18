@@ -24,6 +24,14 @@ def owner_ref(request: Request, response: Response, settings: SettingsDep) -> st
 
     클라이언트마다 다른 값이어야 다른 실행 접근 차단(TC-N03)을 시험할 수 있다.
     """
+    from specton.api.auth import COOKIE, current_user, mutation
+
+    if request.cookies.get(COOKIE):
+        with request.app.state.pool.connection() as conn:
+            user = current_user(request, conn)
+            if request.method not in {"GET", "HEAD", "OPTIONS"}:
+                mutation(request, user, settings)
+            return f"user:{user['id']}"
     value = request.cookies.get(SESSION_COOKIE)
     if value is not None and _SESSION_FORMAT.fullmatch(value):
         return value

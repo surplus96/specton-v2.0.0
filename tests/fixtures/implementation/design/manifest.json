@@ -1,0 +1,62 @@
+{
+  "approved": true,
+  "files": [
+    {
+      "file_format": "sql",
+      "hash": "fdf427d53415b2664f5ce08908ce6ed6a18c9d80be9e8e67fb024468d2665ed7",
+      "kind": "ddl"
+    },
+    {
+      "file_format": "mmd",
+      "hash": "68c5bef5cbc34dc4c31976b8d23db3d89b83f38378dedbe41a1779b4fb0a885c",
+      "kind": "erd"
+    },
+    {
+      "file_format": "md",
+      "hash": "75f45cc2f54cb46855f1dfc5e380427a4cef0fab29c564510317c5e563ee8362",
+      "kind": "functions"
+    },
+    {
+      "file_format": "csv",
+      "hash": "8c4ca599cafbf5541a9f093c79b0dcfb759bcf23cc28f5b9084f5d5c7709bda2",
+      "kind": "rtm"
+    },
+    {
+      "file_format": "xlsx",
+      "hash": "adaf8a0930033a7b9f63492ff2b19af49a5624b859ddaa3d708a7e3c3e5459d5",
+      "kind": "rtm"
+    }
+  ],
+  "generator_versions": {
+    "common_version": "0.1.8",
+    "lexicon_digest": "c02847ddf0d7f18d159b00e4fe3673a4d638ab74ae8ce487388b06fd258e1d09",
+    "normalize_rules": "normalize-v7",
+    "policy_digest": "412531dfe827db1258381e1ee006ee45b0d081f717b0ae857f5b22728af8c353"
+  },
+  "model_hash": "f7cea3219769eed45e89db3f78a448b29bf759ed795a7f53f5791129c54a59e6",
+  "model_names": {
+    "A01": "gpt-6.1-sol",
+    "A02": "gpt-6.1-sol",
+    "A03": "gpt-6.1-sol",
+    "A04": "gpt-6.1-sol",
+    "A05": "gpt-6-luna",
+    "A06": "gpt-6-luna",
+    "A07": "gpt-6-luna",
+    "A08": "gpt-6-luna"
+  },
+  "pack": "inventory",
+  "pack_version": "0.1.23",
+  "prompt_versions": {
+    "A01": "a01-v2",
+    "A02": "a02-v4",
+    "A03": "a03-v9",
+    "A04": "a04-v9",
+    "A05": "a05-v3",
+    "A06": "a06-v8",
+    "A07": "a07-v5",
+    "A08": "a08-v5"
+  },
+  "revision": "0",
+  "run_id": "4473701d-3f55-4e51-a02f-132b4c6fa815",
+  "source_hash": null
+}

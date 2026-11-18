@@ -1,0 +1,134 @@
+"""Bounded, verified multi-record commands, executed in one PostgreSQL transaction."""
+import hashlib
+import json
+import operator
+from datetime import datetime, timezone
+from decimal import Decimal, localcontext
+from typing import Annotated
+
+import psycopg
+from psycopg import sql
+from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
+from fastapi import Header, HTTPException, Request
+from pydantic import TypeAdapter, ValidationError
+
+from domain import models, enforce_invariants
+
+
+def canonical(value):
+    if isinstance(value, Decimal):
+        with localcontext() as context:
+            context.prec=128
+            return format(value.normalize(), 'f')
+    if isinstance(value, datetime) and value.tzinfo is not None:
+        return value.astimezone(timezone.utc).isoformat()
+    return str(value)
+
+
+def register(app, operations, dsn, principal):
+    def bind(op):
+        _, inputs = models(op)
+        response, _ = models({**op, 'fields':op['response_metadata']})
+        targets={t['id']:t for t in op['targets']}
+        full={k:models({'id':op['id']+'_'+k,'action':'update','fields':t['fields'],'keys':[]})[0] for k,t in targets.items()}
+        fingerprint=hashlib.sha256(json.dumps(op,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+
+        def endpoint(payload, request:Request, idempotency_key:Annotated[str,Header(min_length=1,max_length=128)]):
+            actor=principal(request,op['actor_roles'])
+            values=payload.model_dump()
+            request_hash=hashlib.sha256(json.dumps(payload.model_dump(mode='json'),sort_keys=True,separators=(',',':')).encode()).hexdigest()
+            scope=actor+':'+op['id']+':'+fingerprint
+            rows={}
+            calculated={}
+            def value(expr):
+                kind=expr['kind']
+                if kind=='calculated':return calculated[expr['calculation_id']]
+                if kind=='input':return values[expr['name']]
+                if kind=='row':return rows[expr['target']][expr['name']]
+                if kind=='arithmetic':
+                    left,right=value(expr['left']),value(expr['right'])
+                    with localcontext() as context:
+                        context.prec=128
+                        return left+right if expr['operator']=='add' else left-right
+                raw=expr['value']
+                if raw is None:return None
+                if expr['data_type']=='decimal':return Decimal(raw)
+                if expr['data_type']=='date':
+                    from datetime import date
+                    return date.fromisoformat(raw)
+                if expr['data_type']=='datetime':return datetime.fromisoformat(raw)
+                if expr['data_type']=='uuid':
+                    from uuid import UUID
+                    return UUID(raw)
+                return raw
+            def conditions(rules):
+                for rule in rules:
+                    left,right=value(rule['left']),value(rule['right'])
+                    try:valid={'eq':operator.eq,'ne':operator.ne,'lt':operator.lt,'le':operator.le,'gt':operator.gt,'ge':operator.ge}[rule['operator']](left,right)
+                    except (TypeError,ValueError):valid=False
+                    if not valid:raise HTTPException(409,detail='RULE_VIOLATION')
+            def typed(name, key, raw):
+                f=full[name].model_fields[key]
+                return TypeAdapter(Annotated[f.annotation,*f.metadata]).validate_python(raw)
+            try:
+                keys={name:{key:typed(name,key,value(expr)) for key,expr in t['keys'].items()} for name,t in targets.items()}
+                identity={name:(t['table'],tuple((k,canonical(v)) for k,v in sorted(keys[name].items()))) for name,t in targets.items()}
+                if len(set(identity.values()))!=len(targets):raise HTTPException(409,detail='RULE_VIOLATION')
+                with psycopg.connect(dsn,row_factory=dict_row) as conn:
+                    conn.execute("SET LOCAL lock_timeout='2s'")
+                    conn.execute("SET LOCAL statement_timeout='5s'")
+                    conn.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',(scope+':'+idempotency_key,))
+                    prior=conn.execute('SELECT * FROM _specton_commands WHERE scope=%s AND key=%s',(scope,idempotency_key)).fetchone()
+                    if prior:
+                        if prior['request_hash']!=request_hash:raise HTTPException(409,detail='IDEMPOTENCY_CONFLICT')
+                        return prior['result']
+                    actual=set()
+                    # Lock before reading conditions or computing any writes. Inserts reserve
+                    # the same key; SQL PK/FK constraints remain authoritative.
+                    for name in sorted(targets,key=lambda n:identity[n]):
+                        t=targets[name]; table=sql.Identifier(t['table'])
+                        conn.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,1))',(json.dumps(identity[name]),))
+                        where=sql.SQL(' AND ').join(sql.SQL('{}=%s').format(sql.Identifier(k)) for k in keys[name])
+                        row=conn.execute(sql.SQL('SELECT * FROM {} WHERE {} FOR UPDATE').format(table,where),list(keys[name].values())).fetchone()
+                        if t['mode']=='insert':
+                            if row is not None:raise HTTPException(409,detail='DUPLICATE_KEY')
+                        else:
+                            if row is None:raise HTTPException(404,detail='NOT_FOUND')
+                            row=full[name].model_validate(row).model_dump()
+                            ident=(t['table'],tuple((k,canonical(row[k])) for k in sorted(keys[name])))
+                            if ident in actual:raise HTTPException(409,detail='RULE_VIOLATION')
+                            actual.add(ident);rows[name]=row
+                    if op.get('calculations'):
+                        from calculations import calculate
+                        calculated=calculate(op['calculations'],value)
+                    conditions(op['before'])
+                    for step in op['writes']:
+                        name=step['target'];t=targets[name];table=sql.Identifier(t['table'])
+                        changes={k:value(v) for k,v in step['values'].items()}
+                        proposed={**(rows[name] if t['mode']=='update' else keys[name]),**changes}
+                        proposed=full[name].model_validate(proposed).model_dump()
+                        enforce_invariants(t,proposed)
+                        if t['mode']=='insert':
+                            names=list(proposed)
+                            row=conn.execute(sql.SQL('INSERT INTO {} ({}) VALUES ({}) RETURNING *').format(table,sql.SQL(',').join(map(sql.Identifier,names)),sql.SQL(',').join(sql.Placeholder() for _ in names)),[proposed[n] for n in names]).fetchone()
+                        else:
+                            where=sql.SQL(' AND ').join(sql.SQL('{}=%s').format(sql.Identifier(k)) for k in keys[name])
+                            row=conn.execute(sql.SQL('UPDATE {} SET {} WHERE {} RETURNING *').format(table,sql.SQL(',').join(sql.SQL('{}=%s').format(sql.Identifier(k)) for k in changes),where),[proposed[k] for k in changes]+list(keys[name].values())).fetchone()
+                        rows[name]=full[name].model_validate(row).model_dump()
+                    conditions(op['after'])
+                    output=response.model_validate({k:value(v) for k,v in op['returns'].items()}).model_dump(mode='json')
+                    conn.execute('INSERT INTO _specton_commands VALUES(%s,%s,%s,%s)',(scope,idempotency_key,request_hash,Jsonb(output)))
+                    # The connection context commits *before* this result leaves the endpoint.
+                    return output
+            except ValidationError:raise HTTPException(422,detail='CONSTRAINT_VIOLATION') from None
+            except psycopg.errors.UniqueViolation:raise HTTPException(409,detail='DUPLICATE_KEY') from None
+            except psycopg.errors.ForeignKeyViolation:raise HTTPException(409,detail='REFERENCE_NOT_FOUND') from None
+            except (psycopg.errors.CheckViolation,psycopg.errors.NumericValueOutOfRange,psycopg.errors.NotNullViolation):raise HTTPException(422,detail='CONSTRAINT_VIOLATION') from None
+            except (psycopg.errors.DeadlockDetected,psycopg.errors.SerializationFailure):raise HTTPException(409,detail='CONCURRENT_MODIFICATION') from None
+            except (psycopg.errors.LockNotAvailable,psycopg.errors.QueryCanceled):raise HTTPException(409,detail='COMMAND_TIMEOUT') from None
+            except psycopg.DatabaseError:raise HTTPException(409,detail='TRANSACTION_FAILED') from None
+        endpoint.__annotations__['payload']=inputs
+        app.add_api_route(op['path'],endpoint,methods=['POST'],operation_id=op['id'],response_model=response)
+    for op in operations:
+        if op['action']=='command':bind(op)

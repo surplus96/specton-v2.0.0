@@ -2310,3 +2310,129 @@ a:focus-visible > .logo i {
 .requirement-preview { margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; overflow-wrap: anywhere; }
 .requirement-details { padding: 8px; }
 .requirement-detail-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* 프로젝트·SDD·고객 피드백 화면: 기존 디자인 토큰과 공통 컴포넌트를 사용한다. */
+.extension-page {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.extension-page > a {
+  display: inline-block;
+  margin-bottom: var(--space-4);
+  color: var(--ink-muted);
+}
+.extension-page .screen-head { margin-bottom: var(--space-5); }
+.extension-content { padding: var(--space-6); overflow: visible; }
+.extension-content > :first-child { margin-top: 0; }
+.extension-content > :last-child { margin-bottom: 0; }
+.extension-content p { color: var(--ink-muted); }
+.extension-content h2 {
+  margin: var(--space-6) 0 var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.extension-content h3 { font-size: 18px; }
+.extension-content a:not(.btn) { text-underline-offset: 4px; }
+.extension-content .btn {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  min-height: 44px;
+  padding-block: var(--space-2);
+  margin: var(--space-1) var(--space-2) var(--space-1) 0;
+}
+.extension-content .notice { margin-block: var(--space-4); }
+.extension-content form { margin-block: var(--space-5); }
+.extension-content label {
+  display: grid;
+  gap: var(--space-2);
+  margin-block: var(--space-3);
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+}
+.extension-content label:has(input[type='checkbox']) {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-weight: 400;
+}
+.extension-content label > br { display: none; }
+.extension-content :is(input:not([type='checkbox']), select, textarea) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--page);
+  color: var(--ink);
+  font-weight: 400;
+}
+.extension-content textarea { resize: vertical; line-height: 1.65; }
+.extension-content input[type='checkbox'] {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 4px 0 0;
+  accent-color: var(--forest);
+}
+.extension-content :is(input, select, textarea):disabled {
+  background: var(--soft);
+  color: var(--ink-muted);
+  cursor: not-allowed;
+}
+.extension-card, .extension-content fieldset {
+  min-width: 0;
+  margin-block: var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--page);
+}
+.extension-card > h2:first-child { border: 0; padding-top: 0; margin-top: 0; }
+.extension-content legend { padding-inline: var(--space-2); font-weight: 600; }
+.extension-content :is(ul, ol) { padding-left: var(--space-5); }
+.extension-content li { padding-block: var(--space-2); }
+.extension-content li + li { border-top: 1px solid var(--line); }
+.extension-content blockquote {
+  margin: var(--space-5) 0;
+  padding: var(--space-4) var(--space-5);
+  background: var(--ivory);
+  border-left: 4px solid var(--forest);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.extension-content details {
+  margin-block: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.extension-content summary { cursor: pointer; font-weight: 600; }
+.extension-content pre {
+  max-width: 100%;
+  padding: var(--space-4);
+  background: var(--soft);
+  border-radius: var(--radius-sm);
+  font: 13px/1.7 var(--mono);
+}
+.extension-content code { font-family: var(--mono); overflow-wrap: anywhere; }
+.extension-table { overflow-x: auto; max-width: 100%; margin-block: var(--space-5); }
+.extension-table table { width: 100%; border-collapse: collapse; min-width: 480px; }
+.extension-table caption { text-align: left; font-weight: 600; margin-bottom: var(--space-3); }
+.extension-table :is(th, td) { text-align: left; padding: var(--space-3); border-bottom: 1px solid var(--line); }
+.extension-table th { background: var(--ivory); }
+.extension-empty { padding: var(--space-5); background: var(--ivory); border-radius: var(--radius); }
+@media (max-width: 640px) {
+  .extension-content { padding: var(--space-4); }
+  .extension-card, .extension-content fieldset { padding: var(--space-4); }
+  .extension-content .btn { width: 100%; margin-inline: 0; }
+  .extension-page .hero { font-size: 30px; }
+  .extension-content details { padding: var(--space-3); }
+}
+
+.extension-preview { width: 100%; height: 780px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--page); }

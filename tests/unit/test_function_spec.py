@@ -1,4 +1,4 @@
-"""#14: 기능 명세서 Markdown (docs/10 「출력 규격」, REQ-18)."""
+"""#14: 기능 명세서 Markdown (docs/ko/domain-packs.md 「출력 규격」, REQ-18)."""
 
 import hashlib
 from pathlib import Path
