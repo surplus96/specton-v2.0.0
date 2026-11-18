@@ -1,0 +1,726 @@
+{
+  "artifacts": [],
+  "branch_results": {},
+  "entities": [
+    {
+      "attributes": [
+        {
+          "data_type": "varchar",
+          "description": null,
+          "id": "ATTR-6be8c07817773f78",
+          "is_key": true,
+          "is_unique": false,
+          "length": 10,
+          "name": "창고코드",
+          "nullable": false,
+          "precision": null,
+          "req_ids": [
+            "REQ-01"
+          ],
+          "scale": null
+        },
+        {
+          "data_type": "varchar",
+          "description": null,
+          "id": "ATTR-22047a612fb3d6cc",
+          "is_key": false,
+          "is_unique": false,
+          "length": 200,
+          "name": "창고명",
+          "nullable": true,
+          "precision": null,
+          "req_ids": [
+            "REQ-01"
+          ],
+          "scale": null
+        }
+      ],
+      "crud_exemptions": [],
+      "description": "창고 정보",
+      "id": "ENT-98727dcf83e8b2b7",
+      "name": "창고",
+      "pack": "inventory",
+      "req_ids": [
+        "REQ-01"
+      ],
+      "unique_keys": null
+    },
+    {
+      "attributes": [
+        {
+          "data_type": "varchar",
+          "description": null,
+          "id": "ATTR-fe3bd292a0ff5063",
+          "is_key": true,
+          "is_unique": false,
+          "length": 10,
+          "name": "품목코드",
+          "nullable": false,
+          "precision": null,
+          "req_ids": [
+            "REQ-01"
+          ],
+          "scale": null
+        },
+        {
+          "data_type": "varchar",
+          "description": null,
+          "id": "ATTR-06a194811e61d614",
+          "is_key": false,
+          "is_unique": false,
+          "length": 100,
+          "name": "품목명",
+          "nullable": true,
+          "precision": null,
+          "req_ids": [
+            "REQ-01"
+          ],
+          "scale": null
+        }
+      ],
+      "crud_exemptions": [],
+      "description": "품목 정보",
+      "id": "ENT-7035cc1720b4d316",
+      "name": "품목",
+      "pack": "inventory",
+      "req_ids": [
+        "REQ-01"
+      ],
+      "unique_keys": null
+    },
+    {
+      "attributes": [
+        {
+          "data_type": "varchar",
+          "description": null,
+          "id": "ATTR-6d61d9dc5969bb44",
+          "is_key": true,
+          "is_unique": false,
+          "length": 50,
+          "name": "입고번호",
+          "nullable": false,
+          "precision": null,
+          "req_ids": [
+            "REQ-01"
+          ],
+          "scale": null
+        },
+        {
+          "data_type": "char",
+          "description": null,
+          "id": "ATTR-20e8f15f53bdcdeb",
+          "is_key": false,
+          "is_unique": false,
+          "length": 8,
+          "name": "입고일자",
+          "nullable": true,
+          "precision": null,
+          "req_ids": [
+            "REQ-01"
+          ],
+          "scale": null
+        }
+      ],
+      "crud_exemptions": [],
+      "description": "입고 정보",
+      "id": "ENT-2b3ba107e4bbc8d6",
+      "name": "입고",
+      "pack": "inventory",
+      "req_ids": [
+        "REQ-01"
+      ],
+      "unique_keys": null
+    },
+    {
+      "attributes": [
+        {
+          "data_type": "numeric",
+          "description": null,
+          "id": "ATTR-382829eca43005f3",
+          "is_key": true,
+          "is_unique": false,
+          "length": null,
+          "name": "일련번호",
+          "nullable": false,
+          "precision": 10,
+          "req_ids": [
+            "REQ-01"
+          ],
+          "scale": 0
+        },
+        {
+          "data_type": "numeric",
+          "description": null,
+          "id": "ATTR-489e16e628521613",
+          "is_key": false,
+          "is_unique": false,
+          "length": null,
+          "name": "입고수량",
+          "nullable": true,
+          "precision": 10,
+          "req_ids": [
+            "REQ-01"
+          ],
+          "scale": 3
+        }
+      ],
+      "crud_exemptions": [],
+      "description": "입고내역 정보",
+      "id": "ENT-a44afd2e6dcd5d14",
+      "name": "입고내역",
+      "pack": "inventory",
+      "req_ids": [
+        "REQ-01"
+      ],
+      "unique_keys": null
+    }
+  ],
+  "findings": [],
+  "functions": [
+    {
+      "description": "창고에 품목을 입고하고 입고 내역을 남긴다.",
+      "entity_ops": [
+        {
+          "entity_id": "ENT-98727dcf83e8b2b7",
+          "operations": [
+            "C",
+            "R",
+            "U",
+            "D"
+          ]
+        },
+        {
+          "entity_id": "ENT-7035cc1720b4d316",
+          "operations": [
+            "C",
+            "R",
+            "U",
+            "D"
+          ]
+        },
+        {
+          "entity_id": "ENT-2b3ba107e4bbc8d6",
+          "operations": [
+            "C",
+            "R",
+            "U",
+            "D"
+          ]
+        },
+        {
+          "entity_id": "ENT-a44afd2e6dcd5d14",
+          "operations": [
+            "C",
+            "R",
+            "U",
+            "D"
+          ]
+        }
+      ],
+      "id": "FUNC-01",
+      "name": "REQ-01 기능",
+      "priority": null,
+      "priority_rationale": null,
+      "priority_source": "unspecified",
+      "req_ids": [
+        "REQ-01"
+      ]
+    },
+    {
+      "description": "품목 목록을 조회한다.",
+      "entity_ops": [
+        {
+          "entity_id": "ENT-7035cc1720b4d316",
+          "operations": [
+            "R"
+          ]
+        }
+      ],
+      "id": "FUNC-02",
+      "name": "REQ-02 기능",
+      "priority": null,
+      "priority_rationale": null,
+      "priority_source": "unspecified",
+      "req_ids": [
+        "REQ-02"
+      ]
+    },
+    {
+      "description": "창고별 재고를 확인한다.",
+      "entity_ops": [
+        {
+          "entity_id": "ENT-7035cc1720b4d316",
+          "operations": [
+            "R"
+          ]
+        }
+      ],
+      "id": "FUNC-03",
+      "name": "REQ-03 기능",
+      "priority": null,
+      "priority_rationale": null,
+      "priority_source": "unspecified",
+      "req_ids": [
+        "REQ-03"
+      ]
+    }
+  ],
+  "interrupt_id": null,
+  "iteration": 0,
+  "normalized": {
+    "common_version": "0.1.8",
+    "foreign_keys": [
+      {
+        "columns": [
+          "COL-b2ee3296c2e78a25"
+        ],
+        "id": "FK-c0d5b6562df5b62f",
+        "parent_columns": [
+          "COL-030867a44e0cfc4c"
+        ],
+        "parent_table_id": "TBL-ea37698a4e30c130",
+        "relationship_id": "REL-03",
+        "req_ids": [
+          "REQ-01"
+        ],
+        "table_id": "TBL-2bb811db0c5c061a"
+      },
+      {
+        "columns": [
+          "COL-8b25d9014d68be1f"
+        ],
+        "id": "FK-c962effd07827664",
+        "parent_columns": [
+          "COL-8903b88ed18127e3"
+        ],
+        "parent_table_id": "TBL-80f5926305946651",
+        "relationship_id": "REL-01",
+        "req_ids": [
+          "REQ-01"
+        ],
+        "table_id": "TBL-977e1e705a25119d"
+      },
+      {
+        "columns": [
+          "COL-5957f8c68ef6c0f5"
+        ],
+        "id": "FK-dae1e2ea4412e36e",
+        "parent_columns": [
+          "COL-eae2d3bde0339aa7"
+        ],
+        "parent_table_id": "TBL-977e1e705a25119d",
+        "relationship_id": "REL-02",
+        "req_ids": [
+          "REQ-01"
+        ],
+        "table_id": "TBL-2bb811db0c5c061a"
+      }
+    ],
+    "lexicon_digest": "c02847ddf0d7f18d159b00e4fe3673a4d638ab74ae8ce487388b06fd258e1d09",
+    "pack": "inventory",
+    "pack_version": "0.1.23",
+    "policy_digest": "412531dfe827db1258381e1ee006ee45b0d081f717b0ae857f5b22728af8c353",
+    "rules_version": "normalize-v7",
+    "tables": [
+      {
+        "columns": [
+          {
+            "attribute_id": "ATTR-382829eca43005f3",
+            "data_type": "numeric",
+            "domain": null,
+            "id": "COL-8572f6bc8d262858",
+            "length": null,
+            "name": "일련번호",
+            "nullable": false,
+            "physical_name": "sn",
+            "precision": 10,
+            "references": null,
+            "relationship_id": null,
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": 0,
+            "time_precision": null
+          },
+          {
+            "attribute_id": "ATTR-489e16e628521613",
+            "data_type": "numeric",
+            "domain": null,
+            "id": "COL-6a855fb09efa3f85",
+            "length": null,
+            "name": "입고수량",
+            "nullable": true,
+            "physical_name": "wrhs_qty",
+            "precision": 10,
+            "references": null,
+            "relationship_id": null,
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": 3,
+            "time_precision": null
+          },
+          {
+            "attribute_id": null,
+            "data_type": "varchar",
+            "domain": null,
+            "id": "COL-5957f8c68ef6c0f5",
+            "length": 50,
+            "name": "입고번호",
+            "nullable": false,
+            "physical_name": "wrhs_no",
+            "precision": null,
+            "references": "COL-eae2d3bde0339aa7",
+            "relationship_id": "REL-02",
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": null,
+            "time_precision": null
+          },
+          {
+            "attribute_id": null,
+            "data_type": "varchar",
+            "domain": "코드C10",
+            "id": "COL-b2ee3296c2e78a25",
+            "length": 10,
+            "name": "품목코드",
+            "nullable": false,
+            "physical_name": "item_cd",
+            "precision": null,
+            "references": "COL-030867a44e0cfc4c",
+            "relationship_id": "REL-03",
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": null,
+            "time_precision": null
+          }
+        ],
+        "entity_id": "ENT-a44afd2e6dcd5d14",
+        "id": "TBL-2bb811db0c5c061a",
+        "name": "입고내역",
+        "physical_name": "wrhs_dsctn",
+        "primary_key": [
+          "COL-5957f8c68ef6c0f5",
+          "COL-8572f6bc8d262858"
+        ],
+        "relationship_id": null,
+        "req_ids": [
+          "REQ-01"
+        ],
+        "unique_keys": []
+      },
+      {
+        "columns": [
+          {
+            "attribute_id": "ATTR-6be8c07817773f78",
+            "data_type": "varchar",
+            "domain": "코드C10",
+            "id": "COL-8903b88ed18127e3",
+            "length": 10,
+            "name": "창고코드",
+            "nullable": false,
+            "physical_name": "wrhus_cd",
+            "precision": null,
+            "references": null,
+            "relationship_id": null,
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": null,
+            "time_precision": null
+          },
+          {
+            "attribute_id": "ATTR-22047a612fb3d6cc",
+            "data_type": "varchar",
+            "domain": "명V200",
+            "id": "COL-88fa25fcf427f897",
+            "length": 200,
+            "name": "창고명",
+            "nullable": true,
+            "physical_name": "wrhus_nm",
+            "precision": null,
+            "references": null,
+            "relationship_id": null,
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": null,
+            "time_precision": null
+          }
+        ],
+        "entity_id": "ENT-98727dcf83e8b2b7",
+        "id": "TBL-80f5926305946651",
+        "name": "창고",
+        "physical_name": "wrhus",
+        "primary_key": [
+          "COL-8903b88ed18127e3"
+        ],
+        "relationship_id": null,
+        "req_ids": [
+          "REQ-01"
+        ],
+        "unique_keys": []
+      },
+      {
+        "columns": [
+          {
+            "attribute_id": "ATTR-6d61d9dc5969bb44",
+            "data_type": "varchar",
+            "domain": null,
+            "id": "COL-eae2d3bde0339aa7",
+            "length": 50,
+            "name": "입고번호",
+            "nullable": false,
+            "physical_name": "wrhs_no",
+            "precision": null,
+            "references": null,
+            "relationship_id": null,
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": null,
+            "time_precision": null
+          },
+          {
+            "attribute_id": "ATTR-20e8f15f53bdcdeb",
+            "data_type": "char",
+            "domain": null,
+            "id": "COL-94dafaf4be34c9b9",
+            "length": 8,
+            "name": "입고일자",
+            "nullable": true,
+            "physical_name": "wrhs_ymd",
+            "precision": null,
+            "references": null,
+            "relationship_id": null,
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": null,
+            "time_precision": null
+          },
+          {
+            "attribute_id": null,
+            "data_type": "varchar",
+            "domain": "코드C10",
+            "id": "COL-8b25d9014d68be1f",
+            "length": 10,
+            "name": "창고코드",
+            "nullable": false,
+            "physical_name": "wrhus_cd",
+            "precision": null,
+            "references": "COL-8903b88ed18127e3",
+            "relationship_id": "REL-01",
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": null,
+            "time_precision": null
+          }
+        ],
+        "entity_id": "ENT-2b3ba107e4bbc8d6",
+        "id": "TBL-977e1e705a25119d",
+        "name": "입고",
+        "physical_name": "wrhs",
+        "primary_key": [
+          "COL-eae2d3bde0339aa7"
+        ],
+        "relationship_id": null,
+        "req_ids": [
+          "REQ-01"
+        ],
+        "unique_keys": []
+      },
+      {
+        "columns": [
+          {
+            "attribute_id": "ATTR-fe3bd292a0ff5063",
+            "data_type": "varchar",
+            "domain": "코드C10",
+            "id": "COL-030867a44e0cfc4c",
+            "length": 10,
+            "name": "품목코드",
+            "nullable": false,
+            "physical_name": "item_cd",
+            "precision": null,
+            "references": null,
+            "relationship_id": null,
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": null,
+            "time_precision": null
+          },
+          {
+            "attribute_id": "ATTR-06a194811e61d614",
+            "data_type": "varchar",
+            "domain": "명V100",
+            "id": "COL-45ba54b2ca7e777a",
+            "length": 100,
+            "name": "품목명",
+            "nullable": true,
+            "physical_name": "item_nm",
+            "precision": null,
+            "references": null,
+            "relationship_id": null,
+            "req_ids": [
+              "REQ-01"
+            ],
+            "scale": null,
+            "time_precision": null
+          }
+        ],
+        "entity_id": "ENT-7035cc1720b4d316",
+        "id": "TBL-ea37698a4e30c130",
+        "name": "품목",
+        "physical_name": "item",
+        "primary_key": [
+          "COL-030867a44e0cfc4c"
+        ],
+        "relationship_id": null,
+        "req_ids": [
+          "REQ-01"
+        ],
+        "unique_keys": []
+      }
+    ],
+    "technical_names": null
+  },
+  "relationships": [
+    {
+      "cardinality": "1:N",
+      "child": "ENT-2b3ba107e4bbc8d6",
+      "fk_bindings": null,
+      "id": "REL-01",
+      "identifying": false,
+      "optional": false,
+      "parent": "ENT-98727dcf83e8b2b7",
+      "rationale": "\"창고에 품목을 입고하고 입고 내역을 남긴다.\" 시험용 고정 관계다.",
+      "req_ids": [
+        "REQ-01"
+      ]
+    },
+    {
+      "cardinality": "1:N",
+      "child": "ENT-a44afd2e6dcd5d14",
+      "fk_bindings": null,
+      "id": "REL-02",
+      "identifying": true,
+      "optional": false,
+      "parent": "ENT-2b3ba107e4bbc8d6",
+      "rationale": "\"창고에 품목을 입고하고 입고 내역을 남긴다.\" 시험용 고정 관계다.",
+      "req_ids": [
+        "REQ-01"
+      ]
+    },
+    {
+      "cardinality": "1:N",
+      "child": "ENT-a44afd2e6dcd5d14",
+      "fk_bindings": null,
+      "id": "REL-03",
+      "identifying": false,
+      "optional": false,
+      "parent": "ENT-7035cc1720b4d316",
+      "rationale": "\"창고에 품목을 입고하고 입고 내역을 남긴다.\" 시험용 고정 관계다.",
+      "req_ids": [
+        "REQ-01"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "analysis_version": 1,
+      "draft_text": "창고에 품목을 입고하고 입고 내역을 남긴다.",
+      "id": "REQ-01",
+      "nfr_category": null,
+      "parent_id": null,
+      "quality_issues": [
+        {
+          "kind": "missing_value",
+          "message": "시험용 확인 질문",
+          "question": "이 요구사항을 그대로 둘까요?"
+        }
+      ],
+      "source_acceptance_level": null,
+      "source_id": "SFR-001",
+      "source_ref": {
+        "block": null,
+        "cell": null,
+        "file_format": "csv",
+        "page": null,
+        "paragraph": null,
+        "row": 2,
+        "section": null,
+        "sheet": null,
+        "table": null
+      },
+      "source_text": "창고에 품목을 입고하고 입고 내역을 남긴다.",
+      "text": "창고에 품목을 입고하고 입고 내역을 남긴다.",
+      "type": "FR"
+    },
+    {
+      "analysis_version": 1,
+      "draft_text": "품목 목록을 조회한다.",
+      "id": "REQ-02",
+      "nfr_category": null,
+      "parent_id": null,
+      "quality_issues": [],
+      "source_acceptance_level": null,
+      "source_id": "SFR-002",
+      "source_ref": {
+        "block": null,
+        "cell": null,
+        "file_format": "csv",
+        "page": null,
+        "paragraph": null,
+        "row": 3,
+        "section": null,
+        "sheet": null,
+        "table": null
+      },
+      "source_text": "품목 목록을 조회한다.",
+      "text": "품목 목록을 조회한다.",
+      "type": "FR"
+    },
+    {
+      "analysis_version": 1,
+      "draft_text": "창고별 재고를 확인한다.",
+      "id": "REQ-03",
+      "nfr_category": null,
+      "parent_id": null,
+      "quality_issues": [],
+      "source_acceptance_level": null,
+      "source_id": null,
+      "source_ref": {
+        "block": null,
+        "cell": null,
+        "file_format": "csv",
+        "page": null,
+        "paragraph": null,
+        "row": 4,
+        "section": null,
+        "sheet": null,
+        "table": null
+      },
+      "source_text": "창고별 재고를 확인한다.",
+      "text": "창고별 재고를 확인한다.",
+      "type": "FR"
+    }
+  ],
+  "revision": 0,
+  "run_id": "4473701d-3f55-4e51-a02f-132b4c6fa815",
+  "source_requirements": [],
+  "status": "queued",
+  "updated_at": null,
+  "versions": {
+    "common_version": null,
+    "document_hash": null,
+    "model_names": {},
+    "pack_id": null,
+    "pack_version": null,
+    "policy_digest": null,
+    "prompt_versions": {}
+  }
+}

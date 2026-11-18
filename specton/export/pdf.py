@@ -21,7 +21,7 @@ ERD PDF 구성 (ADR-0004):
 - PDF 변환은 `data:` 외의 주소(http·https·file 등)를 하나도 가져오지 않는다.
 
 초안 표식: `draft=True`면 쪽마다 「초안 · 승인 전 · revision N」과 배경 표식을 넣는다.
-사용자에게 주는 최종 PDF는 승인한 revision으로만 만든다 (docs/06, 호출·저장은 #17 R1).
+사용자에게 주는 최종 PDF는 승인한 revision으로만 만든다 (docs/ko/api.md, 호출·저장은 #17 R1).
 
 이 모듈은 LLM client를 import하지 않는다 (CLAUDE.md). WeasyPrint는 Windows에서 GTK가 따로 있어야
 import되므로 PDF로 바꿀 때만 불러온다.
@@ -69,7 +69,7 @@ COVER_FIELDS: tuple[tuple[str, str], ...] = (
     ("pack_version", "팩 버전"),
 )
 
-# ── Mermaid (mermaid-cli, 안의 mermaid 11.17.2) ───────────
+# ── Mermaid (mermaid-cli, 안의 mermaid 12.3.0) ───────────
 
 FONT_FAMILY = '"Noto Sans CJK KR", "Noto Sans KR", sans-serif'
 
@@ -126,7 +126,7 @@ class PdfError(RuntimeError):
 class MermaidCli:
     """mermaid-cli(`mmdc`)로 SVG를 그린다.
 
-    실행 이미지에 Node·mermaid-cli(안의 mermaid 11.17.2, ADR-0004)가 있어야 한다 (#25).
+    실행 이미지에 Node·mermaid-cli(안의 mermaid 12.3.0, ADR-0004)가 있어야 한다 (#25).
 
     `command`는 `mmdc` 실행 경로, `puppeteer_config`는 컨테이너에서 Chromium을 띄울 설정 파일이다.
     """

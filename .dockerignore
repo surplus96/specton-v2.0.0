@@ -1,4 +1,4 @@
-# 이미지에 넣지 않는 것. 비밀값(.env)·로컬 저장소·개발 산출물은 절대 들어가면 안 된다 (docs/11).
+# 이미지에 넣지 않는 것. 비밀값(.env)·로컬 저장소·개발 산출물은 절대 들어가면 안 된다 (docs/ko/deployment.md).
 # .gitignore와 달리 .dockerignore는 경로를 붙이지 않으면 빌드 루트만 막으므로 **/를 붙인다 (#226 리뷰).
 **/.env
 **/.env.*
@@ -16,3 +16,15 @@ frontend/node_modules/
 frontend/dist/
 eval/
 *.log
+.claude/
+.codex/
+.agents/
+storage/
+outputs/
+recordings/
+demo-recording/
+portfolio-export/
+local-archive/
+artifacts/
+**/*.dump
+**/*.backup

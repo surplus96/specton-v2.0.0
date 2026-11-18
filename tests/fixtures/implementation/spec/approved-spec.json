@@ -1,0 +1,378 @@
+{
+  "acceptance_cases": [
+    {
+      "fixture_ids": [
+        "synthetic-master"
+      ],
+      "given": [
+        "등록 전"
+      ],
+      "id": "TC-master",
+      "req_ids": [
+        "REQ-masterdata"
+      ],
+      "then": [
+        "값이 같다"
+      ],
+      "tier": "browser",
+      "use_case_ids": [
+        "UC-insert",
+        "UC-get"
+      ],
+      "when": "등록 후 조회"
+    }
+  ],
+  "apis": [
+    {
+      "actor_roles": [
+        "ROLE-operator"
+      ],
+      "concurrency": "optimistic",
+      "error_codes": [
+        "DUPLICATE_KEY",
+        "IDEMPOTENCY_CONFLICT"
+      ],
+      "id": "API-insert",
+      "method": "POST",
+      "pagination": "none",
+      "path": "/records",
+      "request_fields": [
+        {
+          "data_type": "string",
+          "id": "FIELD-value0",
+          "name": "value0",
+          "required": true
+        },
+        {
+          "data_type": "string",
+          "id": "FIELD-value1",
+          "name": "value1",
+          "required": false
+        }
+      ],
+      "response_fields": [
+        {
+          "data_type": "string",
+          "id": "FIELD-value0",
+          "name": "value0",
+          "required": true
+        },
+        {
+          "data_type": "string",
+          "id": "FIELD-value1",
+          "name": "value1",
+          "required": false
+        }
+      ],
+      "success_status": 201,
+      "use_case_id": "UC-insert"
+    },
+    {
+      "actor_roles": [
+        "ROLE-operator"
+      ],
+      "concurrency": "read_only",
+      "error_codes": [
+        "NOT_FOUND"
+      ],
+      "id": "API-get",
+      "method": "GET",
+      "pagination": "none",
+      "path": "/records/{key}",
+      "request_fields": [
+        {
+          "data_type": "string",
+          "id": "FIELD-value0",
+          "name": "value0",
+          "required": true
+        }
+      ],
+      "response_fields": [
+        {
+          "data_type": "string",
+          "id": "FIELD-value0",
+          "name": "value0",
+          "required": true
+        },
+        {
+          "data_type": "string",
+          "id": "FIELD-value1",
+          "name": "value1",
+          "required": false
+        }
+      ],
+      "success_status": 200,
+      "use_case_id": "UC-get"
+    }
+  ],
+  "baseline": {
+    "approval_id": "67de07eb-e787-4f17-a262-f959eae25fa1",
+    "artifacts": [
+      {
+        "file_format": "sql",
+        "kind": "ddl",
+        "sha256": "fdf427d53415b2664f5ce08908ce6ed6a18c9d80be9e8e67fb024468d2665ed7"
+      },
+      {
+        "file_format": "mmd",
+        "kind": "erd",
+        "sha256": "68c5bef5cbc34dc4c31976b8d23db3d89b83f38378dedbe41a1779b4fb0a885c"
+      },
+      {
+        "file_format": "md",
+        "kind": "functions",
+        "sha256": "75f45cc2f54cb46855f1dfc5e380427a4cef0fab29c564510317c5e563ee8362"
+      },
+      {
+        "file_format": "csv",
+        "kind": "rtm",
+        "sha256": "8c4ca599cafbf5541a9f093c79b0dcfb759bcf23cc28f5b9084f5d5c7709bda2"
+      }
+    ],
+    "baseline_id": "5624a8ef-eabd-4151-82f6-7ab3e6476852",
+    "manifest_hash": "b4ff2b16b23fa9c13a5ff7715b90395c9596042cf1e82964d1d7e07d9949e505",
+    "model_hash": "f7cea3219769eed45e89db3f78a448b29bf759ed795a7f53f5791129c54a59e6",
+    "project_id": "4ba83475-d64b-4298-b48a-2cd51086f0c5",
+    "source_revision": 0,
+    "source_run_id": "4473701d-3f55-4e51-a02f-132b4c6fa815"
+  },
+  "entities": [
+    {
+      "fields": [
+        {
+          "data_type": "string",
+          "id": "FIELD-value0",
+          "name": "value0",
+          "required": true
+        },
+        {
+          "data_type": "string",
+          "id": "FIELD-value1",
+          "name": "value1",
+          "required": false
+        }
+      ],
+      "id": "ENTITY-master",
+      "legacy_id": "ENT-98727dcf83e8b2b7",
+      "name": "창고"
+    }
+  ],
+  "invariants": [],
+  "operation_bindings": [
+    {
+      "action": "insert",
+      "api_id": "API-insert",
+      "entity_id": "ENTITY-master",
+      "key_field_id": "FIELD-value0",
+      "key_format": "url-safe-segment"
+    },
+    {
+      "action": "get",
+      "api_id": "API-get",
+      "entity_id": "ENTITY-master",
+      "key_field_id": "FIELD-value0",
+      "key_format": "url-safe-segment"
+    }
+  ],
+  "parent_spec_hash": "4c3cf809e18a59e5e0841f3176d11369ef1586b9aaacce26cb19038b20674e7a",
+  "questions": [
+    {
+      "answer": "원래 업무는 이번 합성 기준정보 시험에서 제외하며 별도 후속 구현한다.",
+      "id": "QUESTION-285eb0b1ed62526aa9618d327b1b8e0b",
+      "question": "이 요구의 범위·우선순위·화면 필요 여부와 허용 역할, 입력·출력, 실패 조건, 업무 규칙을 확인하고 유스케이스·API·화면·인수 사례 계약에 반영하세요.",
+      "req_ids": [
+        "REQ-0691f979dff75a199e6618d37c249b4c"
+      ]
+    },
+    {
+      "answer": "원래 업무는 이번 합성 기준정보 시험에서 제외하며 별도 후속 구현한다.",
+      "id": "QUESTION-7abd66e432a15a5aa44087d2ba0bc817",
+      "question": "이 요구의 범위·우선순위·화면 필요 여부와 허용 역할, 입력·출력, 실패 조건, 업무 규칙을 확인하고 유스케이스·API·화면·인수 사례 계약에 반영하세요.",
+      "req_ids": [
+        "REQ-d474d4736f1d5478ab78b1cc72032ba3"
+      ]
+    },
+    {
+      "answer": "원래 업무는 이번 합성 기준정보 시험에서 제외하며 별도 후속 구현한다.",
+      "id": "QUESTION-4c9aa7cebaf05728932102630583690f",
+      "question": "이 요구의 범위·우선순위·화면 필요 여부와 허용 역할, 입력·출력, 실패 조건, 업무 규칙을 확인하고 유스케이스·API·화면·인수 사례 계약에 반영하세요.",
+      "req_ids": [
+        "REQ-959379809f405f47a0b27072482e7cab"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "REQ-0691f979dff75a199e6618d37c249b4c",
+      "kind": "FR",
+      "legacy_id": "REQ-01",
+      "origin": "design",
+      "priority": "Won't",
+      "rationale": "합성 생성기 시험에서 원래 입출고 업무는 제외한다.",
+      "requires_ui": false,
+      "text": "창고에 품목을 입고하고 입고 내역을 남긴다."
+    },
+    {
+      "id": "REQ-d474d4736f1d5478ab78b1cc72032ba3",
+      "kind": "FR",
+      "legacy_id": "REQ-02",
+      "origin": "design",
+      "priority": "Won't",
+      "rationale": "합성 생성기 시험에서 원래 입출고 업무는 제외한다.",
+      "requires_ui": false,
+      "text": "품목 목록을 조회한다."
+    },
+    {
+      "id": "REQ-959379809f405f47a0b27072482e7cab",
+      "kind": "FR",
+      "legacy_id": "REQ-03",
+      "origin": "design",
+      "priority": "Won't",
+      "rationale": "합성 생성기 시험에서 원래 입출고 업무는 제외한다.",
+      "requires_ui": false,
+      "text": "창고별 재고를 확인한다."
+    },
+    {
+      "id": "REQ-masterdata",
+      "kind": "FR",
+      "legacy_id": null,
+      "origin": "user",
+      "priority": "Must",
+      "rationale": "검증용으로 명시적으로 추가한 제한된 범위",
+      "requires_ui": true,
+      "text": "기준정보 등록과 단건 조회"
+    }
+  ],
+  "roles": [
+    {
+      "id": "ROLE-operator",
+      "name": "처리 담당자"
+    }
+  ],
+  "schema_version": "spec-v0.2",
+  "screens": [
+    {
+      "actor_roles": [
+        "ROLE-operator"
+      ],
+      "api_ids": [
+        "API-insert",
+        "API-get"
+      ],
+      "empty_state": "자료 없음",
+      "error_state": "요청 실패",
+      "id": "SCREEN-master",
+      "loading_state": "처리 중",
+      "name": "기준정보",
+      "route": "/records"
+    }
+  ],
+  "spec_id": "34d2af31-d204-4e0b-b486-fb5802de59b3",
+  "spec_version": 2,
+  "storage_bindings": [
+    {
+      "columns": {
+        "FIELD-value0": "COL-8903b88ed18127e3",
+        "FIELD-value1": "COL-88fa25fcf427f897"
+      },
+      "entity_id": "ENTITY-master",
+      "table_id": "TBL-80f5926305946651"
+    }
+  ],
+  "template": "inventory-fastapi-react-v1",
+  "use_cases": [
+    {
+      "actor_roles": [
+        "ROLE-operator"
+      ],
+      "error_codes": [
+        "DUPLICATE_KEY",
+        "IDEMPOTENCY_CONFLICT"
+      ],
+      "id": "UC-insert",
+      "idempotency": "key",
+      "inputs": [
+        {
+          "data_type": "string",
+          "id": "FIELD-value0",
+          "name": "value0",
+          "required": true
+        },
+        {
+          "data_type": "string",
+          "id": "FIELD-value1",
+          "name": "value1",
+          "required": false
+        }
+      ],
+      "name": "insert",
+      "outputs": [
+        {
+          "data_type": "string",
+          "id": "FIELD-value0",
+          "name": "value0",
+          "required": true
+        },
+        {
+          "data_type": "string",
+          "id": "FIELD-value1",
+          "name": "value1",
+          "required": false
+        }
+      ],
+      "preconditions": [
+        "데모 토큰 인증"
+      ],
+      "req_ids": [
+        "REQ-masterdata"
+      ],
+      "steps": [
+        "insert"
+      ],
+      "transaction": "atomic"
+    },
+    {
+      "actor_roles": [
+        "ROLE-operator"
+      ],
+      "error_codes": [
+        "NOT_FOUND"
+      ],
+      "id": "UC-get",
+      "idempotency": "not_applicable",
+      "inputs": [
+        {
+          "data_type": "string",
+          "id": "FIELD-value0",
+          "name": "value0",
+          "required": true
+        }
+      ],
+      "name": "get",
+      "outputs": [
+        {
+          "data_type": "string",
+          "id": "FIELD-value0",
+          "name": "value0",
+          "required": true
+        },
+        {
+          "data_type": "string",
+          "id": "FIELD-value1",
+          "name": "value1",
+          "required": false
+        }
+      ],
+      "preconditions": [
+        "데모 토큰 인증"
+      ],
+      "req_ids": [
+        "REQ-masterdata"
+      ],
+      "steps": [
+        "get"
+      ],
+      "transaction": "read_only"
+    }
+  ]
+}

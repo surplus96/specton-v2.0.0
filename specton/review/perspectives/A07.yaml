@@ -1,4 +1,4 @@
-# A07 비기능 요구 검토 (R3, #6). 형식 설명: docs/04-agents.md "관점 설정 형식"
+# A07 비기능 요구 검토 (R3, #6). 형식 설명: docs/ko/architecture.md "관점 설정 형식"
 reviewer_id: A07
 name: 비기능 요구 검토
 prompt_version: a07-v5

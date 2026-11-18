@@ -3,9 +3,8 @@
 # 담는 것: Python 3.12 앱, WeasyPrint용 Pango, 한글 폰트(Noto Sans CJK), mermaid-cli, Chromium.
 # 웹 화면(frontend/)은 이 이미지에 넣지 않는다. API는 웹 파일을 서빙하지 않는다.
 #
-# mermaid-cli는 ADR-0004에 고정한 이미지에서 설치 파일과 잠금 파일만 가져와 Debian에서 다시 설치한다.
-# 그 이미지는 Alpine(musl)·Python 3.11이라 그대로 쓸 수 없다(rhwp-python은 musl 휠이 없고, 앱은 3.12).
-# 같은 잠금 파일로 설치하므로 안의 mermaid는 웹과 같은 11.17.2다.
+# mermaid-cli는 저장소의 manifest·잠금 파일로 Debian에 설치한다.
+# Mermaid는 웹과 같은 12.3.0으로 고정하며 PDF·ERD 검사를 통과한 이미지를 배포한다.
 #
 #   빌드: docker build -t specton-api .   (마지막 단계 release = runtime, 테스트 파일 없음)
 #   검사: docker build --target check .   (PDF·ERD 테스트를 이미지 안에서 돌린다)
@@ -14,20 +13,15 @@
 # 배포는 한 번 만든 이미지를 그대로 옮겨 「로컬과 AWS가 같은 이미지」를 지킨다 (#25).
 ARG PYTHON_IMAGE=python:3.12-slim-bookworm@sha256:935c3c5b12357a7e10caa9c1e6ca5692344d97cf229832ef584be2cec9fc03df
 ARG NODE_IMAGE=node:22-bookworm-slim@sha256:5ec23b7c622b00547753bc6ffd78085dd868a68aeb41c8e0a1418f033e13d96d
-ARG MERMAID_CLI_IMAGE=minlag/mermaid-cli:11.16.1@sha256:d98fe54c22e78e65335589fc17d5419f698f915cebca48ea21fee633aff8b258
-
-# ── mermaid-cli: 고정 이미지의 설치 파일·잠금 파일로 다시 설치 ─────────────
-FROM ${MERMAID_CLI_IMAGE} AS mermaid-source
-
+# ── mermaid-cli: 검증한 manifest·의존성 잠금 파일 ────────────────────────
 FROM ${NODE_IMAGE} AS mermaid
-# 잠금 파일이 ../../install/*.tgz를 가리키므로 원래 경로를 그대로 쓴다.
-COPY --from=mermaid-source /install /install
-COPY --from=mermaid-source /home/mermaidcli/package.json /home/mermaidcli/package-lock.json /home/mermaidcli/
+COPY docker/api/mermaid-package.json /home/mermaidcli/package.json
+COPY docker/api/mermaid-package-lock.json /home/mermaidcli/package-lock.json
 WORKDIR /home/mermaidcli
 # 브라우저는 내려받지 않고 Debian Chromium을 쓴다 (puppeteer.json).
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN npm ci --omit=dev --no-audit --no-fund \
- && node -e "const v=require('mermaid/package.json').version; if (v !== '11.17.2') { console.error('mermaid ' + v + ' != 11.17.2'); process.exit(1) }"
+ && node -e "const v=require('mermaid/package.json').version; if (v !== '12.3.0') { console.error('mermaid ' + v + ' != 12.3.0'); process.exit(1) }"
 
 # ── Python 의존성 (uv.lock 그대로) ──────────────────────────────────────
 FROM ${PYTHON_IMAGE} AS build

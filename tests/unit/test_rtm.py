@@ -1,4 +1,4 @@
-"""#14: RTM(요구사항 추적표)·출력 manifest (REQ-12, TC-F12, docs/10, ADR-0015)."""
+"""#14: RTM(요구사항 추적표)·출력 manifest (REQ-12, TC-F12, docs/ko/domain-packs.md, ADR-0015)."""
 
 import csv
 import io

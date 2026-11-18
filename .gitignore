@@ -30,3 +30,21 @@ frontend/dist/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Local assistant settings and non-source deliverables
+.claude/
+.codex/
+.agents/
+*.log
+*.pid
+*.dump
+*.backup
+coverage.xml
+*.tsbuildinfo
+/recordings/
+/demo-recording/
+/portfolio-export/
+/local-archive/
+/artifacts/
+/docs/evidence/
+/docs/planning/

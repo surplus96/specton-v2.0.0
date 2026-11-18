@@ -1,4 +1,4 @@
-# A05 관계 모순 검토 (R1, #9). 형식 설명: docs/04-agents.md "관점 설정 형식"
+# A05 관계 모순 검토 (R1, #9). 형식 설명: docs/ko/architecture.md "관점 설정 형식"
 reviewer_id: A05
 name: 관계 모순 검토
 prompt_version: a05-v3

@@ -1,0 +1,159 @@
+"""Exact decimal calculations and bounded aggregates over one read-only snapshot."""
+from decimal import Decimal, DecimalException, localcontext, ROUND_HALF_EVEN, ROUND_HALF_UP, ROUND_DOWN
+
+import psycopg
+from psycopg import sql
+from psycopg.rows import dict_row
+from fastapi import HTTPException, Request
+from pydantic import ValidationError
+
+
+def rounded(value, policy):
+    if value is None:
+        return None
+    try:
+        with localcontext() as context:
+            context.prec = 128
+            value = Decimal(value)
+            if not value.is_finite():
+                raise ValueError()
+            result = value.quantize(Decimal(1).scaleb(-policy['scale']), rounding={
+                'half_even': ROUND_HALF_EVEN, 'half_up': ROUND_HALF_UP, 'down': ROUND_DOWN
+            }[policy['rounding']])
+            if abs(result) >= Decimal(10) ** (policy['precision'] - policy['scale']):
+                raise ValueError()
+            return abs(result) if result == 0 else result
+    except (ValueError, TypeError, DecimalException):
+        raise HTTPException(409, detail='CALCULATION_ERROR') from None
+
+
+def calculate(program, resolve):
+    results = {}
+
+    def operand(value):
+        if value['kind'] == 'calculated':
+            return results[value['calculation_id']]
+        if value['kind'] == 'number':
+            return Decimal(value['value'])
+        raw = resolve(value)
+        return Decimal(raw) if raw is not None else None
+
+    try:
+        with localcontext() as context:
+            context.prec = 128
+            for step in program:
+                left = operand(step['left'])
+                right = operand(step['right']) if step['right'] else left
+                if left is None or right is None:
+                    if step['null_policy'] == 'error':
+                        raise HTTPException(409, detail='CALCULATION_ERROR')
+                    value = None
+                elif step['operator'] == 'divide' and right == 0:
+                    if step['zero_division'] == 'error':
+                        raise HTTPException(409, detail='CALCULATION_ERROR')
+                    value = Decimal(0) if step['zero_division'] == 'zero' else None
+                elif step['operator'] == 'add':
+                    value = left + right
+                elif step['operator'] == 'subtract':
+                    value = left - right
+                elif step['operator'] == 'multiply':
+                    value = left * right
+                elif step['operator'] == 'divide':
+                    value = left / right
+                else:
+                    value = abs(left)
+                results[step['id']] = rounded(value, step['result'])
+    except (ValueError, TypeError, DecimalException):
+        raise HTTPException(409, detail='CALCULATION_ERROR') from None
+    return results
+
+
+def aggregate(rows, measures):
+    values = {}
+    for measure in measures:
+        if measure['operator'] == 'count':
+            items = [Decimal(1) for _ in rows]
+        else:
+            raw = [row[measure['name']] for row in rows]
+            if measure['null_policy'] == 'error' and any(v is None for v in raw):
+                raise HTTPException(409, detail='CALCULATION_ERROR')
+            items = [Decimal(v) for v in raw if v is not None]
+        try:
+            with localcontext() as context:
+                context.prec = 128
+                if not items:
+                    if measure['empty_policy'] == 'error':
+                        raise HTTPException(409, detail='CALCULATION_ERROR')
+                    value = Decimal(0) if measure['empty_policy'] == 'zero' else None
+                elif measure['operator'] in {'sum', 'count'}:
+                    value = sum(items, Decimal(0))
+                elif measure['operator'] == 'average':
+                    value = sum(items, Decimal(0)) / len(items)
+                elif measure['operator'] == 'min':
+                    value = min(items)
+                else:
+                    value = max(items)
+                values[measure['id']] = rounded(value, measure['result'])
+        except (ValueError, TypeError, DecimalException):
+            raise HTTPException(409, detail='CALCULATION_ERROR') from None
+    return values
+
+
+def register(app, operations, dsn, principal):
+    from domain import models
+
+    def bind(op):
+        _, inputs = models(op)
+        response, _ = models({**op, 'fields': op['response_metadata']})
+
+        def endpoint(payload, request: Request):
+            principal(request, op['actor_roles'])
+            values = payload.model_dump()
+            clauses, params = [], []
+            operators = {'eq': '=', 'ne': '<>', 'lt': '<', 'le': '<=', 'gt': '>', 'ge': '>='}
+            for rule in op['filters']:
+                clauses.append(sql.SQL('{} {} %s').format(sql.Identifier(rule['name']), sql.SQL(operators[rule['operator']])))
+                params.append(values[rule['input']])
+            for window in op['windows']:
+                start, end = values[window['start']], values[window['end']]
+                if start > end:
+                    raise HTTPException(409, detail='CALCULATION_ERROR')
+                for name, value, inclusive in [('start', start, window['start_inclusive']), ('end', end, window['end_inclusive'])]:
+                    operator = ('>' if name == 'start' else '<') + ('=' if inclusive else '')
+                    clauses.append(sql.SQL('{} {} %s').format(sql.Identifier(window['name']), sql.SQL(operator)))
+                    params.append(value)
+            columns = sorted({m['name'] for m in op['aggregates'] if m['name']})
+            selection = sql.SQL(',').join(map(sql.Identifier, columns)) if columns else sql.SQL('1')
+            where = sql.SQL(' AND ').join(clauses) if clauses else sql.SQL('TRUE')
+            query = sql.SQL('SELECT {} FROM {} WHERE {} LIMIT %s').format(selection, sql.Identifier(op['table']), where)
+            try:
+                with psycopg.connect(dsn, row_factory=dict_row) as conn:
+                    conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
+                    conn.execute("SET LOCAL statement_timeout='5s'")
+                    conn.execute("SET LOCAL lock_timeout='2s'")
+                    rows = conn.execute(query, [*params, op['max_rows'] + 1]).fetchall()
+                    if len(rows) > op['max_rows']:
+                        raise HTTPException(409, detail='RESULT_LIMIT_EXCEEDED')
+                    aggregated = aggregate(rows, op['aggregates'])
+
+                    def resolve(expr):
+                        if expr['kind'] == 'input':
+                            return values[expr['name']]
+                        return aggregated[expr['aggregate_id']]
+
+                    calculated = calculate(op['calculations'], resolve)
+                    output = {name: calculated[expr['calculation_id']] if expr['kind'] == 'calculated' else aggregated[expr['aggregate_id']] for name, expr in op['returns'].items()}
+                    return response.model_validate(output).model_dump(mode='json')
+            except ValidationError:
+                raise HTTPException(409, detail='CALCULATION_ERROR') from None
+            except (psycopg.errors.QueryCanceled, psycopg.errors.LockNotAvailable):
+                raise HTTPException(409, detail='COMMAND_TIMEOUT') from None
+            except psycopg.DatabaseError:
+                raise HTTPException(409, detail='TRANSACTION_FAILED') from None
+
+        endpoint.__annotations__['payload'] = inputs
+        app.add_api_route(op['path'], endpoint, methods=['POST'], operation_id=op['id'], response_model=response)
+
+    for op in operations:
+        if op['action'] == 'calculation':
+            bind(op)

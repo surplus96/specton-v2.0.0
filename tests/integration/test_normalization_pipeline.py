@@ -33,7 +33,7 @@ from specton.contracts import (
 from specton.design_rules_node import design_rules_node
 from specton.erd_node import erd_node
 from specton.graph import REVIEWERS, GraphState, Node
-from specton.packs.build import DEFAULT_ROOT, read_yaml
+from specton.packs.build import DEFAULT_ROOT, lock_content, pack_content_hash, read_yaml
 from specton.packs.provenance import ExecutionPolicyError
 from specton.persistence.db import Pool, create_checkpointer
 from specton.persistence.runs import events_after
@@ -206,6 +206,13 @@ def pipeline(
                 naming = root / "common/naming.yaml"
                 naming.write_text(
                     naming.read_text().replace("unresolved: technical_id", "unresolved: error")
+                )
+                # This fixture owns its copied pack; admit the intentional strict policy.
+                # Production packs still require their unchanged version/hash contract.
+                common = root / "common"
+                version = read_yaml(common / "manifest.yaml")["version"]
+                (common / "pack.lock").write_text(
+                    lock_content({version: pack_content_hash(common)})
                 )
             client = stack.enter_context(TestClient(create_app(settings, pool)))
             if previous is not None:

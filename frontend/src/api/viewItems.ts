@@ -139,13 +139,13 @@ export type Finding = {
 
 // ── view의 artifacts 한 건 (specton/contracts/state.py ArtifactRef) ─────────
 
-/** 생성한 산출물 한 건. approved가 false면 초안이다 (docs/06 「산출물 형식」). */
+/** 생성한 산출물 한 건. approved가 false면 초안이다 (docs/ko/api.md 「산출물 형식」). */
 export type ArtifactRef = {
   kind: 'requirements' | 'functions' | 'erd' | 'ddl' | 'rtm' | 'review' | 'manifest'
   file_format: 'md' | 'pdf' | 'mmd' | 'sql' | 'xlsx' | 'csv' | 'json'
   revision: number
   hash: string
   approved: boolean
-  /** DDL/SQL에만 붙는 지금 기준 검증 상태 (docs/06 `/view`, #195). 기록이 없으면 unverified */
+  /** DDL/SQL에만 붙는 지금 기준 검증 상태 (docs/ko/api.md `/view`, #195). 기록이 없으면 unverified */
   validation?: { status: 'passed' | 'failed' | 'error' | 'unverified'; validated_at: string | null }
 }

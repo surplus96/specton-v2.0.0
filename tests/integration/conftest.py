@@ -26,7 +26,9 @@ def pool() -> Iterator[Pool]:
     settings = Settings(_env_file=None)
     schema = f"test_{uuid4().hex[:12]}"
     try:
-        with psycopg.connect(str(settings.app_database_url), autocommit=True) as admin:
+        with psycopg.connect(
+            str(settings.app_database_url), autocommit=True, connect_timeout=3
+        ) as admin:
             admin.execute(f"CREATE SCHEMA {schema}")  # type: ignore[arg-type]
     except psycopg.OperationalError:
         pytest.skip("로컬 DB가 없습니다 (docker compose up -d db)")

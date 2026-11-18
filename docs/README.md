@@ -1,35 +1,9 @@
-# 개발 문서
+# Specton documentation
 
-Specton의 설계 기준 문서다. 구현에 필요한 내용은 모두 이 폴더와 `docs/adr/`에 둔다. 저장소 밖 문서를 읽어야 이해되는 내용은 두지 않는다(`tests/unit/test_docs_self_contained.py`가 검사).
+[![한국어](assets/lang-ko.svg)](ko/README.md) [![English](assets/lang-en.svg)](en/README.md)
 
-| 문서 | 내용 | 상태 |
-|---|---|---|
-| [01 개요·범위](01-overview.md) | 목표, MVP 범위, 제외 범위, 마일스톤 | 초안 |
-| [02 요구사항](02-requirements.md) | REQ-01~27, 범위, 수용 기준, TC 대응 | 초안 |
-| [03 아키텍처](03-architecture.md) | 구성도, 실행 흐름, 재작업, 상태 전이, 책임 경계 | 초안 |
-| [04 에이전트](04-agents.md) | A01~A09 입출력, 설정형 리뷰어, 규칙 검사 | 초안 |
-| [05 데이터 계약](05-data-contracts.md) | 단계 간 모델, ID·추적, 타입, 플랫폼 저장 모델 | 동결 |
-| [06 API](06-api.md) | 엔드포인트, resume, SSE, 오류, 산출물 형식 | 초안 |
-| [07 테스트·평가](07-testing-eval.md) | 테스트 층위, 평가 데이터 분리, 지표, 보고 양식 | 초안 |
-| [08 개발 운영](08-roles.md) | 개인 작업 흐름, 모듈 경계, 변경·검증 기록 | 초안 |
-| [09 화면·사용자 흐름](09-ui-flow.md) | UI-01~07, MVP 화면 축소안, 수용 시나리오 | 초안 |
-| [10 문서 입출력·도메인 팩](10-io-and-packs.md) | Excel·CSV·HWPX·HWP 입력, PDF 출력·입력 후속 범위, 팩 | 초안 |
-| [11 배포·운영·보안](11-deployment-security.md) | 실행 환경, 격리 DB, 장애 대응, 보안, 릴리스 | 초안 |
-| [12 테스트 케이스](12-test-cases.md) | TC-F·N·A 37개 시나리오·기대 결과 | 초안 |
-| [13 위험·변경 관리](13-risks-changes.md) | 위험 목록·완화 방법, 변경 요청 절차 | 초안 |
-| [14 확장 기능](14-extensions.md) | EXT-01~03 처리 흐름·검증·결정표 (MVP 범위 밖) | 초안 |
-| [api/openapi.json](api/openapi.json) | 실행 제어 API 계약 (OpenAPI 3.1.1) | 동결 |
-| [adr/](adr/README.md) | 결정 기록 ADR-0001~0016 | 제안 |
+- [한국어 개발 문서](ko/README.md)
+- [English developer documentation](en/README.md)
+- [OpenAPI](api/openapi.json)
 
-"초안"은 아직 확정하지 않은 상태다. ADR이 승인되면 해당 문서의 `제안` 표시를 확정으로 바꾼다.
-설치·실행 명령은 저장소 [README](../README.md)를 따른다.
-
-## 현재 분석과 후속 개발
-
-[개발 기획서](planning/README.md)는 현재 코드 분석, 품질 개선, SDD 구현, Gmail API 피드백, 데이터·API 계약, 일정·인수 기준을 묶는다. 기존 문서는 당시 구현 및 검증 기록이며 최신 확장의 기준은 개발 기획서를 따른다.
-
-## 작성 규칙
-
-- 확정, 제안, 미정을 구분한다. 제안은 `제안 (ADR-xxxx)`, 미정은 `미정 (ADR-xxxx)`로 표시한다.
-- 계약·API가 바뀌면 코드와 같은 PR에서 문서를 고친다.
-- 고객 문서 원문·API 키는 넣지 않는다.
+두 언어는 같은 파일 구조와 기능 범위를 유지합니다. / Both languages follow the same structure and scope.

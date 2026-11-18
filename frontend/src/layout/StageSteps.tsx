@@ -1,6 +1,6 @@
 import { STEPS, mergedState } from './stageSteps.ts'
 
-// 화면 단계 표시줄 (UI-01~07, docs/09-ui-flow.md). 지난 단계는 진한 선, 지금 단계는 라임.
+// 화면 단계 표시줄 (UI-01~07, docs/ko/frontend.md). 지난 단계는 진한 선, 지금 단계는 라임.
 // 결과 보기(UI-05)와 최종 승인(UI-06)은 같은 자리에서 오가는 화면이라 한 칸으로 보인다 (6칸).
 // 실패·취소로 실제로 거치지 않은 확인 화면은 지난 단계로 칠하지 않는다(unreached).
 export const SCREENS = [

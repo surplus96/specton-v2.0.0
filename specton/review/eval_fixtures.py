@@ -1,4 +1,4 @@
-"""검토 관점 평가용 고정 설계 (#40, docs/07 「검토 관점 평가」).
+"""검토 관점 평가용 고정 설계 (#40, docs/ko/testing.md 「검토 관점 평가」).
 
 평가 세트 문장마다 고정한 설계를 관점 하나에 넣어 단독으로 검토하고, 심은 결함을 맞췄는지 센다.
 생성 파이프라인(A01~A04) 결과와 관계없이 관점만 잰다.
@@ -440,7 +440,7 @@ def _run_case(
 
 @dataclass(frozen=True)
 class Summary:
-    """결함 탐지 지표 (docs/07). 실패한 사례는 cases·failed_cases·토큰에만 센다."""
+    """결함 탐지 지표 (docs/ko/testing.md). 실패한 사례는 cases·failed_cases·토큰에만 센다."""
 
     cases: int
     failed_cases: int

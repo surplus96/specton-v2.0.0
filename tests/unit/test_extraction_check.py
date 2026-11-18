@@ -1,6 +1,6 @@
 """#17 추출 확인(UI-02): `review`·`fail` 블록이 있을 때만 멈추고, 답을 블록 결정으로 남긴다.
 
-ADR-0015 결정 1·5, docs/06 resume. 422 검사는 resume API(#120)가 먼저 한다.
+ADR-0015 결정 1·5, docs/ko/api.md resume. 422 검사는 resume API(#120)가 먼저 한다.
 """
 
 from collections.abc import Mapping

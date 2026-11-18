@@ -1,0 +1,28 @@
+"""Serve the built customer UI and API from one origin."""
+from pathlib import Path
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from app import app as api
+
+ROOT = Path(__file__).resolve().parents[1] / 'frontend/dist'
+app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+app.mount('/api', api)
+
+
+@app.get('/health')
+def health():
+    return {'status':'ok'}
+
+
+@app.get('/{path:path}')
+def page(path: str):
+    target = (ROOT / path).resolve()
+    if not target.is_relative_to(ROOT.resolve()):
+        raise HTTPException(404)
+    if path.startswith('assets/'):
+        if not target.is_file():
+            raise HTTPException(404)
+        return FileResponse(target, headers={'Cache-Control':'public,max-age=31536000,immutable'})
+    if not (ROOT/'index.html').is_file():
+        raise HTTPException(503, detail='Build the frontend before serving')
+    return FileResponse(ROOT/'index.html', headers={'Cache-Control':'no-store'})

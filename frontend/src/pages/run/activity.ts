@@ -1,5 +1,5 @@
 // 진행 기록 규칙(이벤트 글·연결 상태·경과 시간). AI Workspace와 설계 중 진행 시간(Elapsed)이 쓴다.
-// 이벤트(SSE) 종류·내용은 docs/06-api.md 「SSE」를 따른다. 이벤트는 기록으로만 보이고,
+// 이벤트(SSE) 종류·내용은 docs/ko/api.md 「SSE」를 따른다. 이벤트는 기록으로만 보이고,
 // 화면 판단(어느 화면을 보일지)은 여전히 상태 조회 결과로 한다 (followRun.ts).
 import type { SseEvent, SseEventName } from '../../api/types.ts'
 import type { Tone } from '../../theme.ts'

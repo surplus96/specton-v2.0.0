@@ -6,7 +6,8 @@ import { createRun, setApiBaseUrl } from '../../api/client.ts'
 import { ApiError } from '../../api/errors.ts'
 import type { ErrorCode } from '../../api/types.ts'
 import { createMockBackend } from '../../mocks/backend.ts'
-import { MAX_UPLOAD_MB, PACK_OPTIONS, checkFile, errorPlace, placeError } from './rules.ts'
+import { MAX_UPLOAD_MB, selectablePacks, checkFile, errorPlace, placeError } from './rules.ts'
+import type { PackEntry } from '../../api/types.ts'
 
 const MB = 1024 * 1024
 const named = (name: string, size = 10) => ({ name, size })
@@ -56,8 +57,9 @@ describe('errorPlace: 오류를 보일 자리', () => {
 })
 
 describe('팩 선택지', () => {
-  it('지금은 재고관리만 고를 수 있다', () => {
-    expect(PACK_OPTIONS).toEqual([{ value: 'inventory', label: '재고관리' }])
+  it('서버가 허용한 새 팩도 이름을 하드코딩하지 않고 선택한다', () => {
+    const rows = [{ name: 'facilities', selectable: true }, { name: 'broken', selectable: false }] as PackEntry[]
+    expect(selectablePacks(rows).map(p => p.name)).toEqual(['facilities'])
   })
 })
 

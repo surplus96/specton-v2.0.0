@@ -1,9 +1,12 @@
 # Specton v2.0.0
-[![한국어](https://img.shields.io/badge/lang-%ED%95%9C%EA%B5%AD%EC%96%B4-lightgrey)](README.md) [![English](https://img.shields.io/badge/lang-English-1f6feb)](README.en.md)
 
-A LangGraph-based agent service that reads customer requirement documents, drafts a **functional specification, ERD, DDL, and RTM**, and reviews them for omissions and contradictions.
+[![한국어](docs/assets/lang-ko.svg)](README.md) [![English](docs/assets/lang-en.svg)](README.en.md)
 
-The design reference documents (Korean) live in [docs/](docs/README.md), and decision records in [docs/adr/](docs/adr/README.md).
+**A specification-driven development (SDD) service that analyzes customer requirements and turns approved designs into executable applications.**
+
+Specton analyzes requirement tables in Excel, CSV, HWP, and HWPX to produce **function specifications, ERDs, DDL, and RTMs**. Approved executable contracts generate a domain-specific database, APIs, and basic UI. Gmail requests pass through impact analysis and human approval before a new candidate is generated and re-verified.
+
+[Getting started](docs/en/getting-started.md) · [End-to-end workflow](docs/en/workflow.md) · [Developer docs](docs/en/README.md) · [Supported scope](docs/en/roadmap.md)
 
 ## Demo videos
 
@@ -55,94 +58,98 @@ https://github.com/user-attachments/assets/a2f50cdf-c712-4be7-87f6-919c8fbe890a
 
 </details>
 
-## Tech stack
+## Implemented capabilities
 
-| Area | Tools |
+| Area | Capabilities |
 |---|---|
-| Language · packaging | Python 3.12, uv |
-| LLM · workflow | OpenAI API, LangGraph |
-| Contracts · validation | Pydantic, pglast |
-| API | FastAPI |
-| DB | PostgreSQL 18 (Docker) |
-| Web | React (`frontend/`) |
-| Quality | ruff, mypy, pytest |
+| Analysis/design | A01–A09 agents, rule checks, source traceability, human review and final approval |
+| Domain packs | Common/inventory/maintenance terminology and patterns with version/provenance checks |
+| SDD | Approved-design specs, roles/screens/storage/API bindings, basic customer-app generation |
+| Business contracts | Records, transitions, invariants, atomic multi-record commands, calculations/aggregates |
+| Verification/adoption | Isolated DB/HTTP/API acceptance/Chromium, previews, candidate comparison and adoption |
+| Customer changes | Read-only Gmail ingestion, quotations, AI impact analysis, approved regeneration and retests |
+| Design consistency/transfer | Preserved approval baseline, four regenerated artifacts, spec/source consistency, isolated same-schema transfer and failure-recovery checks |
+| Delivery | Customer source ZIP, separate login/API roles, installation, file integrity, and backup/recovery tools |
 
-Supported inputs: Excel, CSV, HWP and HWPX. PDF input/extraction is outside the current acceptance scope (follow-up); PDF output is supported. The HWP/HWPX engine was adopted on 2026-11-08 (ADR-0004). The UI library remains undecided (ADR-0005). The AWS setup was approved on 2026-11-09 as one EC2 instance with Docker Compose (ADR-0013).
-
-## Getting started
-
-```bash
-cp .env.example .env              # enter keys only in your local environment
-uv sync                           # install dependencies (.venv)
-docker compose up -d db           # PostgreSQL 18 (app + sandbox)
-uv run uvicorn specton.api.main:app --reload
-curl localhost:8000/health
+```mermaid
+flowchart LR
+  A[Requirements] --> B[Analysis · design · review]
+  B --> C[Approved design · executable spec]
+  C --> D[Generate customer app]
+  D --> E[Isolated verification · preview]
+  E --> F[Compare · adopt]
+  G[Gmail change request] --> H[Impact analysis · human approval]
+  H --> C
 ```
 
-Web (`frontend/`):
+## Domain-specific system generation
+
+Approved tables, keys, and relationships determine storage, APIs, and basic screens. The generator does not insert order, return, or equipment features as defaults. Common, inventory, and maintenance packs provide vocabulary and design policies; a shared compiler implements the execution contracts.
+
+Structural derivation creates insert/list/update drafts. State transitions, multi-record changes, calculations, and aggregates execute after review of explicit business contracts and acceptance expectations. The generated customer UI provides forms, lists, editing, relationship selectors, commands, calculation results, and login. Finished visual-design generation is outside the supported scope.
+
+[Business execution contracts](docs/en/business-contracts.md) · [Specification and approval](docs/en/sdd.md) · [Customer changes](docs/en/gmail-feedback.md)
+
+## Generated outputs
+
+| Stage | Outputs |
+|---|---|
+| Design approval | Function specification, ERD, DDL, RTM, approved model and hashes |
+| Specification approval | Requirement scope, role/screen/API/storage bindings, business rules, executable acceptance cases |
+| Source generation | Customer backend/frontend, original/regenerated designs, installation/account/operations tools |
+| Verification/adoption | Source-bound reports, per-requirement execution results, comparison/adoption history |
+| Customer change | Quoted request, impact analysis/review, new specification/design/source/verification results |
+
+## Quick start
+
+Install Python 3.12/3.13, uv, Node.js 22, and Docker.
 
 ```bash
-cd frontend && npm install && npm run dev
+git clone https://github.com/surplus96/specton-v2.0.0.git
+cd specton-v2.0.0
+cp .env.example .env
+uv sync --locked
+npm --prefix frontend ci
+docker compose up -d --wait db
+uv run python -m specton.persistence.migrate upgrade
+uv run uvicorn specton.api.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-### First run
+In another terminal, run `npm --prefix frontend run dev` and open `http://localhost:5173`. Configure the OpenAI key and Google OAuth in `.env` first. Generated-app verification and Gmail analysis require separate workers. See [setup](docs/en/getting-started.md) for the full workflow and [Gmail](docs/en/gmail-feedback.md) for both OAuth callbacks.
 
-- **API key:** set `SPECTON_OPENAI_API_KEY` in `.env` before running a document. Without a key the API still starts and `/health` answers, but a run fails at the requirements analysis step. Runs call the real API and cost money (a few cents for the sample below).
-- **Ports:** the DB uses 5432, the API 8000 and the web app 5173. `docker compose up -d db` fails if another PostgreSQL already uses 5432.
-- **Input document:** the repository ships no sample input (development and evaluation data are kept private). Create a small synthetic CSV as below. The first line is the header.
+Small synthetic [inventory](examples/requirements/inventory.csv) and [maintenance](examples/requirements/maintenance.csv) inputs let you start without customer documents.
 
-```bash
-cat > sample_inventory.csv <<'CSV'
-요구사항 ID,요구사항명,상세 내용
-SFR-001,창고 관리,사용자는 창고의 코드와 이름을 등록하고 조회할 수 있다.
-SFR-002,품목 관리,사용자는 품목의 코드와 이름을 등록하고 조회할 수 있다.
-SFR-003,입고 등록,사용자는 창고별로 품목의 입고 수량과 입고 일자를 등록하고 조회할 수 있다.
-CSV
-```
+## Stack
 
-Open `http://localhost:5173`, upload the file and choose the `inventory` pack. Answer any confirmation questions, then approve at the final review to download the DDL, ERD, function specification and RTM. The screen flow is in [docs/09](docs/09-ui-flow.md).
+| Area | Technology |
+|---|---|
+| Backend | Python, FastAPI, Pydantic, LangGraph, OpenAI API |
+| Data | PostgreSQL 18, Alembic, psycopg |
+| Frontend | React 19, TypeScript, Vite, React Flow, Mermaid |
+| Generation/verification | Declarative contract compilation, Docker, Chromium, pglast |
+| Quality | pytest, Ruff, mypy, Vitest, ESLint, GitHub Actions |
 
-## Quality checks
-
-```bash
-uv run ruff check . && uv run ruff format --check .
-uv run mypy
-uv run pytest                     # unit tests (excludes db·llm)
-uv run pytest -m db               # requires the isolated DB
-uv run pytest -m llm              # real LLM calls; run manually after budget approval
-```
-
-## Domain packs
-
-`domain_packs/` holds inputs based on the 8th edition of the Korean Public Data Common Standard. Human-written files and generated files are kept separate ([guide](domain_packs/README.md), Korean).
-
-```bash
-uv run python -m specton.packs.build          # regenerate after editing inputs
-uv run python -m specton.packs.build --check  # check generated files are up to date (CI)
-```
-
-## Folder structure
+## Repository layout
 
 ```text
-specton/
-  contracts/    data contracts between stages (state, LLM I/O, Finding)
-  ingest/       Excel·CSV·HWPX·HWP extraction, keeps source locations
-  packs/        domain pack loader
-  llm/          shared LLM client, retries, prompt versions
-  nodes/        agent nodes A01–A09
-  codegen/      IDs, naming, N:M, FKs; Mermaid·DDL·RTM generation
-  review/       rule checks, configurable reviewer, evidence merging
-  validate/     DDL parsing, isolated DB execution checks
-  persistence/  platform storage, checkpointer
-  export/       intermediate Markdown; final PDF·SQL·Excel/CSV
-  api/          FastAPI
-  config.py     settings
-domain_packs/   common · inventory (stock·materials) · maintenance (equipment)
-eval/           evaluation data and answer keys (marked origin: synthetic)
-frontend/       React web
-tests/          unit · integration · e2e
+specton/       APIs, agents, contracts, generators, workers, persistence
+frontend/      Platform web UI
+domain_packs/  Common/inventory/maintenance knowledge and public sources
+examples/      Small redistributable synthetic inputs
+tests/         Fixed fixtures, unit/integration/browser checks
+scripts/       Local services, documentation checks, offline spec review
+docker/        Database, generated runtime, browser and web images
+docs/ko/       Korean developer documentation
+docs/en/       English developer documentation
+docs/api/      OpenAPI contract
 ```
+
+## Testing and execution scope
+
+[Testing](docs/en/testing.md) separates checks without external calls, database/Docker integration, and real model evaluation. Failed, unexecuted, and deferred requirements are not reported as passed.
+
+The project generates **initial systems within approved supported contracts**. Arbitrary business automation, scheduled/external actions, row ownership, general schema-changing migration, automatic production deployment, and finished visual design require additional contracts and implementation. Adoption is not production deployment or complete business acceptance. See [supported behavior and constraints](docs/en/roadmap.md).
 
 ## License
 
-[MIT](LICENSE). The Public Data Common Standard CSVs in `domain_packs/sources/` are public data from the Ministry of the Interior and Safety (no usage restrictions); their sources are recorded in `domain_packs/sources/sources.yaml`.
+[MIT](LICENSE). Original copyright notices, public-data attribution, and [Pretendard OFL](frontend/public/fonts/OFL.txt) are retained. [Pack sources](docs/en/domain-pack-sources.md) describe provenance.

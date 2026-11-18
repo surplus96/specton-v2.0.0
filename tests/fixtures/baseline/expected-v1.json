@@ -1,0 +1,119 @@
+{
+  "fixture_hash": "25a28ea281ffce4f48db800490fd4bfea59c1dd608a72680b39d1ed9d6aed880",
+  "cases": {
+    "20": {
+      "source_blocks": 20,
+      "requirements": 20,
+      "tables": 4,
+      "foreign_keys": 3,
+      "source_hash": "0a491835043b5d5e2d68514cbbe25897e5b3da2d530552c8f28de136dd28f215",
+      "model_hash": "e8f9f62fd60890a7448e8118f8df144751caa9a2567923886fa16b0348d70b66",
+      "policy_digest": "412531dfe827db1258381e1ee006ee45b0d081f717b0ae857f5b22728af8c353",
+      "lexicon_digest": "c02847ddf0d7f18d159b00e4fe3673a4d638ab74ae8ce487388b06fd258e1d09",
+      "trace_counts": {
+        "연결": 20,
+        "미연결": 0,
+        "제외": 0,
+        "확인(원문 없음)": 0
+      },
+      "artifacts": {
+        "functions.md": {
+          "sha256": "9645af4408ec8153c8bd37ccae8d8b5e1a09ed60c167379a5cffac2b36b635d7",
+          "bytes": 10497
+        },
+        "erd.mmd": {
+          "sha256": "68c5bef5cbc34dc4c31976b8d23db3d89b83f38378dedbe41a1779b4fb0a885c",
+          "bytes": 794
+        },
+        "ddl.sql": {
+          "sha256": "21bd32ab02a09bab7b4108d1ff22a185114e76821cbe3571b4de8995a31b96c1",
+          "bytes": 979
+        },
+        "rtm.csv": {
+          "sha256": "4201b3d9a93c7d8db65e1a94f341075a7e73f6436223dc42ad5656e47d3114ed",
+          "bytes": 2911
+        },
+        "rtm.xlsx": {
+          "sha256": "aa635b6f95d57ce6843e17d10afee9ca252c9c6058b963531598f878bc4801b7",
+          "bytes": 7302
+        }
+      }
+    },
+    "200": {
+      "source_blocks": 200,
+      "requirements": 200,
+      "tables": 4,
+      "foreign_keys": 3,
+      "source_hash": "398ea0b73a0911af60e6f8e78dba919e207edf0866c710e69de53877e8537c70",
+      "model_hash": "6afca8623ddf5d32efa2a72ffeebf264af8655dad3cc568b7b75052632352afd",
+      "policy_digest": "412531dfe827db1258381e1ee006ee45b0d081f717b0ae857f5b22728af8c353",
+      "lexicon_digest": "c02847ddf0d7f18d159b00e4fe3673a4d638ab74ae8ce487388b06fd258e1d09",
+      "trace_counts": {
+        "연결": 200,
+        "미연결": 0,
+        "제외": 0,
+        "확인(원문 없음)": 0
+      },
+      "artifacts": {
+        "functions.md": {
+          "sha256": "a368768262e114f29a5c4e1ec2e07372d8966f43a01ac20bf070d9047a6a9773",
+          "bytes": 98507
+        },
+        "erd.mmd": {
+          "sha256": "68c5bef5cbc34dc4c31976b8d23db3d89b83f38378dedbe41a1779b4fb0a885c",
+          "bytes": 794
+        },
+        "ddl.sql": {
+          "sha256": "21bd32ab02a09bab7b4108d1ff22a185114e76821cbe3571b4de8995a31b96c1",
+          "bytes": 979
+        },
+        "rtm.csv": {
+          "sha256": "204b13a7f8f95e8f9f248de58171137e381125b5beb0670e4761ef3b28325163",
+          "bytes": 27916
+        },
+        "rtm.xlsx": {
+          "sha256": "a3945f649275842ad00d128cfa3430903242c812a5f19e91caf85f80ad49ad23",
+          "bytes": 16595
+        }
+      }
+    },
+    "1000": {
+      "source_blocks": 1000,
+      "requirements": 1000,
+      "tables": 4,
+      "foreign_keys": 3,
+      "source_hash": "7a5737ef6441973e8d17ad10691fa372cc3156aa2a2f6819d106729bb43cd934",
+      "model_hash": "10a81ad13123b47fe9165e75ca4e9741531656c642601f54885b5b5ad909a9f6",
+      "policy_digest": "412531dfe827db1258381e1ee006ee45b0d081f717b0ae857f5b22728af8c353",
+      "lexicon_digest": "c02847ddf0d7f18d159b00e4fe3673a4d638ab74ae8ce487388b06fd258e1d09",
+      "trace_counts": {
+        "연결": 1000,
+        "미연결": 0,
+        "제외": 0,
+        "확인(원문 없음)": 0
+      },
+      "artifacts": {
+        "functions.md": {
+          "sha256": "0df215eb6a97b5a91d9ee535065ec9e5d29be6e7fd55815fc4c3645d96c9c582",
+          "bytes": 493193
+        },
+        "erd.mmd": {
+          "sha256": "68c5bef5cbc34dc4c31976b8d23db3d89b83f38378dedbe41a1779b4fb0a885c",
+          "bytes": 794
+        },
+        "ddl.sql": {
+          "sha256": "21bd32ab02a09bab7b4108d1ff22a185114e76821cbe3571b4de8995a31b96c1",
+          "bytes": 979
+        },
+        "rtm.csv": {
+          "sha256": "679e1f8694964866255f9dccb718da6a9cafa63f13b716b9e860ff18584e0c98",
+          "bytes": 140459
+        },
+        "rtm.xlsx": {
+          "sha256": "cc9a5dee9f937fba294ea72656c76ccc99507c583b2a58f1ca350c1341a7ecee",
+          "bytes": 56600
+        }
+      }
+    }
+  }
+}

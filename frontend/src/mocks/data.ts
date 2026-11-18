@@ -313,7 +313,7 @@ export const findingItems = [
   },
 ]
 
-/** 산출물 종류와 형식 (docs/06 「산출물 형식」). PDF는 승인한 revision에서만 만든다. */
+/** 산출물 종류와 형식 (docs/ko/api.md 「산출물 형식」). PDF는 승인한 revision에서만 만든다. */
 export const ARTIFACT_FORMATS = {
   requirements: ['md'],
   functions: ['md', 'pdf'],

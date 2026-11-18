@@ -31,7 +31,8 @@ def ddl_validation_findings(
         *(("entity", entity.id) for entity in design.entities),
         *(("relationship", rel.id) for rel in design.relationships),
     }
-    # 지문이 같은 문제는 지적 하나로 합치고 근거는 모두 남긴다 (docs/04 「지적 확정 절차」).
+    # 지문이 같은 문제는 지적 하나로 합치고 근거는 모두 남긴다 (docs/ko/architecture.md
+    # 「지적 확정 절차」).
     # RULE-07은 심각도가 하나이고 복귀 단계가 없어 합칠 것은 근거뿐이다.
     merged: dict[str, tuple[str, tuple[FindingTarget, ...], list[str]]] = {}
     for step in result.steps:

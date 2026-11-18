@@ -4,7 +4,7 @@
 # - input은 A01 노드의 input_data 모양(source_blocks)이다.
 agent: A01
 role: requirement_analysis
-status: draft
+status: approved
 examples:
 - source_id: MNT-009
   input:

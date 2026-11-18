@@ -27,7 +27,7 @@ export const COLUMN_TITLE: Record<TraceColumn, string> = {
 
 export const COLUMNS: readonly TraceColumn[] = ['block', 'requirement', 'function', 'entity', 'relationship', 'finding']
 
-/** 연결 상태. 제외·확인(원문 없음)은 미연결로 세지 않는다 (docs/10) */
+/** 연결 상태. 제외·확인(원문 없음)은 미연결로 세지 않는다 (docs/ko/domain-packs.md) */
 export type TraceMark = 'unlinked' | 'excluded' | 'no-source' | null
 
 export const MARK_LABEL: Record<Exclude<TraceMark, null>, string> = {

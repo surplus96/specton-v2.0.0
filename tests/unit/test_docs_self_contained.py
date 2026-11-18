@@ -37,12 +37,17 @@ AGENDA_CHECKED_SUFFIXES = {".md", ".yaml", ".yml"}
 
 def tracked_files() -> list[str]:
     result = subprocess.run(
-        ["git", "ls-files"], cwd=REPO_ROOT, check=True, capture_output=True, text=True
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
     )
     return [
         path
-        for path in result.stdout.splitlines()
+        for path in sorted(set(result.stdout.split("\0")))
         if (Path(path).suffix in CHECKED_SUFFIXES or Path(path).name in CHECKED_NAMES)
+        and (REPO_ROOT / path).is_file()
         and not path.startswith(EXCLUDED_PREFIXES)
         and path != THIS_FILE
     ]
@@ -108,7 +113,7 @@ def test_other_external_references_are_detected(line: str) -> None:
         "심각도 정책 (ADR-0010)",
         "openMAINT 제품 문서",
         "A01 요구사항 분석 (TC-A01)",
-        "개발 기획서: [확장 계획](docs/planning/README.md)",
+        "개발 문서: [확장 계획](docs/ko/roadmap.md)",
         "https://img.shields.io/badge/lang-%ED%95%9C%EA%B5%AD%EC%96%B4-1f6feb",
     ],
 )

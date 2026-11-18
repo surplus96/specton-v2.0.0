@@ -1,4 +1,4 @@
-# A06 데이터 누락 검토 (R2, #5). 형식 설명: docs/04-agents.md "관점 설정 형식"
+# A06 데이터 누락 검토 (R2, #5). 형식 설명: docs/ko/architecture.md "관점 설정 형식"
 reviewer_id: A06
 name: 데이터 누락 검토
 prompt_version: a06-v8

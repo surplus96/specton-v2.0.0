@@ -1,4 +1,7 @@
 # 로컬 개발용 PostgreSQL 18. specton_app(플랫폼 상태)과 specton_sandbox(DDL 격리 검증)를 분리한다.
+# 저장소 폴더 이름과 무관하게 기존 DB 볼륨을 사용한다.
+name: specton-personal
+
 services:
   db:
     image: postgres:18

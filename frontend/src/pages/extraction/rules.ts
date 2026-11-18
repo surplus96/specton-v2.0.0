@@ -1,5 +1,5 @@
 // UI-02 추출 확인 규칙. 화면(ExtractionPanel)과 분리해 테스트한다.
-// 규칙: docs/06-api.md 「사용자 확인 응답」, docs/09 UI-02, ADR-0015, 구현 가이드 강의 10.
+// 규칙: docs/ko/api.md 「사용자 확인 응답」, docs/ko/frontend.md UI-02, ADR-0015.
 // - review 블록: 확인 또는 제외. 제외하면 사유 필수(공백만 있으면 안 됨)
 // - fail 블록: 제외만 가능. 사유는 선택. 제외하지 않은 fail이 남으면 보낼 수 없다
 // - pass 블록: 결정하지 않는다
@@ -90,7 +90,7 @@ export const STOP_RESPONSE: ExtractionResponse = { kind: 'extraction', confirmed
 export type RelatedWarning = { block_id: string; source_id: string; related_block_ids: string[] }
 
 /**
- * 제외하려는 원문의 ID가 남는 원문의 「관련 요구사항」에 나오는지 (docs/09 UI-02, ADR-0015 결정 5).
+ * 제외하려는 원문의 ID가 남는 원문의 「관련 요구사항」에 나오는지 (docs/ko/frontend.md UI-02, ADR-0015 결정 5).
  * 막지 않고 안내만 한다. 서버(graph.py _related_warnings)와 같은 기준:
  * ID 앞뒤가 다른 글자·숫자·`-`가 아닐 때만 같은 ID로 본다 (「SFR-0031」 ≠ 「SFR-003」).
  */

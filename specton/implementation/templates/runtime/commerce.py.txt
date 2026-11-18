@@ -1,0 +1,188 @@
+"""Atomic fixed wholesale demo commands. No SQL or code is taken from mail/model text."""
+import hashlib
+import json
+from datetime import datetime, date
+from decimal import Decimal, ROUND_HALF_UP
+from typing import Annotated
+from zoneinfo import ZoneInfo
+
+import psycopg
+from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
+from fastapi import Header, HTTPException, Request
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr, ValidationError, create_model
+
+Key=Annotated[StrictStr,Field(pattern=r'^[A-Za-z0-9_-]{1,64}$')]
+Text=Annotated[StrictStr,Field(min_length=1,max_length=200)]
+Amount=Annotated[Decimal,Field(ge=0,max_digits=18,decimal_places=2,allow_inf_nan=False)]
+Quantity=Annotated[Decimal,Field(gt=0,max_digits=18,decimal_places=3,allow_inf_nan=False)]
+Safety=Annotated[Decimal,Field(ge=0,max_digits=18,decimal_places=3,allow_inf_nan=False)]
+
+class Payload(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+class Product(Payload):
+    id:Key; name:Text; specification:Text; barcode:Annotated[StrictStr,Field(max_length=200)]; tax:Text; safety_stock:Safety
+class Unit(Payload):
+    product_id:Key; name:Text; factor:Quantity; is_default:StrictBool
+class Member(Payload):
+    id:Key; name:Text; representative:Text; business_number:Annotated[StrictStr,Field(pattern=r'^\d{10}$')]; grade:Text
+class Receive(Payload):
+    id:Key; product_id:Key; expires:date; quantity:Quantity
+class Line(Payload):
+    product_id:Key; unit:Text; quantity:Quantity; price:Amount
+class Place(Payload):
+    id:Key; member_id:Key; lines_json:Annotated[StrictStr,Field(min_length=2,max_length=20000)]
+class Revise(Payload):
+    id:Key; lines_json:Annotated[StrictStr,Field(min_length=2,max_length=20000)]
+class Cancel(Payload):
+    id:Key
+class Return(Payload):
+    id:Key; member_id:Key; amount:Annotated[Decimal,Field(gt=0,max_digits=18,decimal_places=2,allow_inf_nan=False)]
+MODELS={'product':Product,'unit':Unit,'member':Member,'receive':Receive,'place':Place,'revise':Revise,'cancel':Cancel,'return':Return}
+
+def now(policy):
+    return datetime.now(ZoneInfo(policy['timezone']))
+
+def serial(value):
+    return json.loads(json.dumps(value,default=lambda v:format(v,'f') if isinstance(v,Decimal) else v.isoformat()))
+
+def fail(code,status=409):
+    raise HTTPException(status,detail=code)
+
+def reference(c,table,key):
+    # table is a constant chosen by trusted callers.
+    from psycopg import sql
+    if c.execute(sql.SQL('SELECT 1 FROM {} WHERE id=%s').format(sql.Identifier(table)),(key,)).fetchone() is None:
+        fail('REFERENCE_NOT_FOUND',422)
+
+def order(c,key):
+    row=c.execute('SELECT * FROM _specton_c_order WHERE id=%s',(key,)).fetchone()
+    if row is None: fail('REFERENCE_NOT_FOUND',404)
+    row['lines']=c.execute('SELECT * FROM _specton_c_line WHERE order_id=%s ORDER BY sequence',(key,)).fetchall()
+    return row
+
+def restore(c,key):
+    for row in c.execute('SELECT lot_id,quantity FROM _specton_c_allocation WHERE order_id=%s ORDER BY lot_id',(key,)).fetchall():
+        c.execute('UPDATE _specton_c_lot SET available=available+%s WHERE id=%s',(row['quantity'],row['lot_id']))
+    c.execute('DELETE FROM _specton_c_allocation WHERE order_id=%s',(key,))
+
+def allocate(c,key,raw,today):
+    try:
+        data=json.loads(raw)
+        if not isinstance(data,list) or not 1<=len(data)<=50: raise ValueError()
+        lines=[Line.model_validate(v) for v in data]
+    except (ValueError,ValidationError,TypeError):
+        fail('INVALID_LINES',422)
+    total=Decimal(0)
+    for n,line in enumerate(lines,1):
+        unit=c.execute('SELECT factor FROM _specton_c_unit WHERE product_id=%s AND name=%s',(line.product_id,line.unit)).fetchone()
+        if unit is None: fail('REFERENCE_NOT_FOUND',422)
+        required=line.quantity*unit['factor']
+        if required!=required.quantize(Decimal('0.001')) or required>Decimal('999999999999999.999'): fail('QUANTITY_OVERFLOW',422)
+        price=(line.quantity*line.price).quantize(Decimal('0.01'),rounding=ROUND_HALF_UP)
+        total+=price
+        if total>Decimal('9999999999999999.99'): fail('AMOUNT_OVERFLOW',422)
+        c.execute('INSERT INTO _specton_c_line VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',(key,n,line.product_id,line.unit,line.quantity,unit['factor'],line.price,price))
+        lots=c.execute('SELECT id,available FROM _specton_c_lot WHERE product_id=%s AND expires>=%s AND available>0 ORDER BY expires,id FOR UPDATE',(line.product_id,today)).fetchall()
+        for lot in lots:
+            take=min(lot['available'],required)
+            if take<=0: break
+            c.execute('UPDATE _specton_c_lot SET available=available-%s WHERE id=%s',(take,lot['id']))
+            c.execute('INSERT INTO _specton_c_allocation VALUES (%s,%s,%s,%s)',(key,n,lot['id'],take))
+            required-=take
+        if required>0: fail('INSUFFICIENT_STOCK')
+    c.execute('UPDATE _specton_c_order SET total=%s WHERE id=%s',(total,key))
+
+def execute(c,action,p,policy,instant):
+    if action=='product':
+        c.execute('INSERT INTO _specton_c_product VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT(id) DO UPDATE SET name=excluded.name,specification=excluded.specification,barcode=excluded.barcode,tax=excluded.tax,safety_stock=excluded.safety_stock',(p.id,p.name,p.specification,p.barcode,p.tax,p.safety_stock))
+        if policy.get('product_note_enabled'):
+            c.execute('UPDATE _specton_c_product SET note=%s WHERE id=%s',(p.note,p.id))
+        return p.model_dump(mode='json')
+    if action=='unit':
+        reference(c,'_specton_c_product',p.product_id)
+        if p.is_default: c.execute('UPDATE _specton_c_unit SET is_default=false WHERE product_id=%s',(p.product_id,))
+        c.execute('INSERT INTO _specton_c_unit VALUES (%s,%s,%s,%s) ON CONFLICT(product_id,name) DO UPDATE SET factor=excluded.factor,is_default=excluded.is_default',(p.product_id,p.name,p.factor,p.is_default))
+        return p.model_dump(mode='json')
+    if action=='member':
+        c.execute('INSERT INTO _specton_c_member VALUES (%s,%s,%s,%s,%s) ON CONFLICT(id) DO UPDATE SET name=excluded.name,representative=excluded.representative,business_number=excluded.business_number,grade=excluded.grade',(p.id,p.name,p.representative,p.business_number,p.grade))
+        return p.model_dump(mode='json')
+    if action=='receive':
+        reference(c,'_specton_c_product',p.product_id)
+        c.execute('INSERT INTO _specton_c_lot VALUES (%s,%s,%s,%s,%s)',(p.id,p.product_id,p.expires,p.quantity,p.quantity))
+        return p.model_dump(mode='json')
+    if action=='place':
+        reference(c,'_specton_c_member',p.member_id)
+        c.execute("INSERT INTO _specton_c_order VALUES (%s,%s,%s,'accepted',0)",(p.id,p.member_id,instant))
+        allocate(c,p.id,p.lines_json,instant.date())
+        return order(c,p.id)
+    if action in {'revise','cancel'}:
+        old=order(c,p.id)
+        if old['status']!='accepted': fail('INVALID_STATE')
+        local=old['created_at'].astimezone(ZoneInfo(policy['timezone']))
+        cutoff=local.replace(hour=policy['cutoff_hour'],minute=0,second=0,microsecond=0)
+        if instant>=cutoff: fail('CUTOFF_PASSED')
+        restore(c,p.id)
+        if action=='cancel': c.execute("UPDATE _specton_c_order SET status='cancelled' WHERE id=%s",(p.id,))
+        else:
+            c.execute('DELETE FROM _specton_c_line WHERE order_id=%s',(p.id,))
+            allocate(c,p.id,p.lines_json,instant.date())
+        return order(c,p.id)
+    if action=='return':
+        reference(c,'_specton_c_member',p.member_id)
+        start=instant.replace(day=1,hour=0,minute=0,second=0,microsecond=0)
+        end=start.replace(year=start.year+1,month=1) if start.month==12 else start.replace(month=start.month+1)
+        bought=c.execute("SELECT coalesce(sum(total),0) AS n FROM _specton_c_order WHERE member_id=%s AND status='accepted' AND created_at>=%s AND created_at<%s",(p.member_id,start,end)).fetchone()['n']
+        returned=c.execute('SELECT coalesce(sum(amount),0) AS n FROM _specton_c_return WHERE member_id=%s AND created_at>=%s AND created_at<%s',(p.member_id,start,end)).fetchone()['n']+p.amount
+        warning=returned*100>bought*policy['return_warning_percent']
+        c.execute('INSERT INTO _specton_c_return VALUES (%s,%s,%s,%s,%s)',(p.id,p.member_id,instant,p.amount,warning))
+        return {'id':p.id,'warning':warning,'monthly_purchase':bought,'monthly_returns':returned}
+    if action=='catalog':
+        return {'products':c.execute('SELECT * FROM _specton_c_product ORDER BY id LIMIT 200').fetchall(),'units':c.execute('SELECT * FROM _specton_c_unit ORDER BY product_id,name LIMIT 500').fetchall()}
+    if action=='orders': return [order(c,r['id']) for r in c.execute('SELECT id FROM _specton_c_order ORDER BY created_at DESC,id LIMIT 100').fetchall()]
+    if action=='members': return c.execute('SELECT * FROM _specton_c_member ORDER BY id LIMIT 200').fetchall()
+    if action=='returns': return c.execute('SELECT * FROM _specton_c_return ORDER BY created_at DESC,id LIMIT 200').fetchall()
+    if action=='stock': return c.execute('SELECT * FROM _specton_c_lot ORDER BY expires,id LIMIT 500').fetchall()
+    if action=='alerts':
+        from datetime import timedelta
+        today=instant.date()
+        low=c.execute('SELECT p.id,p.name,p.safety_stock,coalesce(sum(l.available) FILTER(WHERE l.expires>=%s),0) AS available FROM _specton_c_product p LEFT JOIN _specton_c_lot l ON l.product_id=p.id GROUP BY p.id HAVING coalesce(sum(l.available) FILTER(WHERE l.expires>=%s),0)<p.safety_stock ORDER BY p.id LIMIT 500',(today,today)).fetchall()
+        expiry=c.execute('SELECT * FROM _specton_c_lot WHERE available>0 AND expires BETWEEN %s AND %s ORDER BY expires,id LIMIT 500',(today,today+timedelta(days=policy['expiry_days']))).fetchall()
+        expired=c.execute('SELECT * FROM _specton_c_lot WHERE available>0 AND expires<%s ORDER BY expires,id LIMIT 500',(today,)).fetchall()
+        return {'low_stock':low,'expiring':expiry,'expired':expired,'as_of':today}
+    fail('UNKNOWN_OPERATION',422)
+
+def register(app,policy,dsn,principal):
+    def bind(op):
+        action=op['action']
+        if op['method']=='GET':
+            def endpoint(request:Request):
+                principal(request,op['actor_roles'])
+                with psycopg.connect(dsn,row_factory=dict_row) as c:
+                    # Consistent multi-query reads relative to demo commands.
+                    c.execute('SELECT pg_advisory_xact_lock_shared(742619)')
+                    return {'result_json':json.dumps(serial(execute(c,action,None,policy,now(policy))),ensure_ascii=False)}
+        else:
+            def endpoint(payload,request:Request,idempotency_key:Annotated[str,Header(min_length=1,max_length=128)]):
+                actor=principal(request,op['actor_roles'])
+                digest=hashlib.sha256(json.dumps(payload.model_dump(mode='json'),sort_keys=True).encode()).hexdigest()
+                scope=actor+':'+op['id']
+                try:
+                    with psycopg.connect(dsn,row_factory=dict_row) as c:
+                        # Coarse demo transaction lock prevents oversell and races across orders,
+                        # cancellation, unit edits and monthly return accounting.
+                        c.execute('SELECT pg_advisory_xact_lock(742619)')
+                        old=c.execute('SELECT request_hash,result FROM _specton_commands WHERE scope=%s AND key=%s',(scope,idempotency_key)).fetchone()
+                        if old:
+                            if old['request_hash']!=digest: fail('IDEMPOTENCY_CONFLICT')
+                            return old['result']
+                        result={'result_json':json.dumps(serial(execute(c,action,payload,policy,now(policy))),ensure_ascii=False)}
+                        c.execute('INSERT INTO _specton_commands VALUES (%s,%s,%s,%s)',(scope,idempotency_key,digest,Jsonb(result)))
+                        return result
+                except psycopg.errors.UniqueViolation: fail('DUPLICATE_KEY')
+                except psycopg.errors.ForeignKeyViolation: fail('REFERENCE_NOT_FOUND',422)
+                except (psycopg.errors.CheckViolation,psycopg.errors.NumericValueOutOfRange): fail('VALUE_OUT_OF_RANGE',422)
+            endpoint.__annotations__['payload']=(create_model('ProductWithNote',__base__=Product,note=(Annotated[StrictStr,Field(max_length=500)],...)) if action=='product' and policy.get('product_note_enabled') else MODELS[action])
+        response=create_model('Result_'+action,result_json=(str,...))
+        app.add_api_route(op['path'],endpoint,methods=[op['method']],operation_id=op['id'],response_model=response)
+    for op in policy['operations']: bind(op)

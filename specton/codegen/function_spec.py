@@ -1,4 +1,4 @@
-"""기능 명세서: 설계 상태 → Markdown (#14, docs/10 「출력 규격」, REQ-18).
+"""기능 명세서: 설계 상태 → Markdown (#14, docs/ko/domain-packs.md 「출력 규격」, REQ-18).
 
 기능 ID·설명·우선순위와 근거·관련 요구사항·CRUD를 담는다. PDF는 승인 때 #13의 공용 엔진이
 이 Markdown을 변환한다 (ADR-0004).
@@ -7,7 +7,7 @@
   HTML 태그·이미지·각주·셀 안 줄바꿈은 쓰지 않는다. 넓은 CRUD 표는 엔진이 가로 쪽·열 나누기로
   처리한다.
 - 초안 표시는 넣지 않는다. 승인본은 같은 바이트를 그대로 쓰므로(export) 초안·승인 구분은
-  파일 이름과 PDF가 한다 (docs/06 「산출물」).
+  파일 이름과 PDF가 한다 (docs/ko/api.md 「산출물」).
 - 문서 머리의 문서 정보 칸 이름은 ERD PDF 표지와 같다: run_id·revision·model_hash·pack·pack_version.
 - 같은 입력이면 항상 같은 문자열이다 (기능·엔티티는 설계 순서를 따른다).
 - 이 모듈은 LLM client를 import하지 않는다 (CLAUDE.md, `codegen/` 규칙).

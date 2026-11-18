@@ -39,7 +39,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, TypedDict
 
-from specton.contracts import DesignState, Finding
+from specton.contracts import AttributeDraft, DesignState, Finding
 from specton.contracts.base import SqlType
 from specton.contracts.findings import FindingSource, FindingTarget, Severity
 from specton.contracts.normalized import Column, NormalizedModel, Table
@@ -697,3 +697,127 @@ def _describe(spec: DomainSpec) -> str:
     if spec.type in (SqlType.CHAR, SqlType.VARCHAR):
         return f"{spec.type.value}({spec.length})"
     return spec.type.value
+
+
+@dataclass(frozen=True)
+class StorageTypePolicy:
+    """A03 and final review share the same SC-03/SC-06 implementation and source hashes.
+
+    Reject incompatible proposals; never coerce values or rewrite an approved model.
+    Pack terms retain their explicit overrides, as in the final compliance review.
+    """
+
+    context: _Context
+    pack_terms: frozenset[str]
+
+    def problems(self, attribute: AttributeDraft) -> list[str]:
+        name = _nfc(attribute.name)
+        if name in self.pack_terms:
+            return []
+        ctx = self.context
+        term = ctx.official.terms.get(name)
+        column = Column(
+            id="storage-policy-check",
+            attribute_id="storage-policy-check",
+            name=name,
+            physical_name="storage_policy_check",
+            data_type=attribute.data_type,
+            length=attribute.length,
+            precision=attribute.precision,
+            scale=attribute.scale,
+            nullable=attribute.nullable,
+            req_ids=attribute.req_ids,
+            time_precision=None,
+            domain=None,
+        )
+        tally = _Tally(
+            dict.fromkeys(CODES, 0), dict.fromkeys(CODES, 0), {code: set() for code in CODES}, []
+        )
+        _check_classifier(ctx, tally, column, name, _split_name(name, term, ctx))
+        if term is not None:
+            _check_official_term(ctx, tally, column, name, name, term)
+        return [f.evidence[0].quote for f in tally.findings if f.rule_code in {"SC-03", "SC-06"}]
+
+    def resolve(self, attribute: AttributeDraft) -> AttributeDraft:
+        """Assign an unambiguous standard storage type to a NEW draft, with an audit note.
+
+        Never mutates input or runtime data. Ambiguous domains remain subject to rejection.
+        """
+        name = _nfc(attribute.name)
+        if name in self.pack_terms:
+            return attribute
+        ctx = self.context
+        term = ctx.official.terms.get(name)
+        spec = ctx.official.domains.get(_nfc(term.domain), {}).get(ctx.profile) if term else None
+        basis = term.domain if spec and term else None
+        if spec is None:
+            parts = _split_name(name, term, ctx)
+            info = _word_info(parts[-1], ctx.registered, ctx.official) if parts else None
+            if info and info[1] and info[2]:
+                choices = {
+                    p[ctx.profile]
+                    for p in ctx.official.domains.values()
+                    if ctx.profile in p and p[ctx.profile].domain_class == info[2]
+                }
+                if len(choices) == 1:
+                    spec = next(iter(choices))
+                    basis = "분류어 " + info[0]
+        if spec is None:
+            return attribute
+        changes: dict[str, Any] = dict(data_type=spec.type, length=None, precision=None, scale=None)
+        if spec.type in (SqlType.CHAR, SqlType.VARCHAR):
+            changes["length"] = spec.length
+        elif spec.type is SqlType.NUMERIC:
+            changes.update(precision=spec.length, scale=spec.scale or 0)
+        if all(getattr(attribute, key) == value for key, value in changes.items()):
+            return attribute
+        before = attribute.data_type.value
+        if attribute.data_type is SqlType.NUMERIC:
+            before += f"({attribute.precision},{attribute.scale or 0})"
+        elif attribute.length is not None:
+            before += f"({attribute.length})"
+        note = f"[저장 타입 정책 {ctx.profile}: {basis}; 모델 초안 {before} → {_describe(spec)}]"
+        return attribute.evolve(
+            **changes, description=((attribute.description or "") + "\n" + note).strip()
+        )
+
+    def guidance(self, source: str) -> dict[str, Any]:
+        ctx = self.context
+        terms = {}
+        text = _nfc(source)
+        for name in sorted(ctx.official.terms, key=lambda n: (-len(n), n)):
+            if name in self.pack_terms or name not in text:
+                continue
+            term = ctx.official.terms[name]
+            spec = ctx.official.domains.get(_nfc(term.domain), {}).get(ctx.profile)
+            if spec is not None:
+                terms[name] = _describe(spec)
+            if len(terms) >= 128:
+                break
+        classifiers = {}
+        for name in sorted(set(ctx.official.words) | set(ctx.registered)):
+            info = _word_info(name, ctx.registered, ctx.official)
+            if info and info[1]:
+                allowed = ctx.official.class_types.get(info[2] or "", {}).get(ctx.profile, ())
+                if allowed:
+                    classifiers[name] = sorted(t.value for t in allowed)
+        return {
+            "profile": ctx.profile,
+            "source_hashes": dict(ctx.official.sha256),
+            "exact_terms_in_source": terms,
+            "classifier_types": classifiers,
+        }
+
+
+def storage_type_policy(pack: str, *, root: Path = DEFAULT_ROOT) -> StorageTypePolicy:
+    loaded = load_pack(pack, root=root)
+    return StorageTypePolicy(
+        _context(
+            load_official_standard(root=root),
+            pack_words(pack, root=root),
+            compliance_severities(root=root),
+            loaded.common.naming.type_profile,
+            0,
+        ),
+        frozenset(_nfc(t.term) for t in loaded.terms),
+    )

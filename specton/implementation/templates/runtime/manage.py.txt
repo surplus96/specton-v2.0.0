@@ -1,0 +1,52 @@
+"""Offline customer account administration. No default or self-registered administrator."""
+import argparse
+import getpass
+import json
+import os
+from pathlib import Path
+import runpy
+
+import psycopg
+import auth
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest='command', required=True)
+    commands.add_parser('roles')
+    commands.add_parser('init-db')
+    user = commands.add_parser('set-user', help='Create/reset account and revoke all its sessions')
+    user.add_argument('username')
+    user.add_argument('--role', action='append', required=True)
+    disable = commands.add_parser('disable-user')
+    disable.add_argument('username')
+    args = parser.parse_args()
+    root = Path(__file__).parent
+    config = json.loads((root/'contract.json').read_text())
+    if args.command == 'roles':
+        print('\n'.join(sorted(auth.roles_in(config))))
+        return
+    if args.command == 'init-db':
+        if os.environ.get('APP_AUTH_MODE', 'session') != 'session':
+            parser.error('Customer database initialization requires APP_AUTH_MODE=session')
+        runpy.run_path(str(root/'app.py'), run_name='__main__')
+        print('Fresh customer database initialized.')
+        return
+    password = None
+    if args.command == 'set-user':
+        password = getpass.getpass('Password (12-128 characters): ')
+        if password != getpass.getpass('Confirm password: '):
+            parser.error('Passwords do not match')
+    with psycopg.connect(os.environ['APP_DATABASE_URL']) as conn:
+        if args.command == 'set-user':
+            auth.save_user(conn, config, args.username, password, args.role)
+        else:
+            changed = conn.execute('UPDATE _specton_users SET active=false WHERE username=%s', (args.username,))
+            if not changed.rowcount:
+                parser.error('Account not found')
+            conn.execute('DELETE FROM _specton_sessions WHERE username=%s', (args.username,))
+    print('Account updated; previous sessions revoked.')
+
+
+if __name__ == '__main__':
+    main()

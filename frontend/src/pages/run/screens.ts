@@ -1,5 +1,5 @@
 // 실행 상태 → 화면 규칙. 화면 코드(RunPage)와 분리해 테스트한다.
-// 상태 목록은 계약(RunState), 화면 대응은 docs/09-ui-flow.md 화면 목록·흐름도를 따른다.
+// 상태 목록은 계약(RunState), 화면 대응은 docs/ko/frontend.md 화면 목록·흐름도를 따른다.
 import type { ApiErrorBody, InterruptKind, RunState, SseEvent } from '../../api/types.ts'
 import { SCREENS, type StepState, type ScreenId } from '../../layout/StageSteps.tsx'
 
@@ -16,7 +16,7 @@ const SCREEN_OF: Record<RunState, ScreenId> = {
   awaiting_review: 'UI-06', // 최종 검토 (HITL 2)
   exporting: 'UI-04', // 승인 뒤 파일 생성 중 = 결과 보기(진행) (강의 09)
   completed: 'UI-07',
-  // 실패·취소는 진행 화면에서 원인과 다음 행동을 보인다 (docs/09 UI-04 「호출 실패·한도 초과 안내」)
+  // 실패·취소는 진행 화면에서 원인과 다음 행동을 보인다 (docs/ko/frontend.md UI-04 「호출 실패·한도 초과 안내」)
   failed: 'UI-04',
   cancel_requested: 'UI-04',
   cancelled: 'UI-04',
@@ -96,7 +96,7 @@ export function screenSteps(status: RunState, current: ScreenId, events: readonl
   return steps
 }
 
-/** 분석 확인을 건너뛰었을 때 서버가 남기는 문구 (docs/06 「SSE」, ADR-0015) */
+/** 분석 확인을 건너뛰었을 때 서버가 남기는 문구 (docs/ko/api.md 「SSE」, ADR-0015) */
 export const SKIPPED_REQUIREMENTS_MESSAGE = '확인할 항목이 없어 분석 확인을 생략했습니다'
 
 /** UI-04 「분석 확인 생략(확인할 항목 없음)」 표시 여부 */
@@ -108,7 +108,7 @@ export function requirementsCheckSkipped(events: readonly SseEvent[]): boolean {
 
 /**
  * 실패 안내. 「자세히 보기」 문장(detail)은 상태 조회 `error.detail`을 먼저 쓰고, 없으면 SSE error 이벤트
- * `payload.detail`을 쓴다. 상태 조회 값은 DB에 저장돼 새로고침·SSE 재생 만료 뒤에도 남는다 (#204·#230, docs/06).
+ * `payload.detail`을 쓴다. 상태 조회 값은 DB에 저장돼 새로고침·SSE 재생 만료 뒤에도 남는다 (#204·#230, docs/ko/api.md).
  */
 export function failureOf(
   error: ApiErrorBody | null | undefined,

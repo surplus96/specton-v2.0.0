@@ -4,7 +4,7 @@
 # - 요구사항 문장은 개발용 세트(MNT-004·MNT-015)의 것이고, 검토 대상 기능·엔티티는 예시를 위해 만든 가상 설계다.
 agent: A06
 role: missing_data_review
-status: draft
+status: approved
 examples:
 # 지적 예시: 요구사항이 나열한 항목(적용 단가)을 저장할 속성이 없다.
 - source_id: MNT-015

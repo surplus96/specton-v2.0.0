@@ -1,5 +1,5 @@
 // UI-03 분석 확인 규칙. 화면(RequirementsPanel)과 분리해 테스트한다.
-// 규칙: docs/06-api.md 「사용자 확인 응답」, docs/09 UI-03, 구현 가이드 강의 10.
+// 규칙: docs/ko/api.md 「사용자 확인 응답」, docs/ko/frontend.md UI-03.
 // - keep: 그대로 (texts 비움) / edit: 문장 1개로 바꿈 / split: 문장 2개 이상으로 나눔
 // - 답하지 않은 요구사항은 keep으로 본다
 // 서버(contracts/api.py RequirementsResponse.answers_for, #136)도 같은 조건을 422로 막는다.
@@ -27,7 +27,7 @@ export function typeText(req: Pick<AnalysedRequirement, 'type' | 'nfr_category'>
   return req.nfr_category ? `품질 · ${NFR_LABEL[req.nfr_category]}` : '품질 요구'
 }
 
-/** 같은 원문에서 2건 이상 나온 요구사항 (docs/09 UI-03 「분할」). 원문 ID가 없으면 원문 위치로 묶는다. */
+/** 같은 원문에서 2건 이상 나온 요구사항 (docs/ko/frontend.md UI-03 「분할」). 원문 ID가 없으면 원문 위치로 묶는다. */
 export function splitFromSameSource(reqs: readonly AnalysedRequirement[]): Set<string> {
   const keyOf = (r: AnalysedRequirement) => JSON.stringify([r.source_id ?? null, r.source_ref])
   const counts = new Map<string, number>()

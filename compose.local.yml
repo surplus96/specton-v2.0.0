@@ -8,7 +8,9 @@ services:
   web:
     environment:
       SPECTON_SITE_ADDRESS: ":80"
-    ports:
+    # Compose 2.24.4+: replace production bindings so local HTTP stays on loopback.
+    ports: !override
+      - "127.0.0.1:80:80"
       - "127.0.0.1:5194:8080"
       - "127.0.0.1:5196:8080"
     volumes:

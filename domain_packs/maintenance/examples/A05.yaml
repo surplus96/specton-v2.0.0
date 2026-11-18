@@ -3,7 +3,7 @@
 # - output은 해당 노드의 LLM 출력 모델과 같은 모양이어야 한다. load_examples가 그 모델로 검증한다 (docs/04 "노드 작성 규칙").
 agent: A05
 role: relationship_review
-status: draft
+status: approved
 examples:
 # 지적 없음 예시: 요구사항과 맞는 자기참조 관계는 지적하지 않는다.
 - source_id: MNT-002

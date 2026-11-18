@@ -353,6 +353,7 @@ def test_checkpoint_recovery_does_not_render_pdf_twice(
 
 
 @pytest.mark.parametrize("pack", DOMAINS)
+@pytest.mark.native_pdf
 def test_native_mermaid_weasyprint_pdf_approval_and_download(
     world: Callable[..., _World], pack: str
 ) -> None:

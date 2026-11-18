@@ -1,4 +1,5 @@
-"""출력 manifest: 한 revision의 산출물이 어느 실행·모델·버전에서 나왔는지 (#14, docs/10).
+"""출력 manifest: 한 revision의 산출물이 어느 실행·모델·버전에서 나왔는지 (#14,
+docs/ko/domain-packs.md).
 
 `run_id`·`revision`·`model_hash`·원문 해시·팩·프롬프트·생성기 버전·파일별 해시를 담는다.
 초안과 승인본을 섞지 않는다: 한 manifest에는 같은 revision·같은 승인 상태의 파일만 넣는다.

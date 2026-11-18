@@ -106,7 +106,7 @@ def test_excel_sheet_rows_become_source_blocks(tmp_path: Path) -> None:
 def test_skipped_sheets_are_left_as_a_note_for_the_extraction_screen(
     tmp_path: Path, header_only: bool
 ) -> None:
-    """표가 없거나 빈 표인 시트는 안내 한 줄이다 (#95 결론, docs/09 UI-02)."""
+    """표가 없거나 빈 표인 시트는 안내 한 줄이다 (#95 결론, docs/ko/frontend.md UI-02)."""
     book = Workbook()
     cover = book.active
     cover.title = "표지"

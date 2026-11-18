@@ -1,0 +1,63 @@
+"""Trusted declarative scenario interpreter; callbacks target only an isolated app."""
+import json
+import time
+
+
+def run_cases(cases, operations, request, reset, *, budget_seconds=30):
+    results=[]
+    deadline=time.monotonic()+budget_seconds
+    for case in cases:
+        result={'id':case['id'],'req_ids':case['req_ids'],'category':case['category'],
+                'status':'not_run','steps':[]}
+        results.append(result)
+        if time.monotonic()>=deadline:
+            result['reason']='TIME_BUDGET_EXCEEDED'
+            continue
+        abort=False
+        try:
+            reset()
+            result['status']='passed'
+            for index,step in enumerate(case['steps']):
+                item={'index':index+1,'api_id':step['api_id'],'status':'failed'}
+                result['steps'].append(item)
+                if time.monotonic()>=deadline:
+                    item['reason']='TIME_BUDGET_EXCEEDED';result['status']='failed';break
+                status,body=request(operations[step['api_id']],step)
+                expected=step['expect']
+                if status!=expected['status']:
+                    item.update(reason='STATUS_MISMATCH',actual_status=status,expected_status=expected['status'])
+                elif expected['kind']=='exact':
+                    if json.dumps(body,sort_keys=True,ensure_ascii=False,allow_nan=False)==json.dumps(expected['body'],sort_keys=True,ensure_ascii=False,allow_nan=False):
+                        item['status']='passed'
+                    else:item['reason']='BODY_MISMATCH'
+                else:
+                    detail=body.get('detail') if isinstance(body,dict) else None
+                    if expected['code']=='VALIDATION_ERROR':
+                        matched=status==422 and isinstance(detail,list) and len(detail)>0
+                    else:matched=detail==expected['code']
+                    if matched:item['status']='passed'
+                    else:item['reason']='ERROR_CODE_MISMATCH'
+                if item['status']!='passed':
+                    result['status']='failed';break
+        except Exception:
+            # Never publish connection strings, response bodies or credentials from exceptions.
+            result.update(status='failed',reason='SCENARIO_EXECUTION_ERROR')
+            abort=True
+        finally:
+            try:reset()
+            except Exception:
+                result.update(status='failed',reason='ISOLATION_RESET_FAILED')
+                # Isolation cannot be guaranteed for later cases.
+                for remaining in cases[len(results):]:
+                    results.append({'id':remaining['id'],'req_ids':remaining['req_ids'],
+                        'category':remaining['category'],'status':'not_run','steps':[],
+                        'reason':'ISOLATION_RESET_FAILED'})
+                return {'status':'failed','cases':results}
+        if abort:
+            for remaining in cases[len(results):]:
+                results.append({'id':remaining['id'],'req_ids':remaining['req_ids'],
+                    'category':remaining['category'],'status':'not_run','steps':[],
+                    'reason':'PREVIOUS_EXECUTION_ERROR'})
+            return {'status':'failed','cases':results}
+    return {'status':('passed' if all(r['status']=='passed' for r in results) else 'failed')
+            if results else 'not_run','cases':results}

@@ -1,16 +1,15 @@
 import RunEyebrow from '../run/RunEyebrow.tsx'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { getView } from '../../api/client.ts'
+import { getView, listDomainPacks } from '../../api/client.ts'
 import { errorMessage } from '../../api/errors.ts'
-import type { Pack, RunStatus } from '../../api/types.ts'
+import type { PackEntry, RunStatus } from '../../api/types.ts'
 import type { ArtifactRef, DesignItem, Finding } from '../../api/viewItems.ts'
 import Button from '../../ui/Button.tsx'
 import Loading from '../../ui/Loading.tsx'
 import Notice from '../../ui/Notice.tsx'
 import ScreenHead from '../../ui/ScreenHead.tsx'
 import DownloadCard from './DownloadCard.tsx'
-import { PACK_LABELS } from '../upload/rules.ts'
 import Pipeline from './Pipeline.tsx'
 import type { WorkspaceTab } from './pipeline.ts'
 import ResultSummary from './ResultSummary.tsx'
@@ -24,9 +23,10 @@ type Props = {
 }
 
 /** 카드 위 작은 글: 설계에 쓴 업무 분야 (예: 재고관리 요구사항) */
-function subjectOf(design: readonly DesignItem[]): string {
-  const pack = design.find((d) => d.type === 'entity')?.pack as Pack | undefined
-  return pack && PACK_LABELS[pack] ? `${PACK_LABELS[pack].label} 요구사항` : '요구사항'
+function subjectOf(design: readonly DesignItem[], packs: readonly PackEntry[]): string {
+  const pack = design.find((d) => d.type === 'entity')?.pack
+  const entry = packs.find(p => p.name === pack)
+  return pack ? `${entry?.label ?? pack} 요구사항` : '요구사항'
 }
 
 function DownloadPanel({ run, label }: Props) {
@@ -34,6 +34,12 @@ function DownloadPanel({ run, label }: Props) {
   const [, setParams] = useSearchParams()
   const [artifacts, setArtifacts] = useState<ArtifactRef[] | null>(null)
   const [design, setDesign] = useState<DesignItem[]>([])
+  const [packs, setPacks] = useState<PackEntry[]>([])
+  useEffect(() => {
+    let active = true
+    listDomainPacks().then(rows => { if (active) setPacks(rows) }).catch(() => {})
+    return () => { active = false }
+  }, [])
   // null: 검토 지적을 불러오지 못함 (요약의 지적 칸만 비우고 다운로드는 그대로)
   const [findings, setFindings] = useState<Finding[] | null>([])
   const [loadError, setLoadError] = useState<unknown>(null)
@@ -92,7 +98,7 @@ function DownloadPanel({ run, label }: Props) {
       ) : (
         <>
           <div className="decide">
-            <DownloadCard runId={run.run_id} artifacts={artifacts} approved={approved} subject={subjectOf(design)} />
+            <DownloadCard runId={run.run_id} artifacts={artifacts} approved={approved} subject={subjectOf(design, packs)} />
             <ResultSummary design={design} findings={findings} />
           </div>
 

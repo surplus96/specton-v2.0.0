@@ -1,0 +1,8 @@
+# Display metadata only. Admission depends on each pack/common manifest and pack.lock.
+# New pack folders are discovered without editing frontend code.
+inventory:
+  label: 재고관리
+  summary: 부품·소모품 기준정보와 입고·출고·반품·조정·이동 설계
+maintenance:
+  label: 설비보전
+  summary: 설비 대장·예방점검·고장 접수·작업 지시·결과 설계

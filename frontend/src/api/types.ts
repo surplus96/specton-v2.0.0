@@ -4,6 +4,9 @@
 import type { components, operations } from './schema'
 
 type Schemas = components['schemas']
+export type PackEntry = Schemas['PackEntry']
+export type ScopeReport = Schemas['ScopeReport']
+export type HandoffReport = Schemas['HandoffReport']
 
 export type RunStatus = Schemas['RunStatus']
 export type RunState = RunStatus['status']
