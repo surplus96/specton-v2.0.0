@@ -48,7 +48,11 @@ jobs:
 
   database:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [a-d, e-z]
     services:
       postgres:
         image: postgres:18
@@ -79,11 +83,33 @@ jobs:
       - run: uv run python -m specton.persistence.migrate upgrade
       - run: uv run python -m specton.persistence.migrate check
       - name: Database and API regression
-        run: uv run pytest --require-db -m 'db and not native_pdf and not llm and not docker_browser' --junitxml=var/test-results/database.xml
+        env:
+          DATABASE_TEST_SHARD: ${{ matrix.shard }}
+        run: |
+          uv run python - <<'PY'
+          import os
+          import subprocess
+          from pathlib import Path
+          shard = os.environ["DATABASE_TEST_SHARD"]
+          assert shard in {"a-d", "e-z"}
+          paths = set(Path("tests").rglob("test_*.py")) | set(Path("tests").rglob("*_test.py"))
+          # Each matrix job owns its PostgreSQL service. Every test file belongs
+          # to exactly one shard; generated source archives are produced in e-z.
+          files = sorted(str(path) for path in paths if
+              ("a" <= path.stem.removeprefix("test_").casefold()[:1] <= "d") == (shard == "a-d"))
+          assert files, "Database test shard must not be empty"
+          subprocess.run([
+              "uv", "run", "pytest", "--require-db", "-m",
+              "db and not native_pdf and not llm and not docker_browser",
+              "--durations=20", "--junitxml=var/test-results/database.xml", *files,
+          ], check=True)
+          PY
       - uses: actions/setup-node@v5
+        if: matrix.shard == 'e-z'
         with:
           node-version: 22
       - name: Build the application produced by the approved-spec API test
+        if: matrix.shard == 'e-z'
         run: |
           uv run python - <<'PY'
           import hashlib
@@ -103,6 +129,7 @@ jobs:
           npm --prefix var/generated-web/inventory ci --no-audit --no-fund
           npm --prefix var/generated-web/inventory run build
       - name: Verify generated inventory against isolated PostgreSQL and HTTP
+        if: matrix.shard == 'e-z'
         run: |
           docker build -f docker/implementation/Dockerfile -t specton-generated-runtime:inventory-ledger-v1 .
           uv run python - <<'PY'
@@ -119,12 +146,14 @@ jobs:
           assert report["status"] == "smoke_passed", "Isolated inventory verification failed"
           PY
       - name: Verify platform queue and actual worker result registration
+        if: matrix.shard == 'e-z'
         run: |
           export SPECTON_TEST_WORKER_RUNTIME="$(docker image inspect specton-generated-runtime:inventory-ledger-v1 --format '{{.Id}}')"
           export SPECTON_TEST_WORKER_POSTGRES="$(docker image inspect postgres:18 --format '{{.Id}}')"
           export SPECTON_TEST_WORKER_REPORT=var/test-results/worker-runtime.json
           uv run pytest --require-db -m db tests/integration/test_verification_jobs.py::test_worker_registers_report
       - name: Browser acceptance and expiring isolated preview
+        if: matrix.shard == 'e-z'
         run: |
           docker build -f docker/browser/Dockerfile -t specton-browser:generated-ui-v1 .
           export SPECTON_TEST_WORKER_RUNTIME="$(docker image inspect specton-generated-runtime:inventory-ledger-v1 --format '{{.Id}}')"
@@ -145,7 +174,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: database-test-results
+          name: database-test-results-${{ matrix.shard }}
           path: var/test-results/
 
   frontend:
