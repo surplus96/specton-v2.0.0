@@ -52,6 +52,8 @@ jobs:
     services:
       postgres:
         image: postgres:18
+        # Public test credentials for this disposable Actions service only.
+        # They are not production secrets; the runner destroys this DB after the job.
         env:
           POSTGRES_USER: specton
           POSTGRES_PASSWORD: specton
