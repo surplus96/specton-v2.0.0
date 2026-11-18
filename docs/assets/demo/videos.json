@@ -1,0 +1,41 @@
+{
+  "format": "specton-demo-v1",
+  "videos": [
+    {
+      "part": "part_01",
+      "title_ko": "초기 설계도 생성",
+      "title_en": "Initial design generation",
+      "duration": "02:17",
+      "url": "https://github.com/user-attachments/assets/a1f762ea-d0cb-4ba6-859c-3d469e324044",
+      "source_sha256": "bff9b8f8656507c7bb44c9e636b388ee3930df03689cea9e5d48c1ac385f2efe",
+      "source_bytes": 42696441
+    },
+    {
+      "part": "part_02",
+      "title_ko": "AI Workspace",
+      "title_en": "AI Workspace",
+      "duration": "00:33",
+      "url": "https://github.com/user-attachments/assets/07aaf18c-73c0-4353-98bc-02764b9bd99e",
+      "source_sha256": "6465f55dab1bfd710cb6bab2743090edc4ff27a1dfa8637340fb7d35d240b2aa",
+      "source_bytes": 4821892
+    },
+    {
+      "part": "part_03",
+      "title_ko": "승인 설계 검증과 고객 앱 생성",
+      "title_en": "Approved design verification and customer app generation",
+      "duration": "02:47",
+      "url": "https://github.com/user-attachments/assets/82a5424c-db7e-4776-9238-20fead78588f",
+      "source_sha256": "e92b6e9293b277a1abba7d6c636c3fca24f5592674015fec5ec25182dc1ede74",
+      "source_bytes": 28186231
+    },
+    {
+      "part": "part_04",
+      "title_ko": "Gmail 고객 변경 요청 반영",
+      "title_en": "Customer change requests through Gmail",
+      "duration": "02:33",
+      "url": "https://github.com/user-attachments/assets/a2f50cdf-c712-4be7-87f6-919c8fbe890a",
+      "source_sha256": "92a0c78f7b632eec9c030d61c2da69f245cb8983c2bd6910dc4809282ceb7788",
+      "source_bytes": 24548257
+    }
+  ]
+}

@@ -1,10 +1,59 @@
-# Specton
-
+# Specton v2.0.0
 [![한국어](https://img.shields.io/badge/lang-%ED%95%9C%EA%B5%AD%EC%96%B4-1f6feb)](README.md) [![English](https://img.shields.io/badge/lang-English-lightgrey)](README.en.md)
 
 고객 요구사항 문서를 읽어 **기능 명세서·ERD·DDL·RTM** 초안을 만들고, 누락·모순을 검토하는 LangGraph 기반 에이전트 서비스.
 
 설계 기준 문서는 [docs/](docs/README.md)에 있다. 결정 기록은 [docs/adr/](docs/adr/README.md)에 있다.
+
+## 시연 영상
+
+요구사항 분석부터 고객 앱 생성과 Gmail 변경 반영까지 네 편으로 확인할 수 있습니다. 총 재생 시간은 약 **8분 10초**입니다.
+
+| 영상 | 내용 | 재생 시간 |
+|---|---|---|
+| [part_01](docs/ko/demo.md#part_01) | 초기 설계도 생성 | 02:17 |
+| [part_02](docs/ko/demo.md#part_02) | AI Workspace | 00:33 |
+| [part_03](docs/ko/demo.md#part_03) | 승인 설계 검증과 고객 앱 생성 | 02:47 |
+| [part_04](docs/ko/demo.md#part_04) | Gmail 고객 변경 요청 반영 | 02:33 |
+
+[한국어 시연 가이드](docs/ko/demo.md) · [English demo guide](docs/en/demo.md)
+
+<details>
+<summary>영상 펼쳐 보기 — part_01 → part_04</summary>
+
+### part_01
+
+**초기 설계도 생성 · 02:17**
+
+요구사항 문서를 등록하고 분석·검토·승인을 거쳐 기능 명세서·ERD·DDL·RTM을 생성하는 흐름입니다.
+
+https://github.com/user-attachments/assets/a1f762ea-d0cb-4ba6-859c-3d469e324044
+
+### part_02
+
+**AI Workspace · 00:33**
+
+분석·설계 단계별 결과, 테이블 관계와 요구사항의 연결을 AI Workspace에서 확인합니다.
+
+https://github.com/user-attachments/assets/07aaf18c-73c0-4353-98bc-02764b9bd99e
+
+### part_03
+
+**승인 설계 검증과 고객 앱 생성 · 02:47**
+
+승인 설계를 기준으로 실행 명세를 검토하고 소스를 생성·검증한 뒤, 실제 고객이 사용할 앱의 화면과 동작을 확인합니다.
+
+https://github.com/user-attachments/assets/82a5424c-db7e-4776-9238-20fead78588f
+
+### part_04
+
+**Gmail 고객 변경 요청 반영 · 02:33**
+
+Gmail로 받은 수정 요청을 수집하고 영향 분석·검토·승인을 거쳐 변경을 반영한 뒤 결과를 확인합니다.
+
+https://github.com/user-attachments/assets/a2f50cdf-c712-4be7-87f6-919c8fbe890a
+
+</details>
 
 ## 기술 구성
 
@@ -93,14 +142,6 @@ eval/           평가 데이터·정답 (origin: synthetic 표시)
 frontend/       React 웹
 tests/          unit · integration · e2e
 ```
-
-## 개발 규칙
-
-[개인 개발 규칙](CONTRIBUTING.md)을 따른다. 변경 근거·검증 결과를 기록하고 고객 문서·비밀값·실행 산출물은 커밋하지 않는다.
-
-## 프로젝트 분석과 확장 계획
-
-[프로젝트 분석](docs/planning/00-project-analysis.md)과 [개발 계획](docs/planning/README.md)에서 현재 구현, 품질 개선, SDD 구현, Gmail 피드백 반영 범위를 확인할 수 있다. 확장 기능은 기획 단계다.
 
 ## 라이선스
 

@@ -1,10 +1,59 @@
-# Specton
-
+# Specton v2.0.0
 [![한국어](https://img.shields.io/badge/lang-%ED%95%9C%EA%B5%AD%EC%96%B4-lightgrey)](README.md) [![English](https://img.shields.io/badge/lang-English-1f6feb)](README.en.md)
 
 A LangGraph-based agent service that reads customer requirement documents, drafts a **functional specification, ERD, DDL, and RTM**, and reviews them for omissions and contradictions.
 
 The design reference documents (Korean) live in [docs/](docs/README.md), and decision records in [docs/adr/](docs/adr/README.md).
+
+## Demo videos
+
+Four videos cover requirement analysis, customer application generation, and Gmail change handling. Total running time is approximately **8 min 10 sec**.
+
+| Video | Stage | Duration |
+|---|---|---|
+| [part_01](docs/en/demo.md#part_01) | Initial design generation | 02:17 |
+| [part_02](docs/en/demo.md#part_02) | AI Workspace | 00:33 |
+| [part_03](docs/en/demo.md#part_03) | Approved design verification and customer app generation | 02:47 |
+| [part_04](docs/en/demo.md#part_04) | Customer change requests through Gmail | 02:33 |
+
+[한국어 시연 가이드](docs/ko/demo.md) · [English demo guide](docs/en/demo.md)
+
+<details>
+<summary>Play the walkthrough — part_01 → part_04</summary>
+
+### part_01
+
+**Initial design generation · 02:17**
+
+Upload a requirements document, review the analysis and design, approve the result, and generate the function specification, ERD, DDL, and RTM.
+
+https://github.com/user-attachments/assets/a1f762ea-d0cb-4ba6-859c-3d469e324044
+
+### part_02
+
+**AI Workspace · 00:33**
+
+Inspect analysis and design stages, table relationships, and requirement links in AI Workspace.
+
+https://github.com/user-attachments/assets/07aaf18c-73c0-4353-98bc-02764b9bd99e
+
+### part_03
+
+**Approved design verification and customer app generation · 02:47**
+
+Review the executable specification against the approved design, generate and verify source, and inspect the resulting customer application screens and behavior.
+
+https://github.com/user-attachments/assets/82a5424c-db7e-4776-9238-20fead78588f
+
+### part_04
+
+**Customer change requests through Gmail · 02:33**
+
+Collect customer requests through Gmail, analyze their impact, review and approve changes, then inspect the updated result.
+
+https://github.com/user-attachments/assets/a2f50cdf-c712-4be7-87f6-919c8fbe890a
+
+</details>
 
 ## Tech stack
 
@@ -93,12 +142,6 @@ eval/           evaluation data and answer keys (marked origin: synthetic)
 frontend/       React web
 tests/          unit · integration · e2e
 ```
-
-## Development
-
-Follow the [development guide](CONTRIBUTING.md). Keep change rationale and verification results in the repository. Never commit customer documents, secrets, or runtime artifacts.
-
-See the [project analysis](docs/planning/00-project-analysis.md) and [extension plan](docs/planning/README.md) for the planned SDD and Gmail feedback workflows. These extensions are not implemented yet.
 
 ## License
 
